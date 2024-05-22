@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Default Title{% endblock %}</title>
+    {#
+      Calculate the relative path to the "styles.css" file based on the current path.
+      - Calculate the number of levels to go up (`levels_up`) based on the depth
+        of the `current_path` and whether it's the index page or not.
+      - Construct the `relative_path` by adding the appropriate number of '../'
+        based on `levels_up` and appending 'static/css/styles.css'.
+    #}
+    {% set levels_up = current_path.count(separator) %}
+    {% set relative_path = (('..' + separator) * levels_up) ~ 'static/css/styles.css' %}
+    <link rel="stylesheet" href="{{ relative_path }}">
+</head>
+<body>
+    <!-- Navigation menu -->
+    <ul class="menu">
+        <li><a href="#">File View</a></li>
+        <li><a href="#">Module View</a></li>
+    </ul>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        {% block sidebar %}
+        <ul>
+        {% macro render_list(contents, path, current_path, separator) %}
+          {# 
+            Separate the files and directories from the `contents` dictionary
+            into two separate lists for easier rendering.
+          #}
+          {% set files = [] %}
+          {% set directories = [] %}
+    
+          {% for key, value in contents.items() %}
+            {% if value is string %}
+              {# 
+                If the `value` is a string, it means it's a file.
+                Append the `key` (file name) to the `files` list.
+              #}
+              {% set _ = files.append(key) %}
+            {% else %}
+              {#
+                If the `value` is not a string, it means it's a directory.
+                Append a dictionary containing the `key` (directory name)
+                and `value` (directory contents) to the `directories` list.
+              #}
+              {% set _ = directories.append({'key': key, 'value': value}) %}
+            {% endif %}
+          {% endfor %}
+    
+          {#
+            Render the files in the `files` list.
+            Sort the files alphabetically before rendering.
+          #}
+          {% for file in files | sort %}
+            <li>
+              {% if file.endswith('.f90') %}
+                {#
+                  If the file ends with '.f90', generate a link to the corresponding HTML file.
+                  - Construct the `file_path` by joining the current `path` and `file` name.
+                  - Generate the `href` by replacing the '.f90' extension with '.html'.
+                  - Calculate the number of levels to go up (`levels_up`) based on the depth
+                    of the `current_path` and whether it's the index page or not.
+                  - Construct the `relative_href` by adding the appropriate number of '../'
+                    based on `levels_up` and appending the `href`.
+                #}
+                {% set file_path = path ~ separator ~ file if path else file %}
+                {% set href = file_path[:-4] ~ '.html' %}
+                {% set levels_up = current_path.count(separator) + (1 if not is_index else 0) %}
+                {% set relative_href = (('..' ~ separator) * levels_up) ~ href %}
+                <a href="{{ relative_href }}">{{ file }}</a>
+              {% else %}
+                {# If the file doesn't end with '.f90', render it without a link. #}
+                {{ file }}
+              {% endif %}
+            </li>
+          {% endfor %}
+    
+          {#
+            Render the directories in the `directories` list.
+            Sort the directories alphabetically by their `key` (directory name).
+          #}
+          {% for item in directories | sort(attribute='key') %}
+            <li>
+              {# Render the directory name. #}
+              {{ item.key }}
+              <ul>
+                {#
+                  Recursively call the `render_list` macro to render the contents
+                  of the subdirectories and their files.
+                  - Pass the `item.value` (directory contents) as the `contents` parameter.
+                  - Update the `path` by appending the current directory name (`item.key`).
+                  - Pass the `current_path` unchanged to maintain the correct relative paths.
+                  - Pass the `separator` unchanged to correctly generate paths.
+                #}
+                {{ render_list(item.value, 
+                               path ~ separator ~ item.key if path else item.key, 
+                               current_path,
+                               separator) }}
+              </ul>
+            </li>
+          {% endfor %}
+        {% endmacro %}
+    
+        {#
+          Set the `current_path` variable based on the `path` passed to the template.
+          This represents the path of the currently viewed file.
+        #}
+        {% set current_path = path %}
+        {#
+          Call the `render_list` macro to render the directory tree.
+          - Pass the `sidebar_data` (directory tree) as the `contents` parameter.
+          - Pass an empty string as the initial `path`.
+          - Pass the `current_path` to maintain the correct relative paths.
+          - Pass the `separator` to generate the paths correctly for the operating system.
+        #}
+        {{ render_list(sidebar_data, '', current_path, separator) }}
+        </ul>
+        {% endblock %}
+    </div>
+
+    <!-- Main content area -->
+    <div class="content">
+      {% block content %}
+      {{ content_data }}
+      <code class="fortran">{{ code }}</code>
+      {% endblock %}
+    </div>
+</body>
+</html>

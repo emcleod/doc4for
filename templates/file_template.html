@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Default Title{% endblock %}</title>
+    <link rel="stylesheet" href="{{ relative_path }}">
+    
+    <!-- <link rel="stylesheet" href="{{ url_for('static/css/styles.css', relative_to=relative_path) }}"> -->
+            <!-- <link rel="stylesheet" href="static/css/styles.css"> -->
+</head>
+
+<body>
+    <ul class="menu">
+        <li><a href="#">File View</a></li>
+        <li><a href="#">Module View</a></li>
+    </ul>
+
+    <div class="sidebar">
+        {% macro render_tree(tree, separator, current_path, base_path='') %}
+        <ul>
+            {% for key, value in tree.items()|sort(attribute='0') %}
+            {% if value is mapping %}
+            <li>
+                <span>{{ key }}</span>
+                {{ render_tree(value, separator, current_path, base_path + key + separator) }}
+            </li>
+            {% else %}
+            {% set file_name = value.split('.')[0] %}
+            {% set target_path = base_path + file_name + '.html' %}
+            {% set relative_link = get_relative_path(current_path, target_path) %}
+            <li><a href="{{ relative_link }}">{{ key }}</a></li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        {% endmacro %}
+        {{ render_tree(directory_tree, separator, current_path) }}
+    </div>
+    <div class="content">
+        {% block content %}
+        <pre><code>{{ file_content }}</code></pre>
+        {% endblock %}
+    </div>
+
+</body>
+
+</html>
+
+        <!-- {% block sidebar %}
+        <ul>
+        {% macro render_list(contents, path) %}
+          {% set files = [] %}
+          {% set directories = [] %}
+    
+          {% for key, value in contents.items() %}
+            {% if value is string %}
+              {% set _ = files.append(key) %}
+            {% else %}
+              {% set _ = directories.append({'key': key, 'value': value}) %}
+            {% endif %}
+          {% endfor %}
+    
+          {% for file in files | sort %}
+            <li>
+              {% if file.endswith('.f90') %}
+                <a href="{{ path }}/{{ file[:-4] }}.html">{{ file }}</a>
+              {% else %}
+                {{ file[:file.rindex('.')] }}
+              {% endif %}
+            </li>
+          {% endfor %}
+    
+          {% for item in directories | sort(attribute='key') %}
+            <li>
+              {{ item.key }}
+              <ul>
+                {{ render_list(item.value, path ~ '/' ~ item.key) }}
+              </ul>
+            </li>
+          {% endfor %}
+        {% endmacro %}
+    
+        {% for directory, contents in sidebar_data.items() %}
+          <li>
+            {{ directory }}
+            <ul>
+              {{ render_list(contents, directory) }}
+            </ul>
+          </li>
+        {% endfor %}
+        </ul>
+        {% endblock %} -->
