@@ -82,7 +82,7 @@ def generate_html_files(directory_tree):
 
                 # Render the template
                 output = template.render(sidebar_data = directory_tree, 
-                                         content_data = ''
+                                         content_data = '',
                                          code = code,
                                          path = current_path, 
                                          file = file_name, 
