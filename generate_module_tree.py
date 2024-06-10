@@ -1,6 +1,6 @@
 import os
 from fparser.api import parse as fortran_parser
-from fparser.one.block_statements import Module, Comment, Function
+from fparser.one.block_statements import Module, Comment, Function, Class, Real, Integer
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
@@ -17,10 +17,8 @@ def find_f90_files(directory):
 
 
 def process_comment(comment):
-    # Process a single comment, adding <code> tags around text in {}.
     processed_comment = re.sub(r"{(.*?)}", r"<code>\1</code>", comment)
     return html.escape(processed_comment.lstrip("! "))
-
 
 def find_modules(f90_files):
     modules = []
@@ -33,9 +31,9 @@ def find_modules(f90_files):
                 comment_stack.append(child)
             elif isinstance(child, Module):
                 module_data["module_name"] = child.name
-                module_data["constants"] = {}  # name: value
-                module_data["functions"] = {}  # name: description, details
-                module_data["subroutines"] = {}  # name: description, details
+                module_data["constants"] = {}
+                module_data["functions"] = {}
+                module_data["subroutines"] = {}
                 module_data["file_name"] = f90_file
 
                 # collect module comments
@@ -60,34 +58,61 @@ def find_modules(f90_files):
                             "description": "",
                             "details": {},
                         }
-                        if (
-                            function_comments
-                            and function_comments[0].content.startswith("!*")
-                            and function_comments[-1].content.endswith("*!")         
-                        ):
-                            for comment in function_comments[1:-1]:
-                                content = process_comment(comment.content)
-                                if content:
-                                    module_data["functions"][function_name]["description"] += f"{content}\n"
 
-                        # Extract function details  
+                        # Extract function details
                         attributes = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
                         module_data['functions'][function_name]['details'] = {
-                            'attributes': attributes
-                        }             
+                            'attributes': attributes,
+                            'arguments': {}
+                        }
+
+                        inputs, outputs, result = extract_arg_info(item)
+
+                        if function_comments:
+                            # Process function comments
+                            comment_arg_info, comment_return_info, func_description = process_function_comments(function_comments)
+
+                            # Compare and update input argument info
+                            for arg_name, arg_data in comment_arg_info.items():
+                                if arg_name in inputs:
+                                    if arg_data['type'] != inputs[arg_name]['type']:
+                                        print(f"Warning: Mismatched type for input argument {arg_name} in function {function_name}")
+                                    inputs[arg_name].update(arg_data)
+                                elif arg_name in outputs:
+                                    if arg_data['type'] != outputs[arg_name]['type']:
+                                        print(f"Warning: Mismatched type for output argument {arg_name} in function {function_name}")
+                                    outputs[arg_name].update(arg_data)
+                                else:
+                                    print(f"Warning: Argument {arg_name} in comment not found in function {function_name}")
+
+                            # Update result info
+                            if comment_return_info:
+                                result_name = list(result.keys())[0] if result else None
+                                if result_name and comment_return_info['name'] != result_name:
+                                    print(f"Warning: Mismatched result name in comment for function {function_name}")
+                                if result_name and comment_return_info['type'] != result[result_name]['type']:
+                                    print(f"Warning: Mismatched result type in comment for function {function_name}")
+                                result.update(comment_return_info)
+
+                            # Update function description
+                            module_data["functions"][function_name]["description"] = func_description
+
+                        # Update function details with input, output, and result info
+                        module_data['functions'][function_name]['details']['inputs'] = inputs
+                        module_data['functions'][function_name]['details']['outputs'] = outputs
+                        module_data['functions'][function_name]['details']['return'] = result
                         function_comments = []  # Reset for next function
                     else:
                         function_comments = []  # Reset if next item is not a function
 
-                print(module_data)
-                print("\n")
                 modules.append(module_data)
+                print(module_data)
+                print()
                 module_data = {}  # Reset module_data for the next module
                 comment_stack = []  # Reset comment_stack for the next module
     return modules
 
 env = Environment(loader=FileSystemLoader("templates"))
-
 
 def create_modules_directory():
     modules_dir = os.path.join("docs", "modules")
