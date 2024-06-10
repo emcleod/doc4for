@@ -1,13 +1,22 @@
 import os
-from fparser.api import parse as fortran_parser
-from fparser.one.block_statements import Module, Comment, Function, Class, Real, Integer
+from fparser.api import parse as fortran_parser # type: ignore
+from fparser.one.block_statements import Module, Comment, Function, Class, Real, Integer #type: ignore
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
+from typing import List, Dict, Any, Tuple
 
+# TODO
+# class ModuleDict(TypedDict):
+#     module_name: str
+#     file_name: str
+#     module_description: str
+#     constants: Dict[str, Any]
+#     functions: Dict[str, Any]
+#     subroutines: Dict[str, Any]
 
-def find_f90_files(directory):
-    f90_files = []
+def find_f90_files(directory: str) -> List[str]:
+    f90_files: List[str] = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".f90"):
@@ -15,17 +24,57 @@ def find_f90_files(directory):
                 f90_files.append(relative_path)
     return f90_files
 
+# TODO: this works for inline code, but will need to handle multi-line
+# code blocks and surround them with <pre><code>
+def process_comment(comment: str) -> str:
+    return re.sub(r"{(.*?)}", r"<code>\1</code>", html.escape(comment))
 
-def process_comment(comment):
-    processed_comment = re.sub(r"{(.*?)}", r"<code>\1</code>", comment)
-    return html.escape(processed_comment.lstrip("! "))
+def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    inputs: Dict[str, Any] = {}
+    outputs: Dict[str, Any] = {}
+    result: Dict[str, Any] = {}
+    for item in function.content:
+        if isinstance(item, (Class, Real, Integer)):
+            arg_type = item.selector[1] if item.selector else ''
+            intent_in = 'intent(in)' in item.attrspec if hasattr(item, 'attrspec') else False
+            intent_out = 'intent(out)' in item.attrspec if hasattr(item, 'attrspec') else False
+            for arg in item.entity_decls:
+                if intent_in:
+                    inputs[arg] = {'name': arg, 'type': arg_type}
+                elif intent_out:
+                    outputs[arg] = {'name': arg, 'type': arg_type}
+                else:
+                    result[arg] = {'name': arg, 'type': arg_type}
+    return inputs, outputs, result
 
-def find_modules(f90_files):
+def process_function_comments(comments: List[Comment]) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
+    arg_info: Dict[str, Any] = {}
+    return_info: Dict[str, Any] = {}
+    description = ""
+    for comment in comments:
+        content = comment.content.strip()
+        if content.startswith('@in') or content.startswith('@out'):
+            parts = content.split()
+            if len(parts) >= 3:
+                arg_name, arg_type = parts[1].rstrip(':'), parts[2]
+                arg_desc = ' '.join(parts[3:])
+                arg_info[arg_name] = {'name': arg_name, 'type': arg_type, 'description': arg_desc}
+        elif content.startswith('@return'):
+            parts = content.split()
+            if len(parts) >= 3:
+                return_name, return_type = parts[1].rstrip(':'), parts[2]
+                return_desc = ' '.join(parts[3:])
+                return_info = {'name': return_name, 'type': return_type, 'description': return_desc}
+        elif not content.startswith('!*') and not content.endswith('*!'):
+            description += process_comment(content) + "\n"
+    return arg_info, return_info, description.strip()
+
+def process_modules(f90_files: List[str]) -> List[Any]:
     modules = []
     for f90_file in f90_files:
         module_data = {}
-        comment_stack = []
-        tree = fortran_parser(f90_file, ignore_comments=False)
+        comment_stack: List[Comment] = []
+        tree: Any = fortran_parser(f90_file, ignore_comments=False)
         for child in tree.content:
             if isinstance(child, Comment):
                 comment_stack.append(child)
@@ -101,18 +150,18 @@ def find_modules(f90_files):
                         module_data['functions'][function_name]['details']['inputs'] = inputs
                         module_data['functions'][function_name]['details']['outputs'] = outputs
                         module_data['functions'][function_name]['details']['return'] = result
+
                         function_comments = []  # Reset for next function
                     else:
                         function_comments = []  # Reset if next item is not a function
 
                 modules.append(module_data)
-                print(module_data)
-                print()
                 module_data = {}  # Reset module_data for the next module
                 comment_stack = []  # Reset comment_stack for the next module
     return modules
 
 env = Environment(loader=FileSystemLoader("templates"))
+
 
 def create_modules_directory():
     modules_dir = os.path.join("docs", "modules")
@@ -138,13 +187,13 @@ def generate_home_html(modules):
         file.write(output)
 
 
-def generate_module_html(modules):
+def generate_module_html(modules: List[Dict[str, Any]]):
     template = env.get_template("module_template.html")
 
     module_names = list(map(lambda m: m["module_name"], modules))
     for module in modules:
         output = template.render(
-            module_names=module_names, module_data=module, content_data=""
+            module_names = module_names, module_data=module, content_data=""
         )
         with open(
             os.path.join("docs", "modules", f'{module["module_name"]}.html'), "w"
@@ -152,10 +201,10 @@ def generate_module_html(modules):
             file.write(output)
 
 
-current_directory = os.getcwd()
-fortran_files = find_f90_files(current_directory)
-modules = find_modules(fortran_files)
+# current_directory = os.getcwd()
+# fortran_files = find_f90_files(current_directory)
+# modules = process_modules(fortran_files)
 
-create_modules_directory()
-generate_home_html(modules)
-generate_module_html(modules)
+# create_modules_directory()
+# generate_home_html(modules)
+# generate_module_html(modules)

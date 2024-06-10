@@ -1,9 +1,10 @@
 import os
 import shutil
 from jinja2 import Environment, FileSystemLoader
+from typing import List, Dict, Any
 
-def find_f90_files(directory):
-    f90_files = []
+def find_f90_files(directory: str) -> List[str]:
+    f90_files: List[str] = []
     for root, _, files in os.walk(directory):
         for file in files:
             # Get the relative path from the current directory to the file
@@ -12,9 +13,9 @@ def find_f90_files(directory):
                 f90_files.append(relative_path)
     return f90_files
 
-def build_directory_tree(files):
+def build_directory_tree(files: List[str]) -> Dict[str, Any]:
     # Create a dictionary to store the directory structure
-    directory_tree = {}
+    directory_tree: Dict[str, Any] = {}
 
     for file in files:
         # Extract the directory path and file name
@@ -47,7 +48,7 @@ def create_docs_directory():
 
 env = Environment(loader=FileSystemLoader('templates'))
 
-def generate_index_html(directory_tree):
+def generate_index_html(directory_tree: Dict[str, Any]):
     # Load the template
     template = env.get_template('file_template.html')
     
@@ -63,10 +64,10 @@ def generate_index_html(directory_tree):
     with open(os.path.join('docs', 'index.html'), 'w') as file:
         file.write(output)
 
-def generate_html_files(directory_tree):
+def generate_html_files(directory_tree: Dict[str, Any]):
     template = env.get_template('file_template.html')
 
-    def generate_html_recursively(tree, current_path):
+    def generate_html_recursively(tree: Dict[str, Any], current_path: str):
         for key, value in tree.items():
             if isinstance(value, str):
                 file_path = value
