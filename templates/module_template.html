@@ -10,6 +10,8 @@
 
 <body>
     <nav>
+        <input type="checkbox" id="menu-checkbox" class="menu-checkbox">
+        <label for="menu-checkbox" class="menu-toggle">&#9776;</label>
         <ul class="menu">
             <li><a href="../index.html">File View</a></li>
             <li><a href="module_index.html">Module View</a></li>
@@ -29,22 +31,22 @@
             {% endblock %}
         </aside>
 
-        <article>
-        {% block content %}
-        {% if content_data %}
+        <article class="content">
+            {% block content %}
+            {% if content_data %}
             <section>
                 <p>{{ content_data }}</p>
             </section>
-        {% else %}
+            {% else %}
             <section>
                 <h1>{{ module_data.module_name }}</h1>
                 {% if module_data.module_description %}
-                    <p>{{ module_data.module_description | safe }}</p>
+                <p>{{ module_data.module_description | safe }}</p>
                 {% else %}
-                    <p>No description available.</p>
+                <p>No description available.</p>
                 {% endif %}
             </section>
-        {#
+            {#
             <section>
                 <h2>Subroutine Summary</h2>
                 <ul>
@@ -53,7 +55,7 @@
                     {% endfor %}
                 </ul>
             </section>
-        
+
             <section>
                 <h2>Function Summary</h2>
                 <ul>
@@ -62,7 +64,7 @@
                     {% endfor %}
                 </ul>
             </section>
-        
+
             <section>
                 <h2>Subroutine Details</h2>
                 {% for subroutine, details in module_data.subroutines.items() %}
@@ -74,7 +76,7 @@
                 </section>
                 {% endfor %}
             </section>
-        
+
             <section>
                 <h2>Function Details</h2>
                 {% for function, details in module_data.functions.items() %}
@@ -86,8 +88,8 @@
                 {% endfor %}
             </section>
             #}
-        {% endif %}
-        {% endblock %}
+            {% endif %}
+            {% endblock %}
         </article>
     </main>
 </body>
