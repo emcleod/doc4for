@@ -49,7 +49,7 @@ env = Environment(loader=FileSystemLoader('templates'))
 
 def generate_index_html(directory_tree):
     # Load the template
-    template = env.get_template('template.html')
+    template = env.get_template('file_template.html')
     
     # Render the template with the data
     output = template.render(sidebar_data = directory_tree, 
@@ -64,7 +64,7 @@ def generate_index_html(directory_tree):
         file.write(output)
 
 def generate_html_files(directory_tree):
-    template = env.get_template('template.html')
+    template = env.get_template('file_template.html')
 
     def generate_html_recursively(tree, current_path):
         for key, value in tree.items():

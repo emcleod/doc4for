@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Modules{% endblock %}</title>
+    <link rel="stylesheet" href="../static/css/styles.css">
+</head>
+
+<body>
+    <nav>
+        <ul class="menu">
+            <li><a href="../index.html">File View</a></li>
+            <li><a href="module_index.html">Module View</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <aside class="sidebar">
+            {% block sidebar %}
+            <nav>
+                <ul>
+                    {% for module in module_names %}
+                    <li><a href="{{ module }}.html">{{ module }}</a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endblock %}
+        </aside>
+
+        <article>
+        {% block content %}
+        {% if content_data %}
+            <section>
+                <p>{{ content_data }}</p>
+            </section>
+        {% else %}
+            <section>
+                <h1>{{ module_data.module_name }}</h1>
+                {% if module_data.module_description %}
+                    <p>{{ module_data.module_description | safe }}</p>
+                {% else %}
+                    <p>No description available.</p>
+                {% endif %}
+            </section>
+        {#
+            <section>
+                <h2>Subroutine Summary</h2>
+                <ul>
+                    {% for subroutine in module_data.subroutines %}
+                    <li><a href="#{{ subroutine }}">{{ subroutine }}</a></li>
+                    {% endfor %}
+                </ul>
+            </section>
+        
+            <section>
+                <h2>Function Summary</h2>
+                <ul>
+                    {% for function in module_data.functions %}
+                    <li><a href="#{{ function }}">{{ function }}</a></li>
+                    {% endfor %}
+                </ul>
+            </section>
+        
+            <section>
+                <h2>Subroutine Details</h2>
+                {% for subroutine, details in module_data.subroutines.items() %}
+                <section id="{{ subroutine }}">
+                    <h3>{{ subroutine }}</h3>
+                    <p>{{ details.description }}</p>
+                    <p>{{ details.details }}</p>
+                    <!-- Add more details as needed -->
+                </section>
+                {% endfor %}
+            </section>
+        
+            <section>
+                <h2>Function Details</h2>
+                {% for function, details in module_data.functions.items() %}
+                <section id="{{ function }}">
+                    <h3>{{ function }}</h3>
+                    <p>{{ details.description }}</p>
+                    <!-- Add more details as needed -->
+                </section>
+                {% endfor %}
+            </section>
+            #}
+        {% endif %}
+        {% endblock %}
+        </article>
+    </main>
+</body>
+
+</html>
