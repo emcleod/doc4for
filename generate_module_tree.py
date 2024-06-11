@@ -51,14 +51,8 @@ def get_arg_intent(item: Any) -> Tuple[bool, bool]:
 def add_dimension_info(decl: str, info: Dict[str, Any], dims: List[int]) -> None:
     if not dims:
         return
-    dimension_string: str = ''
-    for dim in dims:
-        if not dim:
-            dimension_string += 'allocatable'
-        else:
-            dimension_string += str(dim)
-        dimension_string += ' x '
-    info[decl]['dimension'] = dimension_string[:-3]
+    dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
+    info[decl]['dimension'] = ' &times; '.join(dimension_parts)
 
 def process_arg(decl: str, arg_type: str, intent_in: bool, intent_out: bool,
                inputs: Dict[str, Any], outputs: Dict[str, Any], dims: List[int] = []) -> None:
@@ -88,7 +82,8 @@ def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dic
             arg_type = get_arg_type(item)
             intent_in, intent_out = get_arg_intent(item)
             for decl in item.entity_decls:
-                if not ':' in decl: # it's a scalar
+                # TODO handle assumed size arrays
+                if not ':' in decl: # it's a scalar or assumed size
                     if decl in args:
                         process_arg(decl, arg_type, intent_in, intent_out, inputs, outputs)
                     elif decl == result:
