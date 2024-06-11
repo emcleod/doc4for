@@ -9,6 +9,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
+from re import Match
 from typing import List, Dict, Any, Tuple, Optional
 
 # TODO
@@ -47,15 +48,31 @@ def get_arg_intent(item: Any) -> Tuple[bool, bool]:
         intent_in, intent_out = False, False
     return intent_in, intent_out
 
+def add_dimension_info(decl: str, info: Dict[str, Any], dims: List[int]) -> None:
+    if not dims:
+        return
+    dimension_string: str = ''
+    for dim in dims:
+        if not dim:
+            dimension_string += 'allocatable'
+        else:
+            dimension_string += str(dim)
+        dimension_string += ' x '
+    info[decl]['dimension'] = dimension_string[:-3]
+
 def process_arg(decl: str, arg_type: str, intent_in: bool, intent_out: bool,
-               inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
+               inputs: Dict[str, Any], outputs: Dict[str, Any], dims: List[int] = []) -> None:
     if intent_in:
         inputs[decl] = {'type': arg_type}
+        add_dimension_info(decl, inputs, dims)
     elif intent_out:
         outputs[decl] = {'type': arg_type}
+        add_dimension_info(decl, outputs, dims)
     else:
         inputs[decl] = {'type': arg_type}
         outputs[decl] = {'type': arg_type}
+        add_dimension_info(decl, outputs, dims)
+        add_dimension_info(decl, inputs, dims)
 
 def get_return_type(function: Any) -> Optional[str]:
     return function.typedecl.name if function.typedecl else None
@@ -66,16 +83,24 @@ def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dic
     results: Dict[str, Any] = {}
     args: List[str] = function.args
     result: str = function.result
-
     for item in function.content:
         if isinstance(item, TypeDeclarationStatement):
             arg_type = get_arg_type(item)
             intent_in, intent_out = get_arg_intent(item)
             for decl in item.entity_decls:
-                if decl in args:
-                    process_arg(decl, arg_type, intent_in, intent_out, inputs, outputs)
-                elif decl == result:
-                    results[decl] = {'type': arg_type}
+                if not ':' in decl: # it's a scalar
+                    if decl in args:
+                        process_arg(decl, arg_type, intent_in, intent_out, inputs, outputs)
+                    elif decl == result:
+                        results[decl] = {'type': arg_type}
+                else:
+                    name, dimensions = decl.split('(')
+                    dim = dimensions[:-1].split(':')
+                    if name in args:
+                        process_arg(name, arg_type, intent_in, intent_out, inputs, outputs, dim)
+                    elif name == result:
+                        results[decl] = {'type': arg_type}
+
     if not results:
         return_type = get_return_type(function)
         results[result] = {'type': return_type}
