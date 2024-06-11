@@ -39,8 +39,8 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real'})
@@ -78,8 +78,8 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real'})
@@ -117,8 +117,8 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real'})
@@ -155,8 +155,8 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real'})
@@ -193,11 +193,11 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs['arr'], {'type': 'real', 'dimension': 'allocatable x allocatable'})
+        self.assertEqual(inputs['arr'], {'type': 'real', 'dimension': 'allocatable &times; allocatable'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
         self.assertEqual(results['res'], {'type': 'real'})
@@ -231,12 +231,12 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['inputs']
-        outputs = function['details']['outputs']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['scalar'], {'type': 'real'})
-        self.assertEqual(inputs['arr'], {'type': 'real', 'dimension': 'allocatable x allocatable'})
+        self.assertEqual(inputs['arr'], {'type': 'real', 'dimension': 'allocatable &times; allocatable'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
         #TODO fix
