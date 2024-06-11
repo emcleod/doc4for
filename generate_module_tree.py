@@ -1,10 +1,15 @@
 import os
-from fparser.api import parse as fortran_parser # type: ignore
-from fparser.one.block_statements import Module, Comment, Function, Class, Real, Integer #type: ignore
+from fparser.api import parse as fortran_parser  # type: ignore
+from fparser.one.block_statements import (
+    Module,
+    Comment,
+    Function,
+)
+from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 # TODO
 # class ModuleDict(TypedDict):
@@ -15,6 +20,7 @@ from typing import List, Dict, Any, Tuple
 #     functions: Dict[str, Any]
 #     subroutines: Dict[str, Any]
 
+
 def find_f90_files(directory: str) -> List[str]:
     f90_files: List[str] = []
     for root, _, files in os.walk(directory):
@@ -24,50 +30,118 @@ def find_f90_files(directory: str) -> List[str]:
                 f90_files.append(relative_path)
     return f90_files
 
+
 # TODO: this works for inline code, but will need to handle multi-line
 # code blocks and surround them with <pre><code>
 def process_comment(comment: str) -> str:
     return re.sub(r"{(.*?)}", r"<code>\1</code>", html.escape(comment))
 
+def get_arg_type(item: Any) -> str:
+    return item.name if item.name else ''
+
+def get_arg_intent(item: Any) -> Tuple[bool, bool]:
+    if hasattr(item, 'attrspec'):
+        intent_in = 'intent(in)' in item.attrspec
+        intent_out = 'intent(out)' in item.attrspec
+    else:
+        intent_in, intent_out = False, False
+    return intent_in, intent_out
+
+def process_arg(decl: str, arg_type: str, intent_in: bool, intent_out: bool,
+               inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
+    if intent_in:
+        inputs[decl] = {'name': decl, 'type': arg_type}
+    elif intent_out:
+        outputs[decl] = {'name': decl, 'type': arg_type}
+    else:
+        inputs[decl] = {'name': decl, 'type': arg_type}
+        outputs[decl] = {'name': decl, 'type': arg_type}
+
+def get_return_type(function: Any) -> Optional[str]:
+    return function.typedecl.name if function.typedecl else None
+
 def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     inputs: Dict[str, Any] = {}
     outputs: Dict[str, Any] = {}
-    result: Dict[str, Any] = {}
-    for item in function.content:
-        if isinstance(item, (Class, Real, Integer)):
-            arg_type = item.selector[1] if item.selector else ''
-            intent_in = 'intent(in)' in item.attrspec if hasattr(item, 'attrspec') else False
-            intent_out = 'intent(out)' in item.attrspec if hasattr(item, 'attrspec') else False
-            for arg in item.entity_decls:
-                if intent_in:
-                    inputs[arg] = {'name': arg, 'type': arg_type}
-                elif intent_out:
-                    outputs[arg] = {'name': arg, 'type': arg_type}
-                else:
-                    result[arg] = {'name': arg, 'type': arg_type}
-    return inputs, outputs, result
+    results: Dict[str, Any] = {}
+    args: List[str] = function.args
+    result: str = function.result
 
-def process_function_comments(comments: List[Comment]) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
+    for item in function.content:
+        if isinstance(item, TypeDeclarationStatement):
+            arg_type = get_arg_type(item)
+            intent_in, intent_out = get_arg_intent(item)
+            for decl in item.entity_decls:
+                if decl in args:
+                    process_arg(decl, arg_type, intent_in, intent_out, inputs, outputs)
+                elif decl == result:
+                    results[decl] = {'name': decl, 'type': arg_type}
+    if not results:
+        return_type = get_return_type(function)
+        results[result] = {'name': result, 'type': return_type}
+    return inputs, outputs, results
+# def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+#     inputs: Dict[str, Any] = {}
+#     outputs: Dict[str, Any] = {}
+#     results: Dict[str, Any] = {}
+#     args = function.args
+#     result = function.result
+#     for item in function.content:
+#         if isinstance(item, TypeDeclarationStatement):
+#             arg_type = item.name if item.name else ''
+#             for decl in item.entity_decls:
+#                 if (decl in args): # is it in the arg list
+#                     intent_in = hasattr(item, 'attrspec') and 'intent(in)' in item.attrspec
+#                     intent_out = hasattr(item, 'attrspec') and 'intent(out)' in item.attrspec
+#                     if intent_in:
+#                         inputs[decl] = {'name': decl, 'type': arg_type}
+#                     elif intent_out:
+#                         outputs[decl] = {'name': decl, 'type': arg_type}
+#                     else:
+#                         inputs[decl] = {'name': decl, 'type': arg_type}
+#                         outputs[decl] = {'name': decl, 'type': arg_type}
+#                 elif decl == result:
+#                     results[decl] = {'name': decl, 'type': arg_type}
+#     if not results: # 'result' wasn't declared
+#         if function.typedecl:
+#             return_type = function.typedecl.name
+#         else:
+#             return_type = None
+#         results[result] = {'name': result, 'type': return_type}
+#     return inputs, outputs, results
+
+def process_function_comments(
+    comments: List[Comment],
+) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
     arg_info: Dict[str, Any] = {}
     return_info: Dict[str, Any] = {}
     description = ""
     for comment in comments:
         content = comment.content.strip()
-        if content.startswith('@in') or content.startswith('@out'):
+        if content.startswith("@in") or content.startswith("@out"):
             parts = content.split()
             if len(parts) >= 3:
-                arg_name, arg_type = parts[1].rstrip(':'), parts[2]
-                arg_desc = ' '.join(parts[3:])
-                arg_info[arg_name] = {'name': arg_name, 'type': arg_type, 'description': arg_desc}
-        elif content.startswith('@return'):
+                arg_name, arg_type = parts[1].rstrip(":"), parts[2]
+                arg_desc = " ".join(parts[3:])
+                arg_info[arg_name] = {
+                    "name": arg_name,
+                    "type": arg_type,
+                    "description": arg_desc,
+                }
+        elif content.startswith("@return"):
             parts = content.split()
             if len(parts) >= 3:
-                return_name, return_type = parts[1].rstrip(':'), parts[2]
-                return_desc = ' '.join(parts[3:])
-                return_info = {'name': return_name, 'type': return_type, 'description': return_desc}
-        elif not content.startswith('!*') and not content.endswith('*!'):
+                return_name, return_type = parts[1].rstrip(":"), parts[2]
+                return_desc = " ".join(parts[3:])
+                return_info = {
+                    "name": return_name,
+                    "type": return_type,
+                    "description": return_desc,
+                }
+        elif not content.startswith("!*") and not content.endswith("*!"):
             description += process_comment(content) + "\n"
     return arg_info, return_info, description.strip()
+
 
 def process_modules(f90_files: List[str]) -> List[Any]:
     modules = []
@@ -103,53 +177,84 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                         function_comments.append(item)
                     elif isinstance(item, Function):
                         function_name = item.name
-                        module_data['functions'][function_name] = {
-                            'description': '',
-                            'details': {},
+                        module_data["functions"][function_name] = {
+                            "description": "",
+                            "details": {},
                         }
 
                         # Extract function details
-                        attributes = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
-                        module_data['functions'][function_name]['details'] = {
-                            'attributes': attributes,
-                            'arguments': {}
+                        attributes = [
+                            attr.strip().lower()
+                            for attr in item.prefix.split()
+                            if attr.strip()
+                        ]
+                        module_data["functions"][function_name]["details"] = {
+                            "attributes": attributes,
+                            "arguments": {},
                         }
 
                         inputs, outputs, result = extract_arg_info(item)
 
                         if function_comments:
                             # Process function comments
-                            comment_arg_info, comment_return_info, func_description = process_function_comments(function_comments)
+                            comment_arg_info, comment_return_info, func_description = (
+                                process_function_comments(function_comments)
+                            )
 
                             # Compare and update input argument info
                             for arg_name, arg_data in comment_arg_info.items():
                                 if arg_name in inputs:
-                                    if arg_data['type'] != inputs[arg_name]['type']:
-                                        print(f"Warning: Mismatched type for input argument {arg_name} in function {function_name}")
+                                    if arg_data["type"] != inputs[arg_name]["type"]:
+                                        print(
+                                            f"Warning: Mismatched type for input argument {arg_name} in function {function_name}"
+                                        )
                                     inputs[arg_name].update(arg_data)
                                 elif arg_name in outputs:
-                                    if arg_data['type'] != outputs[arg_name]['type']:
-                                        print(f"Warning: Mismatched type for output argument {arg_name} in function {function_name}")
+                                    if arg_data["type"] != outputs[arg_name]["type"]:
+                                        print(
+                                            f"Warning: Mismatched type for output argument {arg_name} in function {function_name}"
+                                        )
                                     outputs[arg_name].update(arg_data)
                                 else:
-                                    print(f"Warning: Argument {arg_name} in comment not found in function {function_name}")
+                                    print(
+                                        f"Warning: Argument {arg_name} in comment not found in function {function_name}"
+                                    )
 
                             # Update result info
                             if comment_return_info:
                                 result_name = list(result.keys())[0] if result else None
-                                if result_name and comment_return_info['name'] != result_name:
-                                    print(f"Warning: Mismatched result name in comment for function {function_name}")
-                                if result_name and comment_return_info['type'] != result[result_name]['type']:
-                                    print(f"Warning: Mismatched result type in comment for function {function_name}")
+                                if (
+                                    result_name
+                                    and comment_return_info["name"] != result_name
+                                ):
+                                    print(
+                                        f"Warning: Mismatched result name in comment for function {function_name}"
+                                    )
+                                if (
+                                    result_name
+                                    and comment_return_info["type"]
+                                    != result[result_name]["type"]
+                                ):
+                                    print(
+                                        f"Warning: Mismatched result type in comment for function {function_name}"
+                                    )
                                 result.update(comment_return_info)
 
                             # Update function description
-                            module_data["functions"][function_name]["description"] = func_description
+                            module_data["functions"][function_name][
+                                "description"
+                            ] = func_description
 
                         # Update function details with input, output, and result info
-                        module_data['functions'][function_name]['details']['inputs'] = inputs
-                        module_data['functions'][function_name]['details']['outputs'] = outputs
-                        module_data['functions'][function_name]['details']['return'] = result
+                        module_data["functions"][function_name]["details"][
+                            "inputs"
+                        ] = inputs
+                        module_data["functions"][function_name]["details"][
+                            "outputs"
+                        ] = outputs
+                        module_data["functions"][function_name]["details"][
+                            "return"
+                        ] = result
 
                         function_comments = []  # Reset for next function
                     else:
@@ -159,6 +264,7 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                 module_data = {}  # Reset module_data for the next module
                 comment_stack = []  # Reset comment_stack for the next module
     return modules
+
 
 env = Environment(loader=FileSystemLoader("templates"))
 
@@ -193,7 +299,7 @@ def generate_module_html(modules: List[Dict[str, Any]]):
     module_names = list(map(lambda m: m["module_name"], modules))
     for module in modules:
         output = template.render(
-            module_names = module_names, module_data=module, content_data=""
+            module_names=module_names, module_data=module, content_data=""
         )
         with open(
             os.path.join("docs", "modules", f'{module["module_name"]}.html'), "w"
