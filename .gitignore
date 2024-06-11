@@ -1,5 +1,6 @@
 # Python stuff
 **/__pycache__/
+tests/f90/__pycache__/
 
 # Prerequisites
 *.d
