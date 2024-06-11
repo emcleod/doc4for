@@ -50,12 +50,12 @@ def get_arg_intent(item: Any) -> Tuple[bool, bool]:
 def process_arg(decl: str, arg_type: str, intent_in: bool, intent_out: bool,
                inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
     if intent_in:
-        inputs[decl] = {'name': decl, 'type': arg_type}
+        inputs[decl] = {'type': arg_type}
     elif intent_out:
-        outputs[decl] = {'name': decl, 'type': arg_type}
+        outputs[decl] = {'type': arg_type}
     else:
-        inputs[decl] = {'name': decl, 'type': arg_type}
-        outputs[decl] = {'name': decl, 'type': arg_type}
+        inputs[decl] = {'type': arg_type}
+        outputs[decl] = {'type': arg_type}
 
 def get_return_type(function: Any) -> Optional[str]:
     return function.typedecl.name if function.typedecl else None
@@ -75,40 +75,11 @@ def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dic
                 if decl in args:
                     process_arg(decl, arg_type, intent_in, intent_out, inputs, outputs)
                 elif decl == result:
-                    results[decl] = {'name': decl, 'type': arg_type}
+                    results[decl] = {'type': arg_type}
     if not results:
         return_type = get_return_type(function)
-        results[result] = {'name': result, 'type': return_type}
+        results[result] = {'type': return_type}
     return inputs, outputs, results
-# def extract_arg_info(function: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-#     inputs: Dict[str, Any] = {}
-#     outputs: Dict[str, Any] = {}
-#     results: Dict[str, Any] = {}
-#     args = function.args
-#     result = function.result
-#     for item in function.content:
-#         if isinstance(item, TypeDeclarationStatement):
-#             arg_type = item.name if item.name else ''
-#             for decl in item.entity_decls:
-#                 if (decl in args): # is it in the arg list
-#                     intent_in = hasattr(item, 'attrspec') and 'intent(in)' in item.attrspec
-#                     intent_out = hasattr(item, 'attrspec') and 'intent(out)' in item.attrspec
-#                     if intent_in:
-#                         inputs[decl] = {'name': decl, 'type': arg_type}
-#                     elif intent_out:
-#                         outputs[decl] = {'name': decl, 'type': arg_type}
-#                     else:
-#                         inputs[decl] = {'name': decl, 'type': arg_type}
-#                         outputs[decl] = {'name': decl, 'type': arg_type}
-#                 elif decl == result:
-#                     results[decl] = {'name': decl, 'type': arg_type}
-#     if not results: # 'result' wasn't declared
-#         if function.typedecl:
-#             return_type = function.typedecl.name
-#         else:
-#             return_type = None
-#         results[result] = {'name': result, 'type': return_type}
-#     return inputs, outputs, results
 
 def process_function_comments(
     comments: List[Comment],

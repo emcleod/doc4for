@@ -43,11 +43,11 @@ class TestFunctions(TestCase):
         outputs = function['details']['outputs']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'name': 'x'})
-        self.assertEqual(inputs['y'], {'type': 'real', 'name': 'y'})
+        self.assertEqual(inputs['x'], {'type': 'real'})
+        self.assertEqual(inputs['y'], {'type': 'real'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results['res'], {'type': 'real', 'name': 'res'})
+        self.assertEqual(results['res'], {'type': 'real'})
 
     def test_find_function_with_scalar_args_2(self):
         self.fs.create_file(
@@ -82,11 +82,11 @@ class TestFunctions(TestCase):
         outputs = function['details']['outputs']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'name': 'x'})
-        self.assertEqual(inputs['y'], {'type': 'real', 'name': 'y'})
+        self.assertEqual(inputs['x'], {'type': 'real'})
+        self.assertEqual(inputs['y'], {'type': 'real'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results['res'], {'type': 'real', 'name': 'res'})
+        self.assertEqual(results['res'], {'type': 'real'})
 
     def test_find_function_with_scalar_args_3(self):
         self.fs.create_file(
@@ -121,11 +121,11 @@ class TestFunctions(TestCase):
         outputs = function['details']['outputs']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'name': 'x'})
-        self.assertEqual(inputs['y'], {'type': 'real', 'name': 'y'})
+        self.assertEqual(inputs['x'], {'type': 'real'})
+        self.assertEqual(inputs['y'], {'type': 'real'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results['add_numbers'], {'type': 'real', 'name': 'add_numbers'})
+        self.assertEqual(results['add_numbers'], {'type': 'real'})
 
     def test_find_function_with_scalar_args_4(self):
         self.fs.create_file(
@@ -159,11 +159,11 @@ class TestFunctions(TestCase):
         outputs = function['details']['outputs']
         results = function['details']['return']
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'name': 'x'})
-        self.assertEqual(inputs['y'], {'type': 'real', 'name': 'y'})
+        self.assertEqual(inputs['x'], {'type': 'real'})
+        self.assertEqual(inputs['y'], {'type': 'real'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results['add_numbers'], {'type': None, 'name': 'add_numbers'})
+        self.assertEqual(results['add_numbers'], {'type': None})
 
     # def test_find_function_with_array_args(self):
     #     self.fs.create_file(
