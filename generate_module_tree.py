@@ -26,7 +26,7 @@ def find_f90_files(directory: str) -> List[str]:
     f90_files: List[str] = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith(".f90"):
+            if file.endswith('.f90'):
                 relative_path = os.path.relpath(os.path.join(root, file), directory)
                 f90_files.append(relative_path)
     return f90_files
@@ -35,7 +35,7 @@ def find_f90_files(directory: str) -> List[str]:
 # TODO: this works for inline code, but will need to handle multi-line
 # code blocks and surround them with <pre><code>
 def process_comment(comment: str) -> str:
-    return re.sub(r"{(.*?)}", r"<code>\1</code>", html.escape(comment))
+    return re.sub(r'{(.*?)}', r'<code>\1</code>', html.escape(comment))
 
 def get_arg_type(item: Any) -> str:
     return item.name if item.name else ''
@@ -106,31 +106,31 @@ def process_function_comments(
 ) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
     arg_info: Dict[str, Any] = {}
     return_info: Dict[str, Any] = {}
-    description = ""
+    description = ''
     for comment in comments:
         content = comment.content.strip()
-        if content.startswith("@in") or content.startswith("@out"):
+        if content.startswith('@in') or content.startswith('@out') or content.startswith('@inout'):
             parts = content.split()
             if len(parts) >= 3:
-                arg_name, arg_type = parts[1].rstrip(":"), parts[2]
-                arg_desc = " ".join(parts[3:])
+                arg_name, arg_type = parts[1].rstrip(':'), parts[2]
+                arg_desc = ' '.join(parts[3:])
                 arg_info[arg_name] = {
-                    "name": arg_name,
-                    "type": arg_type,
-                    "description": arg_desc,
+                    'name': arg_name,
+                    'type': arg_type,
+                    'description': arg_desc,
                 }
-        elif content.startswith("@return"):
+        elif content.startswith('@return'):
             parts = content.split()
             if len(parts) >= 3:
-                return_name, return_type = parts[1].rstrip(":"), parts[2]
-                return_desc = " ".join(parts[3:])
+                return_name, return_type = parts[1].rstrip(':'), parts[2]
+                return_desc = ' '.join(parts[3:])
                 return_info = {
-                    "name": return_name,
-                    "type": return_type,
-                    "description": return_desc,
+                    'name': return_name,
+                    'type': return_type,
+                    'description': return_desc,
                 }
-        elif not content.startswith("!*") and not content.endswith("*!"):
-            description += process_comment(content) + "\n"
+        elif not content.startswith('!*') and not content.endswith('*!'):
+            description += process_comment(content) + '\n'
     return arg_info, return_info, description.strip()
 
 
@@ -144,23 +144,23 @@ def process_modules(f90_files: List[str]) -> List[Any]:
             if isinstance(child, Comment):
                 comment_stack.append(child)
             elif isinstance(child, Module):
-                module_data["module_name"] = child.name
-                module_data["constants"] = {}
-                module_data["functions"] = {}
-                module_data["subroutines"] = {}
-                module_data["file_name"] = f90_file
+                module_data['module_name'] = child.name
+                module_data['constants'] = {}
+                module_data['functions'] = {}
+                module_data['subroutines'] = {}
+                module_data['file_name'] = f90_file
 
                 # collect module comments
                 if (
                     comment_stack
-                    and comment_stack[0].content.startswith("!*")
-                    and comment_stack[-1].content.endswith("*!")
+                    and comment_stack[0].content.startswith('!*')
+                    and comment_stack[-1].content.endswith('*!')
                 ):
-                    module_data["module_description"] = ""
+                    module_data['module_description'] = ''
                     for comment in comment_stack[1:-1]:
                         content = process_comment(comment.content)
                         if content:
-                            module_data["module_description"] += f"{content}\n"
+                            module_data['module_description'] += f'{content}\n'
 
                 function_comments = []
                 for item in child.content:
@@ -168,9 +168,9 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                         function_comments.append(item)
                     elif isinstance(item, Function):
                         function_name = item.name
-                        module_data["functions"][function_name] = {
-                            "description": "",
-                            "details": {},
+                        module_data['functions'][function_name] = {
+                            'description': '',
+                            'details': {},
                         }
 
                         # Extract function details
@@ -179,9 +179,9 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                             for attr in item.prefix.split()
                             if attr.strip()
                         ]
-                        module_data["functions"][function_name]["details"] = {
-                            "attributes": attributes,
-                            "arguments": {},
+                        module_data['functions'][function_name]['details'] = {
+                            'attributes': attributes,
+                            'arguments': {},
                         }
 
                         inputs, outputs, result = extract_arg_info(item)
@@ -195,20 +195,20 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                             # Compare and update input argument info
                             for arg_name, arg_data in comment_arg_info.items():
                                 if arg_name in inputs:
-                                    if arg_data["type"] != inputs[arg_name]["type"]:
+                                    if arg_data['type'] != inputs[arg_name]['type']:
                                         print(
-                                            f"Warning: Mismatched type for input argument {arg_name} in function {function_name}"
+                                            f'Warning: Mismatched type for input argument {arg_name} in function {function_name}'
                                         )
                                     inputs[arg_name].update(arg_data)
                                 elif arg_name in outputs:
-                                    if arg_data["type"] != outputs[arg_name]["type"]:
+                                    if arg_data['type'] != outputs[arg_name]['type']:
                                         print(
-                                            f"Warning: Mismatched type for output argument {arg_name} in function {function_name}"
+                                            f'Warning: Mismatched type for output argument {arg_name} in function {function_name}'
                                         )
                                     outputs[arg_name].update(arg_data)
                                 else:
                                     print(
-                                        f"Warning: Argument {arg_name} in comment not found in function {function_name}"
+                                        f'Warning: Argument {arg_name} in comment not found in function {function_name}'
                                     )
 
                             # Update result info
@@ -216,35 +216,35 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                                 result_name = list(result.keys())[0] if result else None
                                 if (
                                     result_name
-                                    and comment_return_info["name"] != result_name
+                                    and comment_return_info['name'] != result_name
                                 ):
                                     print(
-                                        f"Warning: Mismatched result name in comment for function {function_name}"
+                                        f'Warning: Mismatched result name in comment for function {function_name}'
                                     )
                                 if (
                                     result_name
-                                    and comment_return_info["type"]
-                                    != result[result_name]["type"]
+                                    and comment_return_info['type']
+                                    != result[result_name]['type']
                                 ):
                                     print(
-                                        f"Warning: Mismatched result type in comment for function {function_name}"
+                                        f'Warning: Mismatched result type in comment for function {function_name}'
                                     )
                                 result.update(comment_return_info)
 
                             # Update function description
-                            module_data["functions"][function_name][
-                                "description"
+                            module_data['functions'][function_name][
+                                'description'
                             ] = func_description
 
                         # Update function details with input, output, and result info
-                        module_data["functions"][function_name]["details"][
-                            "inputs"
+                        module_data['functions'][function_name]['details'][
+                            'inputs'
                         ] = inputs
-                        module_data["functions"][function_name]["details"][
-                            "outputs"
+                        module_data['functions'][function_name]['details'][
+                            'outputs'
                         ] = outputs
-                        module_data["functions"][function_name]["details"][
-                            "return"
+                        module_data['functions'][function_name]['details'][
+                            'return'
                         ] = result
 
                         function_comments = []  # Reset for next function
@@ -257,11 +257,11 @@ def process_modules(f90_files: List[str]) -> List[Any]:
     return modules
 
 
-env = Environment(loader=FileSystemLoader("templates"))
+env = Environment(loader=FileSystemLoader('templates'))
 
 
 def create_modules_directory():
-    modules_dir = os.path.join("docs", "modules")
+    modules_dir = os.path.join('docs', 'modules')
     os.makedirs(modules_dir, exist_ok=True)
 
     for file in os.listdir(modules_dir):
@@ -271,29 +271,29 @@ def create_modules_directory():
 
 
 def generate_home_html(modules):
-    template = env.get_template("module_template.html")
+    template = env.get_template('module_template.html')
 
-    module_names = list(map(lambda module: module["module_name"], modules))
+    module_names = list(map(lambda module: module['module_name'], modules))
     output = template.render(
         module_names=module_names,
         module_data=[],
-        content_data="Welcome to your modules!",
+        content_data='Welcome to your modules!',
     )
 
-    with open(os.path.join("docs", "modules", "module_index.html"), "w") as file:
+    with open(os.path.join('docs', 'modules', 'module_index.html'), 'w') as file:
         file.write(output)
 
 
 def generate_module_html(modules: List[Dict[str, Any]]):
-    template = env.get_template("module_template.html")
+    template = env.get_template('module_template.html')
 
-    module_names = list(map(lambda m: m["module_name"], modules))
+    module_names = list(map(lambda m: m['module_name'], modules))
     for module in modules:
         output = template.render(
-            module_names=module_names, module_data=module, content_data=""
+            module_names=module_names, module_data=module, content_data=''
         )
         with open(
-            os.path.join("docs", "modules", f'{module["module_name"]}.html'), "w"
+            os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w'
         ) as file:
             file.write(output)
 
