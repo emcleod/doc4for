@@ -103,9 +103,9 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                         function_comments.append(item)
                     elif isinstance(item, Function):
                         function_name = item.name
-                        module_data["functions"][function_name] = {
-                            "description": "",
-                            "details": {},
+                        module_data['functions'][function_name] = {
+                            'description': '',
+                            'details': {},
                         }
 
                         # Extract function details
