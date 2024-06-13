@@ -39,9 +39,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -78,9 +78,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -117,9 +117,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -155,9 +155,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -193,9 +193,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 1)
         self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
         self.assertEqual(len(outputs), 0)
@@ -231,9 +231,9 @@ class TestFunctions(TestCase):
         self.assertIn('details', function)
         self.assertIn('arguments', function['details'])
         self.assertEqual(len(function['details']['arguments']), 0)
-        inputs = function['details']['in_']
-        outputs = function['details']['out_']
-        results = function['details']['return_']
+        inputs = function['details']['in']
+        outputs = function['details']['out']
+        results = function['details']['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['scalar'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})

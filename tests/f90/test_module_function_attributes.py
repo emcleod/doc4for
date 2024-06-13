@@ -35,10 +35,10 @@ end module pure_functions
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('test', module['functions'])
         function = module['functions']['test']
-        self.assertEqual(function['description'], 'A test pure function')
         self.assertIn('details', function)
         self.assertIn('attributes', function['details'])
         self.assertEqual(function['details']['arguments'], {})
+        self.assertEqual(function['details']['description'], 'A test pure function')
         attributes = function['details']['attributes']
         self.assertEqual(attributes, ['pure'])
 

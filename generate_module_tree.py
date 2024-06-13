@@ -12,17 +12,20 @@ import re
 from re import Match
 from typing import List, Dict, Any, Tuple, Optional, TypedDict
 
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Dict
 
-class ArgumentInfo(TypedDict):
-    type: str
-    description: str
-    dimension: Optional[str]
+Argument = TypedDict('Argument', {
+    'type': str,
+    'description': str,
+    'dimension': Optional[str]
+})
 
-class ArgumentsDict(TypedDict):
-    in_: Dict[str, ArgumentInfo]
-    out_: Dict[str, ArgumentInfo]
-    return_: Dict[str, ArgumentInfo]
+FunctionDescription = TypedDict('FunctionDescription', {
+    'description': str,
+    'in': Dict[str, Argument],
+    'out': Dict[str, Argument],
+    'return': Dict[str, Argument]
+})
 
 def find_f90_files(directory: str) -> List[str]:
     f90_files: List[str] = []
@@ -55,11 +58,11 @@ def add_dimension_info(decl: str, dims: List[int]) -> str:
     dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
     return ' &times; '.join(dimension_parts)
 
-def process_arg(decl: str, arg_type: str, intentin_: bool, intentout_: bool,
-               inputs: Dict[str, ArgumentInfo], outputs: Dict[str, ArgumentInfo], dims: List[int] = []) -> None:
-    if intentin_:
+def process_arg(decl: str, arg_type: str, intentin: bool, intentout: bool,
+               inputs: Dict[str, Argument], outputs: Dict[str, Argument], dims: List[int] = []) -> None:
+    if intentin:
         inputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
-    elif intentout_:
+    elif intentout:
         outputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
     else:
         inputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
@@ -68,8 +71,8 @@ def process_arg(decl: str, arg_type: str, intentin_: bool, intentout_: bool,
 def get_return_type(function: Any) -> str:
     return function.typedecl.name if function.typedecl else 'Unknown'
 
-def extract_arg_info(function: Any) -> ArgumentsDict:
-    arg_info: ArgumentsDict = {'in_': {}, 'out_': {}, 'return_': {}}
+# TODO pass in Argument
+def extract_arg_info(function: Any, arg_info: FunctionDescription) -> None:
     args: List[str] = function.args
     result: str = function.result
     for item in function.content:
@@ -80,56 +83,41 @@ def extract_arg_info(function: Any) -> ArgumentsDict:
                 # TODO handle assumed size arrays
                 if not ':' in decl:  # it's a scalar or assumed size
                     if decl in args:
-                        process_arg(decl, arg_type, intentin_, intentout_, arg_info['in_'], arg_info['out_'])
+                        process_arg(decl, arg_type, intentin_, intentout_, arg_info['in'], arg_info['out'])
                     elif decl == result:
                         # TODO sort out dimension
-                        arg_info['return_'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
+                        arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
                 else:
                     name, dimensions = decl.split('(')
                     dim = dimensions[:-1].split(':')
                     if name in args:
-                        process_arg(name, arg_type, intentin_, intentout_, arg_info['in_'], arg_info['out_'], dim)
+                        process_arg(name, arg_type, intentin_, intentout_, arg_info['in'], arg_info['out'], dim)
                     elif name == result:
                         # TODO sort out dimension
-                        arg_info['return_'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
+                        arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
 
-    if not arg_info['return_']:
+    if not arg_info['return']:
         return_type = get_return_type(function)
         # TODO sort out dimension
-        arg_info['return_'][result] = {'type': return_type, 'description': '', 'dimension': ''}
-    return arg_info
+        arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 
-# TODO pass in data and add description to that
-def process_function_comments(comments: List[Comment]) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
-    arg_info: Dict[str, Any] = {}
-    returnin_fo: Dict[str, Any] = {}
-    description = ''
+def process_function_comments(comments: List[Comment], arg_info: FunctionDescription) -> None:
     for comment in comments:
         content = comment.content.strip()
-        if content.startswith('@in') or content.startswith('@out') or content.startswith('@inout'):
+        if content.startswith('@'):
             parts = content.split()
-            if len(parts) >= 3:
+            if (parts[0] == '@in'):
                 arg_name, arg_type = parts[1].rstrip(':'), parts[2]
-                arg_desc = ' '.join(parts[3:])
-                arg_info[arg_name] = {
-                    'name': arg_name,
-                    'type': arg_type,
-                    'description': arg_desc,
-                }
-        elif content.startswith('@return'):
-            parts = content.split()
-            if len(parts) >= 3:
-                return_name, return_type = parts[1].rstrip(':'), parts[2]
-                return_desc = ' '.join(parts[3:])
-                returnin_fo = {
-                    'name': return_name,
-                    'type': return_type,
-                    'description': return_desc,
-                }
+                if not arg_name in arg_info['in']:
+                    print(f'Warning: @in annotation {arg_name} found that is not present in arguments {arg_info["in"].keys}')
+                else:
+                    if arg_info['in'][arg_name] != arg_type:
+                        print(f'Warning: @in annotation {arg_name} type {arg_type} does not match value in arguments {arg_info["in"][arg_name]}' )
+                    return_desc = ' '.join(parts[3:])
+                    arg_info['in'][arg_name]['description'] = return_desc        
+                
         elif not content.startswith('!*') and not content.endswith('*!'):
-            description += process_comment(content) + '\n'
-    return arg_info, returnin_fo, description.strip()
-
+            arg_info['description'] += process_comment(content)
 
 def process_modules(f90_files: List[str]) -> List[Any]:
     modules = []
@@ -166,62 +154,20 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                     elif isinstance(item, Function):
                         function_name = item.name
                         module_data['functions'][function_name] = {
-                            'description': '',
-                            'details': {},
+                            'details': {}
                         }
                         attributes = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
                         module_data['functions'][function_name]['details'] = {
                             'attributes': attributes,
                             'arguments': {},
                         }
-                        arg_info: ArgumentsDict = extract_arg_info(item)
+                        function_description: FunctionDescription = {'description': '', 'in': {}, 'out': {}, 'return': {}}
+                        extract_arg_info(item, function_description)
 
                         if function_comments:
-                            comment_arg_info, commentreturn_in_fo, func_description = (
-                                process_function_comments(function_comments)
-                            )
-
-                            for arg_name, arg_data in comment_arg_info.items():
-                                if arg_name in arg_info['in_']:
-                                    if arg_data['type'] != arg_info['in_'][arg_name]['type']:
-                                        print(
-                                            f'Warning: Mismatched type for input argument {arg_name} in function {function_name}'
-                                        )
-                                    arg_info['in_'][arg_name].update(arg_data)
-                                elif arg_name in arg_info['out_']:
-                                    if arg_data['type'] != arg_info['out_'][arg_name]['type']:
-                                        print(
-                                            f'Warning: Mismatched type for output argument {arg_name} in function {function_name}'
-                                        )
-                                    arg_info['out_'][arg_name].update(arg_data)
-                                else:
-                                    print(
-                                        f'Warning: Argument {arg_name} in comment not found in function {function_name}'
-                                    )
-
-                            # Update result info
-                            if commentreturn_in_fo:
-                                result_name = list(arg_info['return_'].keys())[0] if arg_info['return_'] else None
-                                if (
-                                    result_name
-                                    and commentreturn_in_fo['name'] != result_name
-                                ):
-                                    print(
-                                        f'Warning: Mismatched result name in comment for function {function_name}'
-                                    )
-                                if (result_name and commentreturn_in_fo['type'] != arg_info['return_'][result_name]['type']
-                                ):
-                                    print(
-                                        f'Warning: Mismatched result type in comment for function {function_name}'
-                                    )
-                                arg_info['return_'].update(commentreturn_in_fo)
-
-                            # Update function description
-                            module_data['functions'][function_name]['description'] = func_description
-
+                            process_function_comments(function_comments, function_description)
                         # Update function details with input, output, and result info
-                        module_data['functions'][function_name]['details'].update(arg_info)
-
+                        module_data['functions'][function_name]['details'].update(function_description)
                         function_comments = []  # Reset for next function
                     else:
                         function_comments = []  # Reset if next item is not a function
