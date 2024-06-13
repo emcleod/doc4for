@@ -9,10 +9,11 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
-from re import Match
 from typing import List, Dict, Any, Tuple, Optional, TypedDict
 
-from typing import TypedDict, Optional, Dict
+ANNOTATION_PREFIX = '@'
+IGNORE_PREFIX = '!*'
+IGNORE_SUFFIX = '*!'
 
 Argument = TypedDict('Argument', {
     'type': str,
@@ -59,19 +60,16 @@ def add_dimension_info(decl: str, dims: List[int]) -> str:
     return ' &times; '.join(dimension_parts)
 
 def process_arg(decl: str, arg_type: str, intentin: bool, intentout: bool,
-               inputs: Dict[str, Argument], outputs: Dict[str, Argument], dims: List[int] = []) -> None:
-    if intentin:
-        inputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
-    elif intentout:
-        outputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
-    else:
-        inputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
-        outputs[decl] = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims) }
+                inputs: Dict[str, Argument], outputs: Dict[str, Argument], dims: List[int] = []) -> None:
+    arg_info: Argument = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims)}
+    if intentin or not intentout:
+        inputs[decl] = arg_info.copy()
+    if intentout or not intentin:
+        outputs[decl] = arg_info.copy()
 
 def get_return_type(function: Any) -> str:
     return function.typedecl.name if function.typedecl else 'Unknown'
 
-# TODO pass in Argument
 def extract_arg_info(function: Any, arg_info: FunctionDescription) -> None:
     args: List[str] = function.args
     result: str = function.result
@@ -101,23 +99,37 @@ def extract_arg_info(function: Any, arg_info: FunctionDescription) -> None:
         # TODO sort out dimension
         arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 
+from typing import List, Dict, Callable
+
 def process_function_comments(comments: List[Comment], arg_info: FunctionDescription) -> None:
+    annotation_processors: Dict[str, Callable] = {
+        '@in': lambda parts, info: process_annotation(parts, info, ['in']),
+        '@out': lambda parts, info: process_annotation(parts, info, ['out']),
+        '@inout': lambda parts, info: process_annotation(parts, info, ['in', 'out']),
+    }
+
     for comment in comments:
         content = comment.content.strip()
-        if content.startswith('@'):
+        if content.startswith(ANNOTATION_PREFIX):
             parts = content.split()
-            if (parts[0] == '@in'):
-                arg_name, arg_type = parts[1].rstrip(':'), parts[2]
-                if not arg_name in arg_info['in']:
-                    print(f'Warning: @in annotation {arg_name} found that is not present in arguments {arg_info["in"].keys}')
-                else:
-                    if arg_info['in'][arg_name] != arg_type:
-                        print(f'Warning: @in annotation {arg_name} type {arg_type} does not match value in arguments {arg_info["in"][arg_name]}' )
-                    return_desc = ' '.join(parts[3:])
-                    arg_info['in'][arg_name]['description'] = return_desc        
-                
-        elif not content.startswith('!*') and not content.endswith('*!'):
+            annotation_type = parts[0]
+            if annotation_type in annotation_processors:
+                annotation_processors[annotation_type](parts, arg_info)
+        elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
             arg_info['description'] += process_comment(content)
+
+def process_annotation(parts: List[str], arg_info: FunctionDescription, arg_types: List[str]) -> None:
+    arg_name, arg_type = parts[1].rstrip(':'), parts[2]
+    annotation_type = parts[0][1:]  # Remove '@' prefix
+    
+    if not any(arg_name in arg_info[t] for t in arg_types):
+        print(f"Warning: {annotation_type} annotation {arg_name} found that is not present in arguments {[arg_info[t].keys() for t in arg_types]}")
+    else:
+        for t in arg_types:
+            if arg_name in arg_info[t]:
+                if arg_info[t][arg_name] != arg_type:
+                    print(f"Warning: {annotation_type} annotation {arg_name} type {arg_type} does not match value in arguments {arg_info[t][arg_name]}")
+                arg_desc = ' '.join(parts[3:])
 
 def process_modules(f90_files: List[str]) -> List[Any]:
     modules = []
