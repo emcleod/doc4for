@@ -1,7 +1,7 @@
 import os
 import shutil
-from jinja2 import Environment, FileSystemLoader
 from typing import List, Dict, Any
+from jinja2 import Environment, FileSystemLoader
 
 def find_f90_files(directory: str) -> List[str]:
     f90_files: List[str] = []
@@ -41,7 +41,7 @@ def create_docs_directory():
             item_path = os.path.join(docs_directory, item)
             if item == 'static':
                 continue
-            elif os.path.isfile(item_path):
+            if os.path.isfile(item_path):
                 os.remove(item_path)
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
@@ -51,17 +51,15 @@ env = Environment(loader=FileSystemLoader('templates'))
 def generate_index_html(directory_tree: Dict[str, Any]):
     # Load the template
     template = env.get_template('file_template.html')
-    
     # Render the template with the data
-    output = template.render(sidebar_data = directory_tree, 
+    output = template.render(sidebar_data = directory_tree,
                              content_data = 'Welcome to your code!',
-                             path = '', 
-                             current_path = '', 
+                             path = '',
+                             current_path = '',
                              is_index = True,
                              separator = os.sep)
-
     # Save the rendered output to a file
-    with open(os.path.join('docs', 'index.html'), 'w') as file:
+    with open(os.path.join('docs', 'index.html'), 'w', encoding='utf-8') as file:
         file.write(output)
 
 def generate_html_files(directory_tree: Dict[str, Any]):
@@ -74,24 +72,25 @@ def generate_html_files(directory_tree: Dict[str, Any]):
                 file_name = os.path.basename(file_path)
                 target_directory = os.path.join('docs', os.path.dirname(file_path))
                 os.makedirs(target_directory, exist_ok=True)
-                
                 # Include 'docs' in the current_path
-                current_path_with_docs = os.path.join('docs', current_path)  
+                current_path_with_docs = os.path.join('docs', current_path)
                 # Read the file
-                with open(file_path, 'r') as file:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                     code = file.read()
-
                 # Render the template
-                output = template.render(sidebar_data = directory_tree, 
+                output = template.render(sidebar_data = directory_tree,
                                          content_data = '',
                                          code = code,
-                                         path = current_path, 
-                                         file = file_name, 
-                                         current_path = current_path_with_docs, 
+                                         path = current_path,
+                                         file = file_name,
+                                         current_path = current_path_with_docs,
                                          is_index = False,
                                          separator = os.sep)
-                
-                with open(os.path.join(target_directory, file_name[:-4] + '.html'), 'w') as file:
+                with open(
+                    os.path.join(target_directory, f'{file_name[:-4]}.html'),
+                    'w', 
+                    encoding='utf-8'
+                ) as file:
                     file.write(output)
             else:
                 generate_html_recursively(value, os.path.join(current_path, key))

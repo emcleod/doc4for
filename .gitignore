@@ -8,6 +8,7 @@ src/doc4for.egg-info
 Makefile
 make.bat
 fortran_docs/
+pylint*
 
 # Prerequisites
 *.d

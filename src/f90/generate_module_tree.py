@@ -3,6 +3,9 @@
 """
 
 import os
+import html
+import re
+from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
     Module,
@@ -11,14 +14,9 @@ from fparser.one.block_statements import (
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
-import html
-import re
-from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable
 
-from typing import TypedDict, List, Dict, Optional, Any
-
-"""Prefix used to identify annotations in comments."""
 ANNOTATION_PREFIX = '@'
+"""Prefix used to identify annotations in comments."""
 
 """Prefix used to mark the start of a section to be ignored."""
 IGNORE_PREFIX = '!*'
@@ -124,15 +122,17 @@ def get_arg_intent(item: Any) -> Tuple[bool, bool]:
         intentin, intentout = False, False
     return intentin, intentout
 
-def add_dimension_info(decl: str, dims: List[int]) -> str:
+def add_dimension_info(dims: List[int]) -> str:
     if not dims:
         return ''
     dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
     return ' &times; '.join(dimension_parts)
 
 def process_arg(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                inputs: Dict[str, Argument], outputs: Dict[str, Argument], dims: List[int] = []) -> None:
-    arg_info: Argument = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(decl, dims)}
+                inputs: Dict[str, Argument], outputs: Dict[str, Argument], dims: Optional[List[int]] = None) -> None:
+    if dims is None:
+        dims = []
+    arg_info: Argument = {'type': arg_type, 'description': '', 'dimension': add_dimension_info(dims)}
     if intentin or not intentout:
         inputs[decl] = arg_info.copy()
     if intentout or not intentin:
@@ -192,13 +192,11 @@ def process_function_comments(comments: List[Comment], arg_info: FunctionDescrip
 def process_annotation(parts: List[str], arg_info: FunctionDescription, annotation_types: List[str]) -> None:
     if parts[0] == '@return':
         if len(arg_info['return']) > 1:
-            print(f'Warning: more than one @return annotation found')
+            print(f'Warning: more than one @return annotation found: {parts[0]} {arg_info["return"]}')
         next(iter(arg_info['return'].values()))['description'] = ' '.join(parts[1:])
         return
-    
     arg_name, annotation_type = parts[1].rstrip(':'), parts[2]
     comment_annotation_type = parts[0][1:]  # Remove '@' prefix
-    
     if not any(arg_name in arg_info[annotation_type] for annotation_type in annotation_types):
         print(f'Warning: {comment_annotation_type} annotation {arg_name} found that is not present in arguments {[arg_info[t].keys() for t in annotation_types]}')
     else:
