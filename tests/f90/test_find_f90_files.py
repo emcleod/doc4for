@@ -5,7 +5,7 @@ import sys
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from generate_module_tree import find_f90_files
+from f90.generate_module_tree import find_f90_files
 
 class TestFindF90Files(unittest.TestCase):
 

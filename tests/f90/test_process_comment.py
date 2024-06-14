@@ -1,10 +1,5 @@
 import unittest
-import os
-import sys
-
-# Add the project root to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from generate_module_tree import process_comment
+from f90.generate_module_tree import process_comment
 
 class TestProcessComment(unittest.TestCase):
     def test_with_code(self):

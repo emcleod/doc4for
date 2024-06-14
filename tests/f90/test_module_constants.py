@@ -1,11 +1,6 @@
 import unittest
 from pyfakefs.fake_filesystem_unittest import TestCase
-import os
-import sys
-
-# Add the project root to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from generate_module_tree import process_modules
+from f90.generate_module_tree import process_modules
 
 class TestConstants(TestCase):
     def setUp(self):
