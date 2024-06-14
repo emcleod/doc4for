@@ -9,7 +9,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 import html
 import re
-from typing import List, Dict, Any, Tuple, Optional, TypedDict
+from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable
 
 ANNOTATION_PREFIX = '@'
 IGNORE_PREFIX = '!*'
@@ -46,12 +46,13 @@ def get_arg_type(item: Any) -> str:
     return item.name if item.name else ''
 
 def get_arg_intent(item: Any) -> Tuple[bool, bool]:
+    #TODO if no attrspec it defaults to inout
     if hasattr(item, 'attrspec'):
-        intentin_ = 'intent(in)' in item.attrspec
-        intentout_ = 'intent(out)' in item.attrspec
+        intentin = 'intent(in)' in item.attrspec
+        intentout = 'intent(out)' in item.attrspec
     else:
-        intentin_, intentout_ = False, False
-    return intentin_, intentout_
+        intentin, intentout = False, False
+    return intentin, intentout
 
 def add_dimension_info(decl: str, dims: List[int]) -> str:
     if not dims:
@@ -99,16 +100,16 @@ def extract_arg_info(function: Any, arg_info: FunctionDescription) -> None:
         # TODO sort out dimension
         arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 
-from typing import List, Dict, Callable
-
 def process_function_comments(comments: List[Comment], arg_info: FunctionDescription) -> None:
     annotation_processors: Dict[str, Callable] = {
         '@in': lambda parts, info: process_annotation(parts, info, ['in']),
         '@out': lambda parts, info: process_annotation(parts, info, ['out']),
         '@inout': lambda parts, info: process_annotation(parts, info, ['in', 'out']),
+        '@return': lambda parts, info: process_annotation(parts, info, ['return'])
     }
 
     for comment in comments:
+        #TODO check that there isn't more than one return statement
         content = comment.content.strip()
         if content.startswith(ANNOTATION_PREFIX):
             parts = content.split()
@@ -118,18 +119,25 @@ def process_function_comments(comments: List[Comment], arg_info: FunctionDescrip
         elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
             arg_info['description'] += process_comment(content)
 
-def process_annotation(parts: List[str], arg_info: FunctionDescription, arg_types: List[str]) -> None:
-    arg_name, arg_type = parts[1].rstrip(':'), parts[2]
-    annotation_type = parts[0][1:]  # Remove '@' prefix
+def process_annotation(parts: List[str], arg_info: FunctionDescription, annotation_types: List[str]) -> None:
+    if parts[0] == '@return':
+        if len(arg_info['return']) > 1:
+            print(f'Warning: more than one @return annotation found')
+        next(iter(arg_info['return'].values()))['description'] = ' '.join(parts[1:])
+        return
     
-    if not any(arg_name in arg_info[t] for t in arg_types):
-        print(f"Warning: {annotation_type} annotation {arg_name} found that is not present in arguments {[arg_info[t].keys() for t in arg_types]}")
+    arg_name, annotation_type = parts[1].rstrip(':'), parts[2]
+    comment_annotation_type = parts[0][1:]  # Remove '@' prefix
+    
+    if not any(arg_name in arg_info[annotation_type] for annotation_type in annotation_types):
+        print(f'Warning: {comment_annotation_type} annotation {arg_name} found that is not present in arguments {[arg_info[t].keys() for t in annotation_types]}')
     else:
-        for t in arg_types:
-            if arg_name in arg_info[t]:
-                if arg_info[t][arg_name] != arg_type:
-                    print(f"Warning: {annotation_type} annotation {arg_name} type {arg_type} does not match value in arguments {arg_info[t][arg_name]}")
+        for annotation_type in annotation_types:
+            if arg_name in arg_info[annotation_type]:
+                if comment_annotation_type != annotation_type:
+                    print(f'Warning: "{comment_annotation_type}" annotation "{arg_name}" type "{annotation_type}" does not match value in arguments "{arg_info[annotation_type][arg_name]}"')
                 arg_desc = ' '.join(parts[3:])
+                arg_info[annotation_type][arg_name]['description'] = arg_desc
 
 def process_modules(f90_files: List[str]) -> List[Any]:
     modules = []
