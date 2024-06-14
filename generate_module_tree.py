@@ -173,8 +173,8 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                 }
                 # collect module comments
                 if (comment_stack and comment_stack[0].content.startswith('!*') and comment_stack[-1].content.endswith('*!')):
-                    for comment in comment_stack[1:-1]:
-                        module_data['module_description'] += f'{process_comment(comment.content)}\n'
+                    module_data['module_description'] = '\n'.join(
+                        process_comment(comment.content) for comment in comment_stack[1:-1] if process_comment(comment.content)) + '\n'
                 function_comments = []
                 for item in child.content:
                     if isinstance(item, Comment):
