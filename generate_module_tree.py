@@ -22,10 +22,24 @@ Argument = TypedDict('Argument', {
 })
 
 FunctionDescription = TypedDict('FunctionDescription', {
+    'attributes': List[str],
     'description': str,
     'in': Dict[str, Argument],
     'out': Dict[str, Argument],
     'return': Dict[str, Argument]
+})
+
+FunctionDetails = TypedDict('FunctionDetails', {
+    'details': FunctionDescription
+})
+
+ModuleData = TypedDict('ModuleData', {
+    'module_name': str,
+    'constants': Dict[str, Any],
+    'functions': Dict[str, FunctionDetails],
+    'subroutines': Dict[str, Any],
+    'file_name': str,
+    'module_description': str
 })
 
 def find_f90_files(directory: str) -> List[str]:
@@ -149,45 +163,38 @@ def process_modules(f90_files: List[str]) -> List[Any]:
             if isinstance(child, Comment):
                 comment_stack.append(child)
             elif isinstance(child, Module):
-                module_data['module_name'] = child.name
-                module_data['constants'] = {}
-                module_data['functions'] = {}
-                module_data['subroutines'] = {}
-                module_data['file_name'] = f90_file
-
+                module_data: ModuleData = {
+                    'module_name': child.name,
+                    'constants': {},
+                    'functions': {},
+                    'subroutines': {},
+                    'file_name': f90_file,
+                    'module_description': ''
+                }
                 # collect module comments
-                if (
-                    comment_stack
-                    and comment_stack[0].content.startswith('!*')
-                    and comment_stack[-1].content.endswith('*!')
-                ):
-                    module_data['module_description'] = ''
+                if (comment_stack and comment_stack[0].content.startswith('!*') and comment_stack[-1].content.endswith('*!')):
                     for comment in comment_stack[1:-1]:
-                        content = process_comment(comment.content)
-                        if content:
-                            module_data['module_description'] += f'{content}\n'
-
+                        module_data['module_description'] += f'{process_comment(comment.content)}\n'
                 function_comments = []
                 for item in child.content:
                     if isinstance(item, Comment):
                         function_comments.append(item)
                     elif isinstance(item, Function):
                         function_name = item.name
-                        module_data['functions'][function_name] = {
-                            'details': {}
-                        }
-                        attributes = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
-                        module_data['functions'][function_name]['details'] = {
+                        attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
+                        function_description: FunctionDescription = {
                             'attributes': attributes,
-                            'arguments': {},
-                        }
-                        function_description: FunctionDescription = {'description': '', 'in': {}, 'out': {}, 'return': {}}
+                            'description': '', 
+                            'in': {}, 
+                            'out': {}, 
+                            'return': {}}
                         extract_arg_info(item, function_description)
 
                         if function_comments:
                             process_function_comments(function_comments, function_description)
-                        # Update function details with input, output, and result info
-                        module_data['functions'][function_name]['details'].update(function_description)
+                        module_data['functions'][function_name] = {
+                            'details': function_description
+                        }
                         function_comments = []  # Reset for next function
                     else:
                         function_comments = []  # Reset if next item is not a function

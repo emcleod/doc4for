@@ -31,13 +31,12 @@ end module pure_functions
         module = result[0]
         self.assertEqual(module['module_name'], 'pure_functions')
         self.assertEqual(module['file_name'], '/fake/path/pure.f90')
-        self.assertNotIn('module_description', module)
+        self.assertIn('module_description', module)
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('test', module['functions'])
         function = module['functions']['test']
         self.assertIn('details', function)
         self.assertIn('attributes', function['details'])
-        self.assertEqual(function['details']['arguments'], {})
         self.assertEqual(function['details']['description'], 'A test pure function')
         attributes = function['details']['attributes']
         self.assertEqual(attributes, ['pure'])
@@ -62,6 +61,7 @@ end module pure_functions
         self.assertEqual(len(result), 1)
         module = result[0]
         self.assertEqual(module['module_name'], 'elemental_functions')
+        self.assertIn('module_description', module)
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('elem_func', module['functions'])
         function = module['functions']['elem_func']
@@ -91,6 +91,7 @@ end module pure_functions
 
         self.assertEqual(len(result), 1)
         module = result[0]
+        self.assertIn('module_description', module)
         self.assertEqual(module['module_name'], 'recursive_functions')
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('fact', module['functions'])
@@ -127,6 +128,7 @@ end module pure_functions
 
         self.assertEqual(len(result), 1)
         module = result[0]
+        self.assertIn('module_description', module)
         self.assertEqual(module['module_name'], 'combined_functions')
         self.assertEqual(len(module['functions']), 2)
         self.assertIn('square', module['functions'])

@@ -37,8 +37,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('add_numbers', module['functions'])
         function = module['functions']['add_numbers']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
@@ -76,8 +74,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('add_numbers', module['functions'])
         function = module['functions']['add_numbers']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
@@ -115,8 +111,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('add_numbers', module['functions'])
         function = module['functions']['add_numbers']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
@@ -153,8 +147,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('add_numbers', module['functions'])
         function = module['functions']['add_numbers']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
@@ -191,8 +183,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('sum_array', module['functions'])
         function = module['functions']['sum_array']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
@@ -229,8 +219,6 @@ class TestFunctionArguments(TestCase):
         self.assertIn('multiply_scalar_array', module['functions'])
         function = module['functions']['multiply_scalar_array']
         self.assertIn('details', function)
-        self.assertIn('arguments', function['details'])
-        self.assertEqual(len(function['details']['arguments']), 0)
         inputs = function['details']['in']
         outputs = function['details']['out']
         results = function['details']['return']
