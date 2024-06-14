@@ -3,6 +3,11 @@
 tests/f90/__pycache__/
 .coverage
 .vscode/
+docs/
+src/doc4for.egg-info
+Makefile
+make.bat
+fortran_docs/
 
 # Prerequisites
 *.d
