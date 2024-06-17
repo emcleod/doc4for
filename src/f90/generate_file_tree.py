@@ -6,7 +6,7 @@ import time
 import random
 from pathlib import Path, PureWindowsPath
 from jinja2 import Environment, FileSystemLoader
-from typing import Any, Dict, List, Union, Optional, Iterator
+from typing import List, Union, Optional, Iterator
 
 class DirectoryTree:
     """Represents a directory tree structure.
@@ -252,66 +252,150 @@ def check_write_permissions(path):
     
 env = Environment(loader=FileSystemLoader('templates'))
 
-def generate_index_html(directory_tree: Dict[str, Any]):
-    # Load the template
-    template = env.get_template('file_template.html')
-    # Render the template with the data
-    output = template.render(sidebar_data = directory_tree,
-                             content_data = 'Welcome to your code!',
-                             path = '',
-                             current_path = '',
-                             is_index = True,
-                             separator = os.sep)
-    # Save the rendered output to a file
-    with open(os.path.join('docs', 'index.html'), 'w', encoding='utf-8') as file:
-        file.write(output)
-
-def generate_html_files(directory_tree: Dict[str, Any]):
+def generate_html_files(directory_tree: DirectoryTree):
     template = env.get_template('file_template.html')
 
-    def generate_html_recursively(tree: Dict[str, Any], current_path: str):
-        for key, value in tree.items():
-            if isinstance(value, str):
-                file_path = value
-                file_name = os.path.basename(file_path)
-                target_directory = os.path.join('docs', os.path.dirname(file_path))
-                os.makedirs(target_directory, exist_ok=True)
-                # Include 'docs' in the current_path
-                current_path_with_docs = os.path.join('docs', current_path)
-                # Read the file
-                with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
-                    code = file.read()
-                # Render the template
-                output = template.render(sidebar_data = directory_tree,
-                                         content_data = '',
-                                         code = code,
-                                         path = current_path,
-                                         file = file_name,
-                                         current_path = current_path_with_docs,
-                                         is_index = False,
-                                         separator = os.sep)
-                with open(
-                    os.path.join(target_directory, f'{file_name[:-4]}.html'),
-                    'w', 
-                    encoding='utf-8'
-                ) as file:
-                    file.write(output)
-            else:
-                generate_html_recursively(value, os.path.join(current_path, key))
+    def generate_html_recursively(node: Union[DirectoryTree, str], current_path: Path):
+        if isinstance(node, str):
+            # This is a file
+            file_path = Path(node)
+            file_name = file_path.name
+            target_directory = Path('docs') / file_path.parent
+            target_directory.mkdir(parents=True, exist_ok=True)
+            
+            # Calculate relative path
+            relative_path = '../' * len(current_path.parts)
+            
+            # Read the file
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+                code = file.read()
+            
+            # Render the template
+            output = template.render(
+                sidebar_data=directory_tree,
+                code=code,
+                file=file_name,
+                relative_path=relative_path,
+                is_index=False,
+                content_data=''
+            )
+            
+            # Write the output
+            output_path = target_directory / f'{file_path.stem}.html'
+            with open(output_path, 'w', encoding='utf-8') as file:
+                file.write(output)
+        else:
+            # This is a directory
+            for child in node.children:
+                generate_html_recursively(child, current_path / node.name)
 
-    generate_html_recursively(directory_tree, '')
+    # Generate regular file pages
+    generate_html_recursively(directory_tree, Path())
+
+    # Generate index page
+    index_output = template.render(
+        sidebar_data=directory_tree,
+        content_data='Welcome to your code!',
+        relative_path='',
+        is_index=True,
+        file='',
+        code=''
+    )
+    with open('docs/index.html', 'w', encoding='utf-8') as file:
+        file.write(index_output)
+
+# def generate_index_html(directory_tree: DirectoryTree):
+#     template = env.get_template('file_template.html')
+#     output = template.render(sidebar_data = directory_tree,
+#                              content_data = 'Welcome to your code!',
+#                              path = '',
+#                              current_path = '',
+#                              is_index = True,
+#                              separator = os.sep)
+#     with open(os.path.join('docs', 'index.html'), 'w', encoding='utf-8') as file:
+#         file.write(output)
+
+# def generate_html_files(directory_tree: DirectoryTree):
+#     template = env.get_template('file_template.html')
+
+#     def generate_html_recursively(node: Union[DirectoryTree, str], current_path: Path):
+#         if isinstance(node, str):
+#             # This is a file
+#             file_path = Path(node)
+#             file_name = file_path.name
+#             target_directory = Path('docs') / file_path.parent
+#             target_directory.mkdir(parents=True, exist_ok=True)
+            
+#             # Calculate relative path
+#             relative_path = '../' * len(current_path.parts)
+            
+#             # Read the file
+#             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+#                 code = file.read()
+            
+#             # Render the template
+#             output = template.render(
+#                 sidebar_data=directory_tree,
+#                 code=code,
+#                 file=file_name,
+#                 relative_path=relative_path
+#             )
+            
+#             # Write the output
+#             output_path = target_directory / f'{file_path.stem}.html'
+#             with open(output_path, 'w', encoding='utf-8') as file:
+#                 file.write(output)
+#         else:
+#             # This is a directory
+#             for child in node.children:
+#                 generate_html_recursively(child, current_path / node.name)
+
+#     generate_html_recursively(directory_tree, Path())
+# def generate_html_files(directory_tree: DirectoryTree):
+#     template = env.get_template('file_template.html')
+
+#     def generate_html_recursively(node: Union[DirectoryTree, str], current_path: Path):
+#         if isinstance(node, str):
+#             # This is a file
+#             file_path = Path(node)
+#             file_name = file_path.name
+#             target_directory = Path('docs') / file_path.parent
+#             target_directory.mkdir(parents=True, exist_ok=True)
+            
+#             # Include 'docs' in the current_path
+#             current_path_with_docs = Path('docs') / current_path
+            
+#             # Read the file
+#             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+#                 code = file.read()
+            
+#             # Render the template
+#             output = template.render(
+#                 sidebar_data=directory_tree,
+#                 content_data='',
+#                 code=code,
+#                 path=current_path,
+#                 file=file_name,
+#                 current_path=current_path_with_docs,
+#                 is_index=False,
+#                 separator=os.sep
+#             )
+            
+#             # Write the output
+#             output_path = target_directory / f'{file_path.stem}.html'
+#             with open(output_path, 'w', encoding='utf-8') as file:
+#                 file.write(output)
+#         else:
+#             # This is a directory
+#             for child in node.children:
+#                 generate_html_recursively(child, current_path / node.name)
+
+#     generate_html_recursively(directory_tree, Path())
 
 # Find .f90 files starting from the current directory
 current_directory = os.getcwd()
 fortran_files = find_f90_files(current_directory)
-
-# Build the directory tree
 directory_tree = build_directory_tree(fortran_files)
-
-# Manage the docs directory
 create_docs_directory()
-
-# Generate the HTML content
-# generate_index_html(directory_tree)
-
-# generate_html_files(directory_tree)
+#generate_index_html(directory_tree)
+generate_html_files(directory_tree)
