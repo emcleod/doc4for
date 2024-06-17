@@ -459,7 +459,7 @@ def generate_home_html(modules):
         content_data='Welcome to your modules!',
     )
 
-    with open(os.path.join('docs', 'modules', 'module_index.html'), 'w') as file:
+    with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8', ) as file:
         file.write(output)
 
 
@@ -472,7 +472,7 @@ def generate_module_html(modules: List[Dict[str, Any]]):
             module_names=module_names, module_data=module, content_data=''
         )
         with open(
-            os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w'
+            os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8', 
         ) as file:
             file.write(output)
 
