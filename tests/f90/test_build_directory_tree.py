@@ -184,5 +184,108 @@ class TestBuildDirectoryTree(TestCase):
 
         self.assertEqual(list(result.walk()), list(expected.walk()))
 
+    def test_special_characters_in_filenames(self):
+        """Test with file names containing special characters excluding back and forward slashes."""
+        files = [
+            'file with spaces.txt',
+            'file-with-hyphens.txt',
+            'file_with_underscores.txt',
+            'file.with.periods.txt',
+            'file(with)parentheses.txt',
+            'file[with]brackets.txt',
+            'file{with}braces.txt',
+            'file#with#hashes.txt',
+            'file%with%percent.txt',
+            'file&with&ampersand.txt',
+            'file+with+plus.txt',
+            'file=with=equal.txt',
+            'file@with@at.txt',
+            'file!with!exclamation.txt',
+            'file*with*asterisk.txt',
+            'file|with|pipe.txt',
+            'file:with:colons.txt',
+            'file;with;semicolons.txt',
+            'file\'with\'singlequotes.txt',
+            'file"with"doublequotes.txt',
+            'file<with<lessthan.txt',
+            'file>with>greaterthan.txt',
+            'file?with?questionmark.txt',
+            'file,with,commas.txt',
+        ]
+
+        for file in files:
+            self.fs.create_file(file)
+
+        result = build_directory_tree(files)
+
+        expected = DirectoryTree('')
+        for file in files:
+            path = Path(file)
+            current = expected
+            for part in path.parts[:-1]:
+                child = next((c for c in current.children if isinstance(c, DirectoryTree) and c.name == part), None)
+                if child is None:
+                    child = DirectoryTree(part, current)
+                    current.children.append(child)
+                current = child
+            current.children.append(str(path))
+
+        self.assertEqual(list(result.walk()), list(expected.walk()))
+
+    def test_whitespace_in_filenames(self):
+        """Test with file names containing whitespace."""
+        files = [
+            'file with spaces.txt',
+            'file\twith\ttabs.txt',
+            'file\nwith\nnewlines.txt',
+            'file\rwith\rcarriagereturns.txt',
+        ]
+
+        for file in files:
+            self.fs.create_file(file)
+
+        result = build_directory_tree(files)
+
+        expected = DirectoryTree('')
+        for file in files:
+            path = Path(file)
+            current = expected
+            for part in path.parts[:-1]:
+                child = next((c for c in current.children if isinstance(c, DirectoryTree) and c.name == part), None)
+                if child is None:
+                    child = DirectoryTree(part, current)
+                    current.children.append(child)
+                current = child
+            current.children.append(str(path))
+
+        self.assertEqual(list(result.walk()), list(expected.walk()))
+
+    def test_mixed_cases(self):
+        """Test with file names having mixed cases."""
+        files = [
+            'FileWithMixedCases.txt',
+            'file/with/MixedCases/file.txt',
+            'MixedCases/file.txt',
+        ]
+
+        for file in files:
+            self.fs.create_file(file)
+
+        result = build_directory_tree(files)
+
+        expected = DirectoryTree('')
+        for file in files:
+            path = Path(file)
+            current = expected
+            for part in path.parts[:-1]:
+                child = next((c for c in current.children if isinstance(c, DirectoryTree) and c.name == part), None)
+                if child is None:
+                    child = DirectoryTree(part, current)
+                    current.children.append(child)
+                current = child
+            current.children.append(str(path))
+
+        self.assertEqual(list(result.walk()), list(expected.walk()))
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,17 +1,50 @@
 import os
 import shutil
 from pathlib import Path, PureWindowsPath
-from typing import List, Dict, Any
 from jinja2 import Environment, FileSystemLoader
-from typing import Dict, List, Union, Optional, Iterator
+from typing import Any, Dict, List, Union, Optional, Iterator
 
 class DirectoryTree:
+    """Represents a directory tree structure.
+
+    This class provides methods to build and traverse a directory tree structure.
+    The tree is composed of `DirectoryTree` objects representing directories and
+    strings representing file paths.
+
+    Attributes:
+        name (str): The name of the directory or file.
+        parent (Optional[DirectoryTree]): The parent directory of this directory or file.
+        children (List[Union[str, DirectoryTree]]): A list of child directories and files.
+
+    Methods:
+        add_path(path: Path):
+            Adds a file path to the directory tree.
+
+        walk() -> Iterator[Union[str, DirectoryTree]]:
+            Yields the names of directories and files in the tree by traversing it recursively.
+    """
+
     def __init__(self, name: str, parent: Optional['DirectoryTree'] = None):
+        """Initializes a new DirectoryTree instance.
+
+        Args:
+            name (str): The name of the directory or file.
+            parent (Optional[DirectoryTree]): The parent directory of this directory or file.
+        """
         self.name = name
         self.parent = parent
         self.children: List[Union[str, 'DirectoryTree']] = []
 
     def add_path(self, path: Path):
+        """Adds a file path to the directory tree.
+
+        Args:
+            path (Path): The file path to be added to the tree.
+
+        The method recursively traverses the directory tree and creates new `DirectoryTree`
+        instances for any missing directories in the path. The file name is added as a string
+        to the final directory in the path.
+        """
         parts = path.parts
         current = self
         for part in parts[:-1]:
@@ -23,13 +56,20 @@ class DirectoryTree:
         current.children.append(str(path))
 
     def walk(self) -> Iterator[Union[str, 'DirectoryTree']]:
+        """Yields the names of directories and files in the tree by traversing it recursively.
+
+        Yields:
+            Union[str, DirectoryTree]: The name of a directory or file in the tree.
+
+        The method yields the name of the current directory, then recursively yields the names
+        of its child directories and files.
+        """
         yield self.name
         for child in self.children:
             if isinstance(child, DirectoryTree):
                 yield from child.walk()
             else:
                 yield child
-
 
 def find_f90_files(directory: str) -> List[str]:
     """
@@ -45,30 +85,75 @@ def find_f90_files(directory: str) -> List[str]:
     for root, _, files in os.walk(directory):
         for file in files:
             # Get the relative path from the current directory to the file
-            if file.endswith(".f90"):
+            if file.endswith('.f90'):
                 relative_path = os.path.relpath(os.path.join(root, file), directory)
                 f90_files.append(relative_path)
     return f90_files
 
 
-# TODO
-# invalid file paths - add error handling and validation checks
-# special characters / whitespace
 def build_directory_tree(files: List[str]) -> DirectoryTree:
-    directory_tree = DirectoryTree('')
+    """Builds a directory tree from a list of file paths.
 
-    for file in files:
-        # Convert Windows-style paths to Unix-style
-        if '\\' in file:
-            file = PureWindowsPath(file).as_posix()
+    Args:
+        files: A list of file paths as strings.
 
-        # Convert the file path to a Path object
-        path = Path(file)
+    Returns:
+        A `DirectoryTree` object representing the directory structure.
 
-        # Add the path to the directory tree
-        directory_tree.add_path(path)
+    Raises:
+        MemoryError: If the file list is too large and causes a memory error.
+        Exception: If an unexpected error occurs during the building process.
 
-    return directory_tree
+    The function takes a list of file paths and constructs a directory tree based on the paths.
+    It handles both Unix-style and Windows-style paths. If a Windows-style path is encountered,
+    it is converted to a Unix-style path using `PureWindowsPath`.
+
+    If an invalid Windows path is encountered, a warning message is printed, and the path is skipped.
+    If an error occurs while adding a path to the directory tree, a warning message is printed,
+    and the path is skipped.
+
+    The function returns a `DirectoryTree` object representing the directory structure.
+
+    If a `MemoryError` occurs due to a large file list, an error message is printed,
+    and the exception is re-raised.
+
+    If any other unexpected exception occurs, an error message is printed, and the exception
+    is re-raised.
+
+    Example:
+        files = [
+            '/path/to/file1.txt',
+            '/path/to/file2.txt',
+            '/another/path/file3.txt',
+            'C:\\Windows\\path\\file4.txt'
+        ]
+        directory_tree = build_directory_tree(files)
+        for item in directory_tree.walk():
+            print(item)
+    """
+    try:
+        directory_tree = DirectoryTree('')
+        for file in files:
+            # Convert Windows-style paths to Unix-style
+            if '\\' in file:
+                try:
+                    file = PureWindowsPath(file).as_posix()
+                except ValueError as e:
+                    print(f'Invalid Windows path: {file}. Skipping.')
+                    continue
+            path = Path(file)
+            try:
+                directory_tree.add_path(path)
+            except Exception as e:
+                print(f'Error adding path: {path}. Skipping.')
+                continue
+        return directory_tree
+    except MemoryError as e:
+        print(f'Memory error occurred. The file list might be too large: {e}.')
+        raise
+    except Exception as e:
+        print(f'An unexpected error occurred: {e}')
+        raise
 
 def create_docs_directory():
     docs_directory = 'docs'
