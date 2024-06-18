@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch
 import os
-import shutil
 from pyfakefs.fake_filesystem_unittest import TestCase
 from f90.generate_file_tree import create_docs_directory, check_write_permissions
 
