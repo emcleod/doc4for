@@ -182,7 +182,6 @@ def create_docs_directory(max_retries=5, base_delay=0.1):
         OSError: If there's an issue creating the directory or removing its contents after all retries.
     """
     docs_directory = 'docs'
-
     if not check_write_permissions(os.getcwd()):
         raise PermissionError("No write permissions in the current directory.")
     for attempt in range(max_retries):
@@ -274,7 +273,6 @@ def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'temp
     """
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template('file_template.html')
-
     def generate_html_recursively(node: Union[DirectoryTree, str], current_path: Path):
         if isinstance(node, str):
             # This is a file
@@ -287,7 +285,7 @@ def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'temp
             # Read the file
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                 code = file.read()
-            # Render the template
+            # Render the template 
             output = template.render(
                 sidebar_data=directory_tree,
                 code=code,
@@ -320,21 +318,10 @@ def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'temp
     with open('docs/index.html', 'w', encoding='utf-8') as file:
         file.write(index_output)
 
-# 1. **Error handling**: Some functions, like `build_directory_tree`, have extensive error handling and printing,
-# while others, like `generate_html_files`, don't have any error handling or logging.
-# Consistent error handling and logging across the codebase would improve maintainability and debugging.
-
-# 2. **Configuration options**: Some values, like the template directory (`templates`)
-# and the base directory for source files (`base_dir`), are hard-coded. Allowing these values
-# to be configured through command-line arguments or a configuration file would make the script more flexible and reusable.
-
-# 3. **Separation of concerns**: The `generate_html_files` function is responsible for both
-# generating the HTML files and rendering the Jinja2 template. Separating these concerns into
-# different functions or classes could improve the code's modularity and readability.
-
-# 4. **Docstring formatting**: The docstrings follow the Google style guide, but some of them
-# could be formatted more consistently, especially for the description and the examples.
-
-# 5. **Potential performance issues**: The script might face performance issues when dealing with
-# large directories or files, as it reads the entire file content into memory.
-# Implementing a streaming approach or using a more efficient way of reading and writing files could improve performance.
+# TODO add error handling
+# TODO add logging
+# TODO remove hard-coding of e.g. template directory and base directory, but use defaults
+# TODO allow general configuration e.g. style file, output directory name
+# TODO check docstring formatting
+# TODO remove duplicated code in this and module tree generator for directory creation
+# TODO large directories / files - stream the input to improve performance
