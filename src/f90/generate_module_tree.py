@@ -1,7 +1,6 @@
 """ Module for processing Fortran 90 modules and comments and generating a static webpage from their contents.
 
 """
-
 import os
 import html
 import re
