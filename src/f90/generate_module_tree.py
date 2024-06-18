@@ -5,6 +5,11 @@
 import os
 import html
 import re
+import shutil
+import tempfile
+import errno
+import time
+import random
 from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
@@ -386,8 +391,8 @@ def process_annotation(parts: List[str], arg_info: FunctionDescription, annotati
                 arg_desc = ' '.join(parts[3:])
                 arg_info[annotation_type][arg_name]['description'] = arg_desc
 
-def process_modules(f90_files: List[str]) -> List[Any]:
-    modules = []
+def process_modules(f90_files: List[str]) -> List[ModuleData]:
+    modules: List[ModuleData] = []
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
         tree: Any = fortran_parser(f90_file, ignore_comments=False)
@@ -435,52 +440,155 @@ def process_modules(f90_files: List[str]) -> List[Any]:
                 comment_stack = []  # Reset comment_stack for the next module
     return modules
 
+def create_modules_directory(max_retries=5, base_delay=0.1):
+    """
+    Creates a 'modules' directory in the 'docs' directory if it doesn't exist.
+    If it exists, clears its contents.
 
-env = Environment(loader=FileSystemLoader('templates'))
+    The function performs the following actions:
+    1. Attempts to create or clear the 'docs/modules' directory.
+    2. If a race condition is detected, it retries the operation.
 
+    Args:
+        max_retries (int): Maximum number of retry attempts.
+        base_delay (float): Base delay between retries, in seconds.
 
-def create_modules_directory():
+    Returns:
+        None
+
+    Raises:
+        PermissionError: If the program doesn't have write permissions.
+        OSError: If there's an issue creating the directory or removing its contents after all retries.
+    """
     modules_dir = os.path.join('docs', 'modules')
-    os.makedirs(modules_dir, exist_ok=True)
 
-    for file in os.listdir(modules_dir):
-        file_path = os.path.join(modules_dir, file)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
+    if not check_write_permissions(os.path.dirname(modules_dir)):
+        raise PermissionError("No write permissions in the docs directory.")
 
+    for attempt in range(max_retries):
+        try:
+            if not os.path.exists(modules_dir):
+                os.makedirs(modules_dir)
+            else:
+                clear_directory(modules_dir)
+            return  # Success, exit the function
+        except FileExistsError:
+            # Directory was created by another process after we checked
+            continue
+        except FileNotFoundError:
+            # Directory was deleted by another process after we checked
+            continue
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        
+        # If we get here, we need to retry
+        time.sleep(base_delay * (2 ** attempt) * (random.random() + 0.5))
 
-def generate_home_html(modules):
+    # If we've exhausted all retries, make one last attempt and let any exceptions propagate
+    if not os.path.exists(modules_dir):
+        os.makedirs(modules_dir)
+    else:
+        clear_directory(modules_dir)
+
+def clear_directory(directory):
+    """
+    Clears the contents of the given directory.
+
+    Args:
+        directory (str): Path to the directory to clear.
+
+    Raises:
+        OSError: If there's an issue removing the contents.
+    """
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        if os.path.islink(item_path) or os.path.isfile(item_path):
+            os.unlink(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+
+def check_write_permissions(path):
+    """
+    Check if the program has write permissions in the specified path.
+
+    Args:
+        path (str): The path to check for write permissions.
+
+    Returns:
+        bool: True if write permissions are available, False otherwise.
+    """
+    try:
+        testfile = tempfile.TemporaryFile(dir=path)
+        testfile.close()
+    except (IOError, OSError):
+        return False
+    return True
+
+def generate_module_pages(modules: List[ModuleData]):
+    create_modules_directory()  # Assuming this function already exists
+
+    env = Environment(loader=FileSystemLoader('templates'))
     template = env.get_template('module_template.html')
+    module_names = [module['module_name'] for module in modules]
 
-    module_names = list(map(lambda module: module['module_name'], modules))
+    # Generate module_index.html
     output = template.render(
         module_names=module_names,
-        module_data=[],
+        module_data={},
         content_data='Welcome to your modules!',
+        is_index=True,
+        relative_path=''
     )
-
-    with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8', ) as file:
+    with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8') as file:
         file.write(output)
 
-
-def generate_module_html(modules: List[Dict[str, Any]]):
-    template = env.get_template('module_template.html')
-
-    module_names = list(map(lambda m: m['module_name'], modules))
+    # Generate individual module pages
     for module in modules:
         output = template.render(
-            module_names=module_names, module_data=module, content_data=''
+            module_names=module_names,
+            module_data=module,
+            content_data='',
+            is_index=False,
+            relative_path='../'
         )
-        with open(
-            os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8', 
-        ) as file:
+        with open(os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8') as file:
             file.write(output)
 
 
-# current_directory = os.getcwd()
-# fortran_files = find_f90_files(current_directory)
-# modules = process_modules(fortran_files)
+# def generate_home_html(modules: List[ModuleData]):
+#     template = env.get_template('module_template.html')
 
-# create_modules_directory()
+#     module_names = list(map(lambda module: module['module_name'], modules))
+#     output = template.render(
+#         module_names=module_names,
+#         module_data=[],
+#         content_data='Welcome to your modules!',
+#     )
+
+#     with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8', ) as file:
+#         file.write(output)
+
+
+# def generate_module_html(modules: List[ModuleData]):
+#     template = env.get_template('module_template.html')
+
+#     module_names = list(map(lambda m: m['module_name'], modules))
+#     for module in modules:
+#         output = template.render(
+#             module_names=module_names, module_data=module, content_data=''
+#         )
+#         with open(
+#             os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8', 
+#         ) as file:
+#             file.write(output)
+
+
+current_directory = os.getcwd()
+fortran_files = find_f90_files(current_directory)
+modules = process_modules(fortran_files)
+
+create_modules_directory()
+generate_module_pages(modules)
 # generate_home_html(modules)
 # generate_module_html(modules)

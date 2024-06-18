@@ -2,96 +2,45 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Modules{% endblock %}</title>
-    <link rel="stylesheet" href="../static/css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if is_index %}Module Index{% else %}{{ module_data.module_name }}{% endif %}</title>
+  <link rel="stylesheet" href="../static/css/styles.css">
 </head>
 
 <body>
+
     <nav>
-        <input type="checkbox" id="menu-checkbox" class="menu-checkbox">
-        <label for="menu-checkbox" class="menu-toggle">&#9776;</label>
-        <ul class="menu">
-            <li><a href="../index.html">File View</a></li>
-            <li><a href="module_index.html">Module View</a></li>
+    <input type="checkbox" id="menu-checkbox" class="menu-checkbox">
+    <label for="menu-checkbox" class="menu-toggle">&#9776;</label>
+    <ul class="menu">
+      <li><a href="../index.html">File View</a></li>
+      <li><a href="module_index.html">Module View</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <aside class="sidebar">
+      <nav>
+        <ul>
+          {% for module_name in module_names %}
+            <li><a href="{{ module_name }}.html">{{ module_name }}</a></li>
+          {% endfor %}
         </ul>
-    </nav>
+      </nav>
+    </aside>
 
-    <main>
-        <aside class="sidebar">
-            {% block sidebar %}
-            <nav>
-                <ul>
-                    {% for module in module_names %}
-                    <li><a href="{{ module }}.html">{{ module }}</a></li>
-                    {% endfor %}
-                </ul>
-            </nav>
-            {% endblock %}
-        </aside>
-
-        <article class="content">
-            {% block content %}
-            {% if content_data %}
-            <section>
-                <p>{{ content_data }}</p>
-            </section>
-            {% else %}
-            <section>
-                <h1>{{ module_data.module_name }}</h1>
-                {% if module_data.module_description %}
-                <p>{{ module_data.module_description | safe }}</p>
-                {% else %}
-                <p>No description available.</p>
-                {% endif %}
-            </section>
-            {#
-            <section>
-                <h2>Subroutine Summary</h2>
-                <ul>
-                    {% for subroutine in module_data.subroutines %}
-                    <li><a href="#{{ subroutine }}">{{ subroutine }}</a></li>
-                    {% endfor %}
-                </ul>
-            </section>
-
-            <section>
-                <h2>Function Summary</h2>
-                <ul>
-                    {% for function in module_data.functions %}
-                    <li><a href="#{{ function }}">{{ function }}</a></li>
-                    {% endfor %}
-                </ul>
-            </section>
-
-            <section>
-                <h2>Subroutine Details</h2>
-                {% for subroutine, details in module_data.subroutines.items() %}
-                <section id="{{ subroutine }}">
-                    <h3>{{ subroutine }}</h3>
-                    <p>{{ details.description }}</p>
-                    <p>{{ details.details }}</p>
-                    <!-- Add more details as needed -->
-                </section>
-                {% endfor %}
-            </section>
-
-            <section>
-                <h2>Function Details</h2>
-                {% for function, details in module_data.functions.items() %}
-                <section id="{{ function }}">
-                    <h3>{{ function }}</h3>
-                    <p>{{ details.description }}</p>
-                    <!-- Add more details as needed -->
-                </section>
-                {% endfor %}
-            </section>
-            #}
-            {% endif %}
-            {% endblock %}
-        </article>
-    </main>
+    <article class="content">
+      {% if is_index %}
+        <h1>Module Index</h1>
+        <p>{{ content_data }}</p>
+      {% else %}
+        <h1>{{ module_data.module_name }}</h1>
+        <p>{{ module_data.module_description }}</p>
+        <!-- You can add more details about the module here -->
+      {% endif %}
+    </article>
+  </main>
 </body>
 
 </html>

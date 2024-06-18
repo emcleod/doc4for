@@ -7,6 +7,7 @@ import random
 from pathlib import Path, PureWindowsPath
 from jinja2 import Environment, FileSystemLoader
 from typing import List, Union, Optional, Iterator
+#from directory_utils import create_or_clear_directory
 
 class DirectoryTree:
     """Represents a directory tree structure.
@@ -159,7 +160,7 @@ def build_directory_tree(files: List[str]) -> DirectoryTree:
         print(f'An unexpected error occurred: {e}')
         raise
 
-#TODO what about large directories
+# #TODO what about large directories
 def create_docs_directory(max_retries=5, base_delay=0.1):
     """
     Creates a 'docs' directory in the current working directory if it doesn't exist.
@@ -250,7 +251,52 @@ def check_write_permissions(path):
         return False
     return True
     
+# def create_docs_directory():
+#     """
+#     Creates a 'docs' directory in the current working directory if it doesn't exist.
+#     If it exists, clears its contents except for the 'static' subdirectory.
+#     """
+#     docs_directory = 'docs'
+#     create_or_clear_directory(docs_directory, preserve_subdirs=['static'])
+    
+#     # Create 'static' subdirectory if it doesn't exist
+#     static_directory = os.path.join(docs_directory, 'static')
+#     if not os.path.exists(static_directory):
+#         os.makedirs(static_directory)
+
+# def create_modules_directory():
+#     """
+#     Creates a 'modules' directory in the 'docs' directory if it doesn't exist.
+#     If it exists, clears its contents.
+#     """
+#     modules_directory = os.path.join('docs', 'modules')
+#     create_or_clear_directory(modules_directory)
+    
 def generate_html_files(directory_tree: DirectoryTree, template_dir: str = 'templates', base_dir: str = ''):
+    """
+    Generates HTML files for a given directory tree structure.
+
+    This function creates HTML files for each file in the directory tree,
+    maintaining the directory structure in the output. It also generates
+    an index page for the root of the documentation.
+
+    Args:
+        directory_tree (DirectoryTree): The directory tree structure to generate HTML files for.
+        template_dir (str, optional): The directory containing HTML templates. Defaults to 'templates'.
+        base_dir (str, optional): The base directory of the source files. Defaults to an empty string.
+
+    Returns:
+        None
+
+    Raises:
+        jinja2.exceptions.TemplateNotFound: If the template file is not found in the template directory.
+        OSError: If there are issues reading source files or writing output files.
+
+    Note:
+        - The function uses Jinja2 for templating.
+        - Output HTML files are created in a 'docs' directory, mirroring the original directory structure.
+        - An index.html file is created at the root of the 'docs' directory.
+    """
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template('file_template.html')
 
@@ -309,3 +355,23 @@ fortran_files = find_f90_files(current_directory)
 directories_and_files = build_directory_tree(fortran_files)
 create_docs_directory()
 generate_html_files(directories_and_files)
+
+
+# 1. **Error handling**: Some functions, like `build_directory_tree`, have extensive error handling and printing, 
+# while others, like `generate_html_files`, don't have any error handling or logging. 
+# Consistent error handling and logging across the codebase would improve maintainability and debugging.
+
+# 2. **Configuration options**: Some values, like the template directory (`templates`) 
+# and the base directory for source files (`base_dir`), are hard-coded. Allowing these values 
+# to be configured through command-line arguments or a configuration file would make the script more flexible and reusable.
+
+# 3. **Separation of concerns**: The `generate_html_files` function is responsible for both 
+# generating the HTML files and rendering the Jinja2 template. Separating these concerns into 
+# different functions or classes could improve the code's modularity and readability.
+
+# 4. **Docstring formatting**: The docstrings follow the Google style guide, but some of them 
+# could be formatted more consistently, especially for the description and the examples.
+
+# 5. **Potential performance issues**: The script might face performance issues when dealing with 
+# large directories or files, as it reads the entire file content into memory. 
+# Implementing a streaming approach or using a more efficient way of reading and writing files could improve performance.
