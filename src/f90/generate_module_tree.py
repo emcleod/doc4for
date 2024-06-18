@@ -171,7 +171,7 @@ def get_dummy_arg_intent(item: Any) -> Tuple[bool, bool]:
         (True, True)
     """
     if hasattr(item, 'attrspec'):
-        if 'intent(inout)' in item.attrspec: 
+        if 'intent(inout)' in item.attrspec:
             intentin, intentout = True, True
         else:
             intentin = 'intent(in)' in item.attrspec
@@ -215,7 +215,7 @@ def add_dimension_info(dims: List[int]) -> str:
     return ' &times; '.join(dimension_parts)
 
 def populate_argument_info(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                dummy_arg_info: FunctionDescription, 
+                dummy_arg_info: FunctionDescription,
                 dims: Optional[List[int]] = None) -> None:
     """Populate the `Argument` type with information from the dummy argument
     declaration.
@@ -425,7 +425,6 @@ def process_modules(f90_files: List[str]) -> List[ModuleData]:
                             'out': {}, 
                             'return': {}}
                         populate_arguments(item, function_description)
-
                         if function_comments:
                             populate_argument_description(function_comments, function_description)
                         module_data['functions'][function_name] = {
@@ -434,7 +433,6 @@ def process_modules(f90_files: List[str]) -> List[ModuleData]:
                         function_comments = []  # Reset for next function
                     else:
                         function_comments = []  # Reset for next function
-
                 modules.append(module_data)
                 comment_stack = []  # Reset comment_stack for the next module
     return modules
@@ -460,10 +458,8 @@ def create_modules_directory(max_retries=5, base_delay=0.1):
         OSError: If there's an issue creating the directory or removing its contents after all retries.
     """
     modules_dir = os.path.join('docs', 'modules')
-
     if not check_write_permissions(os.path.dirname(modules_dir)):
         raise PermissionError("No write permissions in the docs directory.")
-
     for attempt in range(max_retries):
         try:
             if not os.path.exists(modules_dir):
@@ -480,10 +476,8 @@ def create_modules_directory(max_retries=5, base_delay=0.1):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-        
         # If we get here, we need to retry
         time.sleep(base_delay * (2 ** attempt) * (random.random() + 0.5))
-
     # If we've exhausted all retries, make one last attempt and let any exceptions propagate
     if not os.path.exists(modules_dir):
         os.makedirs(modules_dir)
@@ -525,13 +519,10 @@ def check_write_permissions(path):
     return True
 
 def generate_module_pages(modules: List[ModuleData]):
-    create_modules_directory()  # Assuming this function already exists
-
+    create_modules_directory()
     env = Environment(loader=FileSystemLoader('templates'))
     template = env.get_template('module_template.html')
     module_names = [module['module_name'] for module in modules]
-
-    # Generate module_index.html
     output = template.render(
         module_names=module_names,
         module_data={},
@@ -541,8 +532,6 @@ def generate_module_pages(modules: List[ModuleData]):
     )
     with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8') as file:
         file.write(output)
-
-    # Generate individual module pages
     for module in modules:
         output = template.render(
             module_names=module_names,
@@ -553,41 +542,4 @@ def generate_module_pages(modules: List[ModuleData]):
         )
         with open(os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8') as file:
             file.write(output)
-
-
-# def generate_home_html(modules: List[ModuleData]):
-#     template = env.get_template('module_template.html')
-
-#     module_names = list(map(lambda module: module['module_name'], modules))
-#     output = template.render(
-#         module_names=module_names,
-#         module_data=[],
-#         content_data='Welcome to your modules!',
-#     )
-
-#     with open(os.path.join('docs', 'modules', 'module_index.html'), 'w', encoding='utf-8', ) as file:
-#         file.write(output)
-
-
-# def generate_module_html(modules: List[ModuleData]):
-#     template = env.get_template('module_template.html')
-
-#     module_names = list(map(lambda m: m['module_name'], modules))
-#     for module in modules:
-#         output = template.render(
-#             module_names=module_names, module_data=module, content_data=''
-#         )
-#         with open(
-#             os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8', 
-#         ) as file:
-#             file.write(output)
-
-
-current_directory = os.getcwd()
-fortran_files = find_f90_files(current_directory)
-modules = process_modules(fortran_files)
-
-create_modules_directory()
-generate_module_pages(modules)
-# generate_home_html(modules)
-# generate_module_html(modules)
+            

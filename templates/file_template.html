@@ -9,10 +9,8 @@
 </head>
 
 <body>
-  <!-- Navigation menu -->
   <nav>
-    <input type="checkbox" id="menu-checkbox" class="menu-checkbox">
-    <label for="menu-checkbox" class="menu-toggle">&#9776;</label>
+    <div class="menu-toggle">&#9776;</div>
     <ul class="menu">
       <li><a href="{{ relative_path }}index.html">File View</a></li>
       <li><a href="{{ relative_path }}modules/module_index.html">Module View</a></li>
@@ -59,6 +57,34 @@
       {% endif %}
     </article>
   </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuToggle = document.querySelector('.menu-toggle');
+      const menu = document.querySelector('.menu');
+      const menuItems = document.querySelectorAll('.menu a');
+    
+      // Toggle menu when hamburger icon is clicked
+      menuToggle.addEventListener('click', () => {
+        menu.classList.toggle('active');
+      });
+    
+      // Close menu when a menu item is clicked
+      menuItems.forEach(item => {
+        item.addEventListener('click', (event) => {
+          event.stopPropagation(); // Prevent event from bubbling up to document
+          menu.classList.remove('active');
+        });
+      });
+    
+      // Close menu when clicking outside
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.menu') && !event.target.closest('.menu-toggle')) {
+          menu.classList.remove('active');
+        }
+      });
+    });
+    </script>
 </body>
 
 </html>

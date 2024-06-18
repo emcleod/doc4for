@@ -4,9 +4,9 @@ import tempfile
 import errno
 import time
 import random
+from typing import List, Union, Optional, Iterator
 from pathlib import Path, PureWindowsPath
 from jinja2 import Environment, FileSystemLoader
-from typing import List, Union, Optional, Iterator
 
 class DirectoryTree:
     """Represents a directory tree structure.
@@ -142,13 +142,13 @@ def build_directory_tree(files: List[str]) -> DirectoryTree:
             if '\\' in file:
                 try:
                     file = PureWindowsPath(file).as_posix()
-                except ValueError as e:
+                except ValueError:
                     print(f'Invalid Windows path: {file}. Skipping.')
                     continue
             path = Path(file)
             try:
                 directory_tree.add_path(path)
-            except Exception as e:
+            except Exception:
                 print(f'Error adding path: {path}. Skipping.')
                 continue
         return directory_tree
@@ -185,7 +185,6 @@ def create_docs_directory(max_retries=5, base_delay=0.1):
 
     if not check_write_permissions(os.getcwd()):
         raise PermissionError("No write permissions in the current directory.")
-
     for attempt in range(max_retries):
         try:
             if not os.path.exists(docs_directory):
@@ -203,10 +202,8 @@ def create_docs_directory(max_retries=5, base_delay=0.1):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-        
         # If we get here, we need to retry
         time.sleep(base_delay * (2 ** attempt) * (random.random() + 0.5))
-
     # If we've exhausted all retries, make one last attempt and let any exceptions propagate
     if not os.path.exists(docs_directory):
         os.makedirs(docs_directory)
@@ -249,8 +246,8 @@ def check_write_permissions(path):
     except (IOError, OSError):
         return False
     return True
-        
-def generate_html_files(directory_tree: DirectoryTree, template_dir: str = 'templates', base_dir: str = ''):
+
+def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'templates', base_dir: str = ''):
     """
     Generates HTML files for a given directory tree structure.
 
@@ -285,14 +282,11 @@ def generate_html_files(directory_tree: DirectoryTree, template_dir: str = 'temp
             file_name = file_path.name
             target_directory = Path('docs') / file_path.parent.relative_to(base_dir) if base_dir else Path('docs') / file_path.parent
             target_directory.mkdir(parents=True, exist_ok=True)
-            
             # Calculate relative path
             relative_path = '../' * len(current_path.parts)
-            
             # Read the file
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                 code = file.read()
-            
             # Render the template
             output = template.render(
                 sidebar_data=directory_tree,
@@ -302,7 +296,6 @@ def generate_html_files(directory_tree: DirectoryTree, template_dir: str = 'temp
                 is_index=False,
                 content_data=''
             )
-            
             # Write the output
             output_path = target_directory / f'{file_path.stem}.html'
             with open(output_path, 'w', encoding='utf-8') as file:
@@ -327,29 +320,21 @@ def generate_html_files(directory_tree: DirectoryTree, template_dir: str = 'temp
     with open('docs/index.html', 'w', encoding='utf-8') as file:
         file.write(index_output)
 
-# Find .f90 files starting from the current directory
-current_directory = os.getcwd()
-fortran_files = find_f90_files(current_directory)
-directories_and_files = build_directory_tree(fortran_files)
-create_docs_directory()
-generate_html_files(directories_and_files)
-
-
-# 1. **Error handling**: Some functions, like `build_directory_tree`, have extensive error handling and printing, 
-# while others, like `generate_html_files`, don't have any error handling or logging. 
+# 1. **Error handling**: Some functions, like `build_directory_tree`, have extensive error handling and printing,
+# while others, like `generate_html_files`, don't have any error handling or logging.
 # Consistent error handling and logging across the codebase would improve maintainability and debugging.
 
-# 2. **Configuration options**: Some values, like the template directory (`templates`) 
-# and the base directory for source files (`base_dir`), are hard-coded. Allowing these values 
+# 2. **Configuration options**: Some values, like the template directory (`templates`)
+# and the base directory for source files (`base_dir`), are hard-coded. Allowing these values
 # to be configured through command-line arguments or a configuration file would make the script more flexible and reusable.
 
-# 3. **Separation of concerns**: The `generate_html_files` function is responsible for both 
-# generating the HTML files and rendering the Jinja2 template. Separating these concerns into 
+# 3. **Separation of concerns**: The `generate_html_files` function is responsible for both
+# generating the HTML files and rendering the Jinja2 template. Separating these concerns into
 # different functions or classes could improve the code's modularity and readability.
 
-# 4. **Docstring formatting**: The docstrings follow the Google style guide, but some of them 
+# 4. **Docstring formatting**: The docstrings follow the Google style guide, but some of them
 # could be formatted more consistently, especially for the description and the examples.
 
-# 5. **Potential performance issues**: The script might face performance issues when dealing with 
-# large directories or files, as it reads the entire file content into memory. 
+# 5. **Potential performance issues**: The script might face performance issues when dealing with
+# large directories or files, as it reads the entire file content into memory.
 # Implementing a streaming approach or using a more efficient way of reading and writing files could improve performance.
