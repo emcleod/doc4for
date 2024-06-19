@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import patch
 import os
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_file_tree import create_docs_directory, check_write_permissions
+from doc4for.file_utils import check_write_permissions
+from doc4for.f90.generate_file_tree import create_docs_directory
 
 class TestCreateDocsDirectory(TestCase):
     def setUp(self):
@@ -56,8 +57,8 @@ class TestCreateDocsDirectory(TestCase):
     def test_no_write_permissions(self):
         """Test that PermissionError is raised when there are no write permissions."""
         # Mock the check_write_permissions function to always return False
-        with patch('doc4for.file_utils.check_write_permissions', return_value=False):
-            with self.assertRaises(PermissionError):
+        with patch('doc4for.f90.generate_file_tree.check_write_permissions', return_value=False):
+             with self.assertRaises(PermissionError):
                 create_docs_directory()
 
     def test_check_write_permissions(self):

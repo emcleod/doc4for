@@ -1,11 +1,10 @@
 import os
 import shutil
-import tempfile
 import errno
 import time
 import random
+from pathlib import Path
 from typing import List, Union, Optional, Iterator
-from pathlib import Path, PureWindowsPath
 from jinja2 import Environment, FileSystemLoader
 from doc4for.file_utils import check_write_permissions
 
