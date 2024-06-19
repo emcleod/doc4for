@@ -18,10 +18,10 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='emcleod',
-#    author_email='',
+    author_email='',
     url='https://github.com/emcleod/doc4for',
     install_requires=[
-        'fparser>=0.1.5'
+        'fparser>=0.1.4'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
