@@ -50,7 +50,10 @@ class DirectoryTree:
         instances for any missing directories in the path. The file name is added as a string
         to the final directory in the path.
         """
-        parts = path.parts
+        # Normalize the path to use forward slashes
+        # TODO is this the right thing to do
+        normalized_path = Path(str(path).replace('\\', '/'))
+        parts = normalized_path.parts
         current = self
         for part in parts[:-1]:
             child = next((c for c in current.children if isinstance(c, DirectoryTree) and c.name == part), None)
@@ -58,7 +61,7 @@ class DirectoryTree:
                 child = DirectoryTree(part, current)
                 current.children.append(child)
             current = child
-        current.children.append(str(path))
+        current.children.append(str(str(path).replace('\\', '/')))
 
     def walk(self) -> Iterator[Union[str, 'DirectoryTree']]:
         """Yields the names of directories and files in the tree by traversing it recursively.

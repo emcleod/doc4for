@@ -3,7 +3,7 @@ import os
 from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase as FakefsTestCase
 from jinja2 import Environment, FileSystemLoader
-from doc4for.file_utils import find_f90_files
+from doc4for.file_utils import find_files_by_extensions
 from doc4for.f90.generate_file_tree import ( 
                                     build_directory_tree,
                                     create_docs_directory,
@@ -96,9 +96,9 @@ end program main
             '''
         )
         # Set up actual directory tree
-        self.f90_files = find_f90_files('/fake')
+        self.f90_files = find_files_by_extensions('/fake')
         self.directory_tree = build_directory_tree(self.f90_files)
-        self.f90_files = find_f90_files('/fake')
+        self.f90_files = find_files_by_extensions('/fake')
         self.directory_tree = build_directory_tree(self.f90_files)
 
 # The next two tests check that the fake file system is set up properly, not

@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import process_modules
 
@@ -35,7 +36,7 @@ end module complex
         )
 
         # Call the function with the fake file
-        result = process_modules(['/fake/path/complex.f90'])
+        result = process_modules([Path('/fake/path/complex.f90')])
 
         # Assertions
         self.assertEqual(len(result), 1)

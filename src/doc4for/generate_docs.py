@@ -10,7 +10,7 @@ current_directory = os.getcwd()
 
 fortran_files = find_files_by_extensions(current_directory)
 directories_and_files = build_directory_tree(fortran_files)
-
 generate_file_pages(directories_and_files)
+
 modules = process_modules(fortran_files)
 generate_module_pages(modules)

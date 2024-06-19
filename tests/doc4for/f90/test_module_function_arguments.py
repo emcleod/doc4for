@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import process_modules
 
@@ -23,7 +24,7 @@ class TestFunctionArguments(TestCase):
     end module scalar_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/scalar_args.f90'])
+        result = process_modules([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -60,7 +61,7 @@ class TestFunctionArguments(TestCase):
     end module scalar_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/scalar_args.f90'])
+        result = process_modules([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -97,7 +98,7 @@ class TestFunctionArguments(TestCase):
     end module scalar_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/scalar_args.f90'])
+        result = process_modules([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -133,7 +134,7 @@ class TestFunctionArguments(TestCase):
     end module scalar_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/scalar_args.f90'])
+        result = process_modules([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -169,7 +170,7 @@ class TestFunctionArguments(TestCase):
     end module array_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/array_args.f90'])
+        result = process_modules([Path('/fake/path/array_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -205,7 +206,7 @@ class TestFunctionArguments(TestCase):
     end module mixed_args_functions
                             ''',
         )
-        result = process_modules(['/fake/path/mixed_args.f90'])
+        result = process_modules([Path('/fake/path/mixed_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]

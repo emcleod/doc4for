@@ -56,7 +56,7 @@ class TestCreateDocsDirectory(TestCase):
     def test_no_write_permissions(self):
         """Test that PermissionError is raised when there are no write permissions."""
         # Mock the check_write_permissions function to always return False
-        with patch('f90.generate_file_tree.check_write_permissions', return_value=False):
+        with patch('doc4for.file_utils.check_write_permissions', return_value=False):
             with self.assertRaises(PermissionError):
                 create_docs_directory()
 

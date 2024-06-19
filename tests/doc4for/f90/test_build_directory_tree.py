@@ -17,7 +17,7 @@ class TestBuildDirectoryTree(TestCase):
     def test_single_file(self):
         """Test with a single file in the path directory."""
         self.fs.create_file('/path/file.f90')
-        result = build_directory_tree(['/path/file.f90'])
+        result = build_directory_tree([Path('/path/file.f90')])
         expected = DirectoryTree('')
         root = DirectoryTree('/', expected)
         expected.children.append(root)
@@ -33,7 +33,7 @@ class TestBuildDirectoryTree(TestCase):
         """Test with multiple files in the same directory."""
         self.fs.create_file('/path/file1.f90')
         self.fs.create_file('/path/file2.f90')
-        result = build_directory_tree(['/path/file1.f90', '/path/file2.f90'])
+        result = build_directory_tree([Path('/path/file1.f90'), Path('/path/file2.f90')])
         expected = DirectoryTree('')
         root = DirectoryTree('/', expected)
         expected.children.append(root)
@@ -53,9 +53,9 @@ class TestBuildDirectoryTree(TestCase):
         self.fs.create_file('/path/dir1/subdir/file2.f90')
         self.fs.create_file('/path/dir2/file3.f90')
         files = [
-            '/path/dir1/file1.f90',
-            '/path/dir1/subdir/file2.f90',
-            '/path/dir2/file3.f90'
+            Path('/path/dir1/file1.f90'),
+            Path('/path/dir1/subdir/file2.f90'),
+            Path('/path/dir2/file3.f90')
         ]
         result = build_directory_tree(files)
 
@@ -87,7 +87,7 @@ class TestBuildDirectoryTree(TestCase):
         """Test with files having the same name in different directories."""
         self.fs.create_file('/path/dir1/file.f90')
         self.fs.create_file('/path/dir2/file.f90')
-        files = ['/path/dir1/file.f90', '/path/dir2/file.f90']
+        files = [Path('/path/dir1/file.f90'), Path('/path/dir2/file.f90')]
         result = build_directory_tree(files)
 
         expected = DirectoryTree('')
@@ -107,7 +107,7 @@ class TestBuildDirectoryTree(TestCase):
         """Test that non-f90 files are handled correctly."""
         self.fs.create_file('/path/file.f90')
         self.fs.create_file('/path/file.txt')
-        files = ['/path/file.f90', '/path/file.txt']
+        files = [Path('/path/file.f90'), Path('/path/file.txt')]
         result = build_directory_tree(files)
 
         expected = DirectoryTree('')
@@ -123,7 +123,7 @@ class TestBuildDirectoryTree(TestCase):
         """Test with a mix of absolute and relative paths."""
         self.fs.create_file('/abs/path/file1.f90')
         self.fs.create_file('rel/path/file2.f90')
-        files = ['/abs/path/file1.f90', 'rel/path/file2.f90']
+        files = [Path('/abs/path/file1.f90'), Path('rel/path/file2.f90')]
         result = build_directory_tree(files)
 
         expected = DirectoryTree('')
@@ -147,7 +147,7 @@ class TestBuildDirectoryTree(TestCase):
         """Test that empty directories are not included."""
         self.fs.create_file('/path/dir1/file.f90')
         self.fs.create_dir('/path/empty_dir')
-        files = ['/path/dir1/file.f90']
+        files = [Path('/path/dir1/file.f90')]
         result = build_directory_tree(files)
 
         expected = DirectoryTree('')
@@ -166,11 +166,10 @@ class TestBuildDirectoryTree(TestCase):
         self.fs.create_file('/path/dir1/file1.f90')
         self.fs.create_file('/path/dir2/file2.f90')
         files = [
-            '/path/dir1/file1.f90',
-            r'\path\dir2\file2.f90'  # Using Windows-style path
+            Path('/path/dir1/file1.f90'),
+            Path(r'\path\dir2\file2.f90')  # Using Windows-style path
         ]
         result = build_directory_tree(files)
-
         expected = DirectoryTree('')
         root = DirectoryTree('/', expected)
         expected.children.append(root)
@@ -181,7 +180,6 @@ class TestBuildDirectoryTree(TestCase):
         path.children.extend([dir1, dir2])
         dir1.children.append('/path/dir1/file1.f90')
         dir2.children.append('/path/dir2/file2.f90')
-
         self.assertEqual(list(result.walk()), list(expected.walk()))
 
     def test_special_characters_in_filenames(self):
@@ -216,7 +214,7 @@ class TestBuildDirectoryTree(TestCase):
         for file in files:
             self.fs.create_file(file)
 
-        result = build_directory_tree(files)
+        result = build_directory_tree(list(map(lambda file: Path(file), files)))
 
         expected = DirectoryTree('')
         for file in files:
@@ -244,7 +242,7 @@ class TestBuildDirectoryTree(TestCase):
         for file in files:
             self.fs.create_file(file)
 
-        result = build_directory_tree(files)
+        result = build_directory_tree(list(map(lambda file: Path(file), files)))
 
         expected = DirectoryTree('')
         for file in files:
@@ -271,7 +269,7 @@ class TestBuildDirectoryTree(TestCase):
         for file in files:
             self.fs.create_file(file)
 
-        result = build_directory_tree(files)
+        result = build_directory_tree(list(map(lambda file: Path(file), files)))
 
         expected = DirectoryTree('')
         for file in files:
