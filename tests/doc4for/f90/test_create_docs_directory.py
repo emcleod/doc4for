@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 import os
 from pyfakefs.fake_filesystem_unittest import TestCase
-from f90.generate_file_tree import create_docs_directory, check_write_permissions
+from doc4for.f90.generate_file_tree import create_docs_directory, check_write_permissions
 
 class TestCreateDocsDirectory(TestCase):
     def setUp(self):

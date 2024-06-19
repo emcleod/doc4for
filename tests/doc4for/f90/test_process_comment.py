@@ -1,5 +1,5 @@
 import unittest
-from f90.generate_module_tree import process_comment
+from doc4for.f90.generate_module_tree import process_comment
 
 class TestProcessComment(unittest.TestCase):
     def test_with_code(self):

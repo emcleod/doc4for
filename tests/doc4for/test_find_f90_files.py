@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch
-
-from f90.generate_module_tree import find_f90_files
+from doc4for.file_utils import find_f90_files
 
 class TestFindF90Files(unittest.TestCase):
 

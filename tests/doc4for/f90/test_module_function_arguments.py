@@ -1,8 +1,6 @@
 import unittest
 from pyfakefs.fake_filesystem_unittest import TestCase
-
-# Add the project root to the Python path
-from f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import process_modules
 
 class TestFunctionArguments(TestCase):
     def setUp(self):

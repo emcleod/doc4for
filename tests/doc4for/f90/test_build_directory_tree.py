@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from f90.generate_file_tree import build_directory_tree, DirectoryTree
+from doc4for.f90.generate_file_tree import build_directory_tree, DirectoryTree
 
 class TestBuildDirectoryTree(TestCase):
     def setUp(self):

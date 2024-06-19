@@ -3,11 +3,11 @@ import os
 from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase as FakefsTestCase
 from jinja2 import Environment, FileSystemLoader
-from f90.generate_file_tree import (DirectoryTree, 
-                                    find_f90_files, 
+from doc4for.file_utils import find_f90_files
+from doc4for.f90.generate_file_tree import ( 
                                     build_directory_tree,
                                     create_docs_directory,
-                                    generate_html_files)
+                                    generate_file_pages)
 
 class TestClass(FakefsTestCase):
     @classmethod
@@ -136,7 +136,7 @@ end program main
         mock_env_instance.get_template.side_effect = lambda x: Environment(loader=FileSystemLoader(template_dir)).get_template(x)
 
         # Call the function with actual directory tree, template directory, and base directory
-        generate_html_files(self.directory_tree, template_dir=template_dir, base_dir='/fake')        
+        generate_file_pages(self.directory_tree, template_dir=template_dir, base_dir='/fake')        
         # Check if HTML files were generated
         self.assertTrue(self.fs.exists('docs/dir1/simple1.html'))
         self.assertTrue(self.fs.exists('docs/dir1/simple2.html'))

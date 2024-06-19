@@ -1,7 +1,6 @@
 import unittest
 from pyfakefs.fake_filesystem_unittest import TestCase
-
-from f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import process_modules
 
 class TestFunctionAnnotations(TestCase):
     def setUp(self):
