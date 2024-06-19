@@ -1,9 +1,9 @@
 import os
-from f90.generate_file_tree import (find_f90_files,
-                                    build_directory_tree,
+from f90.generate_file_tree import (build_directory_tree,
                                     create_docs_directory,
                                     generate_file_pages)
 from f90.generate_module_tree import process_modules, generate_module_pages
+from .file_utils import find_f90_files
 
 create_docs_directory()
 current_directory = os.getcwd()

@@ -91,24 +91,6 @@ Fields:
     module_description (str): A description of the module's purpose.
 """
 
-def find_f90_files(directory: str) -> List[str]:
-    """
-    Finds all Fortran 90 files (*.f90) in a directory and its subdirectories.
-
-    Args:
-        directory (str): The path to the top-level directory
-    Returns:
-        A list of relative paths to any fortran files that have been found.
-
-    """
-    f90_files: List[str] = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.f90'):
-                relative_path = os.path.relpath(os.path.join(root, file), directory)
-                f90_files.append(relative_path)
-    return f90_files
-
 def process_comment(comment: str) -> str:
     """Process a comment string to escape HTML entities and replace code blocks.
 
@@ -542,4 +524,3 @@ def generate_module_pages(modules: List[ModuleData]):
         )
         with open(os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8') as file:
             file.write(output)
-            
