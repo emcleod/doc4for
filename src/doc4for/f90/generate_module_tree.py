@@ -17,6 +17,7 @@ from fparser.one.block_statements import (
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
 from doc4for.file_utils import check_write_permissions
 
 ANNOTATION_PREFIX = '@'
@@ -372,11 +373,12 @@ def process_annotation(parts: List[str], arg_info: FunctionDescription, annotati
                 arg_desc = ' '.join(parts[3:])
                 arg_info[annotation_type][arg_name]['description'] = arg_desc
 
-def process_modules(f90_files: List[str]) -> List[ModuleData]:
+def process_modules(f90_files: List[Path]) -> List[ModuleData]:
     modules: List[ModuleData] = []
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
-        tree: Any = fortran_parser(f90_file, ignore_comments=False)
+        f90_file_str = os.fspath(f90_file)
+        tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
         for child in tree.content:
             if isinstance(child, Comment):
                 comment_stack.append(child)
@@ -386,7 +388,7 @@ def process_modules(f90_files: List[str]) -> List[ModuleData]:
                     'constants': {},
                     'functions': {},
                     'subroutines': {},
-                    'file_name': f90_file,
+                    'file_name': f90_file_str,
                     'module_description': ''
                 }
                 # collect module comments

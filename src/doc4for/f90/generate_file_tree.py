@@ -76,11 +76,11 @@ class DirectoryTree:
             else:
                 yield child
 
-def build_directory_tree(files: List[str]) -> DirectoryTree:
+def build_directory_tree(files: List[Path]) -> DirectoryTree:
     """Builds a directory tree from a list of file paths.
 
     Args:
-        files: A list of file paths as strings.
+        files: A list of file paths as Path objects.
 
     Returns:
         A `DirectoryTree` object representing the directory structure.
@@ -89,11 +89,9 @@ def build_directory_tree(files: List[str]) -> DirectoryTree:
         MemoryError: If the file list is too large and causes a memory error.
         Exception: If an unexpected error occurs during the building process.
 
-    The function takes a list of file paths and constructs a directory tree based on the paths.
-    It handles both Unix-style and Windows-style paths. If a Windows-style path is encountered,
-    it is converted to a Unix-style path using `PureWindowsPath`.
+    The function takes a list of Path objects and constructs a directory tree based on the paths.
+    It handles both Unix-style and Windows-style paths automatically through the Path objects.
 
-    If an invalid Windows path is encountered, a warning message is printed, and the path is skipped.
     If an error occurs while adding a path to the directory tree, a warning message is printed,
     and the path is skipped.
 
@@ -107,10 +105,10 @@ def build_directory_tree(files: List[str]) -> DirectoryTree:
 
     Example:
         files = [
-            '/path/to/file1.txt',
-            '/path/to/file2.txt',
-            '/another/path/file3.txt',
-            'C:\\Windows\\path\\file4.txt'
+            Path('/path/to/file1.txt'),
+            Path('/path/to/file2.txt'),
+            Path('/another/path/file3.txt'),
+            Path('C:/Windows/path/file4.txt')
         ]
         directory_tree = build_directory_tree(files)
         for item in directory_tree.walk():
@@ -118,19 +116,11 @@ def build_directory_tree(files: List[str]) -> DirectoryTree:
     """
     try:
         directory_tree = DirectoryTree('')
-        for file in files:
-            # Convert Windows-style paths to Unix-style
-            if '\\' in file:
-                try:
-                    file = PureWindowsPath(file).as_posix()
-                except ValueError:
-                    print(f'Invalid Windows path: {file}. Skipping.')
-                    continue
-            path = Path(file)
+        for file_path in files:
             try:
-                directory_tree.add_path(path)
-            except Exception:
-                print(f'Error adding path: {path}. Skipping.')
+                directory_tree.add_path(file_path)
+            except Exception as e:
+                print(f'Error adding path: {file_path}. Skipping. Error: {e}')
                 continue
         return directory_tree
     except MemoryError as e:

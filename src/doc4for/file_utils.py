@@ -2,38 +2,38 @@ import os
 import tempfile
 from typing import List
 
-def find_f90_files(directory: str) -> List[str]:
+import os
+from pathlib import Path
+from typing import List, Union, Set
+
+def find_files_by_extensions(directory: Union[str, Path], extensions: Set[str] = {'f90'}) -> List[Path]:
     """
-    Finds all Fortran 90 files (*.f90) in a directory and its subdirectories.
+    Finds all files with the specified extensions in a directory and its subdirectories.
 
     Args:
-        directory (str): The path to the top-level directory
+        directory (Union[str, Path]): The path to the top-level directory
+        extensions (Set[str]): The file extensions to search for (e.g., {'f90', 'f95'})
     Returns:
-        A list of relative paths to any fortran files that have been found.
-
+        A list of relative paths to any files that have been found.
     """
-    f90_files: List[str] = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            # Get the relative path from the current directory to the file
-            if file.endswith('.f90'):
-                relative_path = os.path.relpath(os.path.join(root, file), directory)
-                f90_files.append(relative_path)
-    return f90_files
+    directory = Path(directory)
+    files = [file_path.relative_to(directory) 
+             for extension in extensions 
+             for file_path in directory.rglob(f'*.{extension.lstrip(".")}')]
+    return files
 
-def check_write_permissions(path):
+def check_write_permissions(path: Union[str, Path]) -> bool:
     """
     Check if the program has write permissions in the specified path.
 
     Args:
-        path (str): The path to check for write permissions.
+        path (Union[str, Path]): The path to check for write permissions.
 
     Returns:
         bool: True if write permissions are available, False otherwise.
     """
-    try:
-        testfile = tempfile.TemporaryFile(dir=path)
-        testfile.close()
-    except (IOError, OSError):
-        return False
-    return True
+    path = Path(path)
+    return os.access(path, os.W_OK)
+
+#TODO use configuration files (e.g., YAML or JSON) to define project-specific settings 
+# like file extensions, directories to search, etc.
