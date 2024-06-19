@@ -15,7 +15,7 @@ class TestClass(FakefsTestCase):
         # Call the parent class's setUpClass method
         super().setUpClass()
         # Read the real template file content
-        cls.real_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        cls.real_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
         real_template_file = os.path.join(cls.real_project_root, 'templates', 'file_template.html')
         with open(real_template_file, 'r') as f:
             cls.template_content = f.read()
@@ -111,7 +111,7 @@ end program main
         self.assertTrue(self.fs.exists('/fake/dir2/simple3.f90'))
         self.assertTrue(self.fs.exists('/fake/main.f90'))
 
-    @patch('f90.generate_file_tree.check_write_permissions')
+    @patch('doc4for.f90.generate_file_tree.check_write_permissions')
     def test_create_docs_directory(self, mock_check_permissions):
         mock_check_permissions.return_value = True
         
@@ -127,8 +127,8 @@ end program main
         self.assertTrue(self.fs.exists('docs/static'))
         self.assertFalse(self.fs.exists('docs/existing_dir'))
 
-    @patch('f90.generate_file_tree.Environment', autospec=True)
-    @patch('f90.generate_file_tree.FileSystemLoader', autospec=True)
+    @patch('doc4for.f90.generate_file_tree.Environment', autospec=True)
+    @patch('doc4for.f90.generate_file_tree.FileSystemLoader', autospec=True)
     def test_generate_html_files(self, mock_loader, mock_env):
         template_dir = os.path.join(self.fake_project_root, 'templates')        
         # Set up the Environment mock to use the fake file system
@@ -143,8 +143,6 @@ end program main
         self.assertTrue(self.fs.exists('docs/dir2/simple3.html'))
         self.assertTrue(self.fs.exists('docs/main.html'))
         self.assertTrue(self.fs.exists('docs/index.html'))
-
-
 
 if __name__ == '__main__':
     unittest.main()
