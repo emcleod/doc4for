@@ -21,7 +21,8 @@ setup(
     author_email='',
     url='https://github.com/emcleod/doc4for',
     install_requires=[
-        'fparser>=0.1.4'
+        'fparser>=0.1.4',
+        'jinja2>=3.1'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

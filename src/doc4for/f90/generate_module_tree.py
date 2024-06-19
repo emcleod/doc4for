@@ -5,7 +5,6 @@ import os
 import html
 import re
 import shutil
-import tempfile
 import errno
 import time
 import random
@@ -18,6 +17,7 @@ from fparser.one.block_statements import (
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
+from doc4for.file_utils import check_write_permissions
 
 ANNOTATION_PREFIX = '@'
 """Prefix used to identify annotations in comments."""
@@ -482,23 +482,6 @@ def clear_directory(directory):
             os.unlink(item_path)
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
-
-def check_write_permissions(path):
-    """
-    Check if the program has write permissions in the specified path.
-
-    Args:
-        path (str): The path to check for write permissions.
-
-    Returns:
-        bool: True if write permissions are available, False otherwise.
-    """
-    try:
-        testfile = tempfile.TemporaryFile(dir=path)
-        testfile.close()
-    except (IOError, OSError):
-        return False
-    return True
 
 def generate_module_pages(modules: List[ModuleData]):
     create_modules_directory()

@@ -7,6 +7,7 @@ import random
 from typing import List, Union, Optional, Iterator
 from pathlib import Path, PureWindowsPath
 from jinja2 import Environment, FileSystemLoader
+from doc4for.file_utils import check_write_permissions
 
 class DirectoryTree:
     """Represents a directory tree structure.
@@ -208,23 +209,6 @@ def clear_directory(directory):
             os.unlink(item_path)
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
-
-def check_write_permissions(path):
-    """
-    Check if the program has write permissions in the specified path.
-
-    Args:
-        path (str): The path to check for write permissions.
-
-    Returns:
-        bool: True if write permissions are available, False otherwise.
-    """
-    try:
-        testfile = tempfile.TemporaryFile(dir=path)
-        testfile.close()
-    except (IOError, OSError):
-        return False
-    return True
 
 def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'templates', base_dir: str = ''):
     """

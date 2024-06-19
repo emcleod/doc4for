@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import List
 
 def find_f90_files(directory: str) -> List[str]:
@@ -20,3 +21,19 @@ def find_f90_files(directory: str) -> List[str]:
                 f90_files.append(relative_path)
     return f90_files
 
+def check_write_permissions(path):
+    """
+    Check if the program has write permissions in the specified path.
+
+    Args:
+        path (str): The path to check for write permissions.
+
+    Returns:
+        bool: True if write permissions are available, False otherwise.
+    """
+    try:
+        testfile = tempfile.TemporaryFile(dir=path)
+        testfile.close()
+    except (IOError, OSError):
+        return False
+    return True
