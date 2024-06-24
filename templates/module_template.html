@@ -33,12 +33,13 @@
         <h1>Module Index</h1>
         <p>{{ content_data }}</p>
       {% else %}
-        <h1>{{ module_data.module_name }}</h1>
-        <p>{{ module_data.module_description }}</p>
-        <!-- You can add more details about the module here -->
+        <h1>Module {{ module_data.module_name }}</h1>
+        <p class="file-name">Defined in: 
+          <a href="../{{ module_data.file_name.split('.')[0] }}.html">{{ module_data.file_name }}</a>
+        </p>
+        <p class="module-description">{{ module_data.module_description }}</p>
       {% endif %}
     </article>
-  </main>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
