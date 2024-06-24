@@ -71,7 +71,8 @@ Contains detailed information about a Fortran 90 function.
 Fields:
     details (FunctionDescription): Detailed description of the function.
 """
-
+#TODO add @version annotation
+#TODO add @author annotation
 ModuleData = TypedDict('ModuleData', {
     'module_name': str,
     'constants': Dict[str, Any],
@@ -509,3 +510,44 @@ def generate_module_pages(modules: List[ModuleData]):
         )
         with open(os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8') as file:
             file.write(output)
+
+# 1. Subroutine vs. Function:
+#    - You can differentiate between subroutines and functions. Subroutines do not have a return value, while functions do.
+#    - This information can be obtained from the `typedecl` attribute of the `Function` object. If `typedecl` is present, it indicates a function; otherwise, it's a subroutine.
+
+# 2. Module Procedures:
+#    - You can identify module procedures, which are functions or subroutines defined within a module.
+#    - Module procedures have a `parent` attribute that refers to the module in which they are defined.
+
+# 3. Attributes:
+#    - In addition to `intent`, you can extract other attributes of variables and arguments, such as `allocatable`, `dimension`, `pointer`, `target`, etc.
+#    - These attributes can be found in the `attrspec` attribute of the `TypeDeclarationStatement` object.
+
+# 4. Assumed-Shape Arrays:
+#    - Assumed-shape arrays are declared with dimensions specified using colons (e.g., `array(:)`).
+#    - You can identify assumed-shape arrays by checking for the presence of colons in the dimension specifier.
+
+# 5. Allocatable Arrays:
+#    - Allocatable arrays are declared with the `allocatable` attribute.
+#    - You can check for the presence of the `allocatable` attribute in the `attrspec` attribute of the `TypeDeclarationStatement` object.
+
+# 6. Assumed-Size Arrays:
+#    - Assumed-size arrays are declared with an asterisk as the last dimension (e.g., `array(10,*)`).
+#    - You can identify assumed-size arrays by checking for the presence of an asterisk in the last dimension specifier.
+
+# 7. Optional Arguments:
+#    - Optional arguments are declared with the `optional` attribute.
+#    - You can check for the presence of the `optional` attribute in the `attrspec` attribute of the `TypeDeclarationStatement` object.
+
+# 8. Derived Types:
+#    - Derived types are user-defined types in Fortran.
+#    - You can identify derived type declarations by checking for the presence of a `Type` object in the parsed code.
+
+# 9. Interfaces and Generic Procedures:
+#    - Interfaces and generic procedures provide a way to overload procedures with different argument types or define a set of procedures with a common name.
+#    - You can identify interfaces and generic procedures by checking for the presence of an `Interface` object in the parsed code.
+
+# 10. Use Statements and External Procedures:
+#     - Use statements indicate modules that are being used within a program unit.
+#     - External procedures are procedures that are defined outside the current program unit and are referenced using the `external` attribute.
+#     - You can identify use statements and external procedures by checking for the presence of `Use` and `External` objects in the parsed code.
