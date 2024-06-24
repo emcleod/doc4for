@@ -1,12 +1,11 @@
 import os
-import shutil
-import errno
-import time
-import random
+import logging
 from pathlib import Path
 from typing import List, Union, Optional, Iterator
 from jinja2 import Environment, FileSystemLoader
-from doc4for.file_utils import check_write_permissions
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class DirectoryTree:
     """Represents a directory tree structure.
@@ -131,76 +130,6 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
     except Exception as e:
         print(f'An unexpected error occurred: {e}')
         raise
-
-# #TODO what about large directories
-def create_docs_directory(max_retries=5, base_delay=0.1):
-    """
-    Creates a 'docs' directory in the current working directory if it doesn't exist.
-    If it exists, clears its contents except for the 'static' subdirectory.
-
-    The function performs the following actions:
-    1. Attempts to create or clear the 'docs' directory.
-    2. If the 'docs' directory doesn't exist, creates a 'static' subdirectory within it.
-    3. If a race condition is detected, it retries the operation.
-
-    Args:
-        max_retries (int): Maximum number of retry attempts.
-        base_delay (float): Base delay between retries, in seconds.
-
-    Returns:
-        None
-
-    Raises:
-        PermissionError: If the program doesn't have write permissions.
-        OSError: If there's an issue creating the directory or removing its contents after all retries.
-    """
-    docs_directory = 'docs'
-    if not check_write_permissions(os.getcwd()):
-        raise PermissionError("No write permissions in the current directory.")
-    for attempt in range(max_retries):
-        try:
-            if not os.path.exists(docs_directory):
-                os.makedirs(docs_directory)
-                os.makedirs(os.path.join(docs_directory, 'static'))
-            else:
-                clear_directory(docs_directory)
-            return  # Success, exit the function
-        except FileExistsError:
-            # Directory was created by another process after we checked
-            continue
-        except FileNotFoundError:
-            # Directory was deleted by another process after we checked
-            continue
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-        # If we get here, we need to retry
-        time.sleep(base_delay * (2 ** attempt) * (random.random() + 0.5))
-    # If we've exhausted all retries, make one last attempt and let any exceptions propagate
-    if not os.path.exists(docs_directory):
-        os.makedirs(docs_directory)
-        os.makedirs(os.path.join(docs_directory, 'static'))
-    else:
-        clear_directory(docs_directory)
-
-def clear_directory(directory):
-    """
-    Clears the contents of the given directory, except for the 'static' subdirectory.
-
-    Args:
-        directory (str): Path to the directory to clear.
-
-    Raises:
-        OSError: If there's an issue removing the contents.
-    """
-    for item in os.listdir(directory):
-        item_path = os.path.join(directory, item)
-        if item == 'static':
-            continue
-        if os.path.islink(item_path) or os.path.isfile(item_path):
-            os.unlink(item_path)
-        elif os.path.isdir(item_path):
-            shutil.rmtree(item_path)
 
 def generate_file_pages(directory_tree: DirectoryTree, template_dir: str = 'templates', base_dir: str = ''):
     """

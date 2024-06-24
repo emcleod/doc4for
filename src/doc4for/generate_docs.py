@@ -1,16 +1,24 @@
 import os
-from doc4for.f90.generate_file_tree import (build_directory_tree,
-                                    create_docs_directory,
-                                    generate_file_pages)
+import logging
+from doc4for.f90.generate_file_tree import build_directory_tree, generate_file_pages
 from doc4for.f90.generate_module_tree import process_modules, generate_module_pages
-from doc4for.file_utils import find_files_by_extensions
+from doc4for.file_utils import find_files_by_extensions, create_docs_directory
 
-create_docs_directory()
-current_directory = os.getcwd()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
-fortran_files = find_files_by_extensions(current_directory)
-directories_and_files = build_directory_tree(fortran_files)
-generate_file_pages(directories_and_files)
-
-modules = process_modules(fortran_files)
-generate_module_pages(modules)
+if (create_docs_directory()):
+    current_directory = os.getcwd()
+    logger.info("Finding fortran files")
+    fortran_files = find_files_by_extensions(current_directory)
+    logger.info("Building pages")
+    directories_and_files = build_directory_tree(fortran_files)
+    generate_file_pages(directories_and_files)
+    modules = process_modules(fortran_files)
+    generate_module_pages(modules)
+else:
+    logger.info("Nothing written")
