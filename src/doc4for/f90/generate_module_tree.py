@@ -15,6 +15,7 @@ from fparser.one.block_statements import (
     Comment,
     Function,
 )
+from fparser.api import parse as fortran_parser
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
@@ -89,6 +90,7 @@ Fields:
     constants (Dict[str, Any]): All public constants defined in the module.
     functions (Dict[str, FunctionDetails]): All public functions in the module.
     subroutines (Dict[str, Any]): All public subroutines in the module.
+    parent classes of this type
     file_name (str): The name of the file containing the module.
     module_description (str): A description of the module's purpose.
 """
@@ -396,28 +398,27 @@ def process_modules(f90_files: List[Path]) -> List[ModuleData]:
                 if (comment_stack and comment_stack[0].content.startswith('!*') and comment_stack[-1].content.endswith('*!')):
                     module_data['module_description'] = '\n'.join(
                         process_comment(comment.content) for comment in comment_stack[1:-1] if process_comment(comment.content)) + '\n'
-                function_comments = []
+                comment_stack = []  # Reset comment_stack for the next entity
                 for item in child.content:
                     if isinstance(item, Comment):
-                        function_comments.append(item)
+                        comment_stack.append(item)
                     elif isinstance(item, Function):
                         function_name = item.name
                         attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
                         function_description: FunctionDescription = {
                             'attributes': attributes,
-                            'description': '', 
-                            'in': {}, 
-                            'out': {}, 
-                            'return': {}}
+                            'description': '',
+                            'in': {},
+                            'out': {},
+                            'return': {}
+                        }
                         populate_arguments(item, function_description)
-                        if function_comments:
-                            populate_argument_description(function_comments, function_description)
+                        if comment_stack:
+                            populate_argument_description(comment_stack, function_description)
                         module_data['functions'][function_name] = {
                             'details': function_description
                         }
-                        function_comments = []  # Reset for next function
-                    else:
-                        function_comments = []  # Reset for next function
+                        comment_stack = []  # Reset comment_stack for the next entity
                 modules.append(module_data)
                 comment_stack = []  # Reset comment_stack for the next module
     return modules

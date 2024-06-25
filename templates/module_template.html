@@ -39,6 +39,13 @@
       </p>
 
       <section class="module-description">
+        {% if module_data.derived_types %}
+          {% for derived_type_name, derived_type_data in module_data.derived_types.items() %}
+            {% if derived_type_data.parent_module %}
+              <p class="derived-from">Derived from: {{ derived_type_data.parent_module }}</p>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
         <p>{{ module_data.module_description }}</p>
       </section>
 
@@ -61,7 +68,7 @@
           <li><strong>{{ subroutine_name }}</strong></li>
           {% endfor %}
         </ul>
-        {% endif %} 
+        {% endif %}
       </section>
 
       <section class="functions-summary">
@@ -96,7 +103,7 @@
         <section class="function" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
           <h3 id="{{ function_name }}-heading" class="function-header">
             {%- if function_data.details.attributes -%}
-              <span class="function-attributes">{{ function_data.details.attributes|join(' ') }}</span>
+            <span class="function-attributes">{{ function_data.details.attributes|join(' ') }}</span>
             {%- endif -%}
             <span class="function-name">{{ function_name }}</span>
           </h3>
