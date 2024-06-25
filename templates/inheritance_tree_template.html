@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="menu-toggle">&#9776;</div>
+        <ul class="menu">
+            <li><a href="index.html">File View</a></li>
+            <li><a href="modules/module_index.html">Module View</a></li>
+            <li><a href="inheritance_tree.html">Inheritance Tree</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <aside></aside>
+        <div class="content">
+            <h1>{{ title }}</h1>
+            {% macro render_tree(node) %}
+                <li>
+                    {{ node.name }}
+                    {% if node.children %}
+                        <ul>
+                            {% for child in node.children %}
+                                {{ render_tree(child) }}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endmacro %}
+
+            <ul class="inheritance-tree">
+                {% for root_node in inheritance_tree %}
+                    {{ render_tree(root_node) }}
+                {% endfor %}
+            </ul>
+        </div>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const menu = document.querySelector('.menu');
+            const menuItems = document.querySelectorAll('.menu a');
+
+            // Toggle menu when hamburger icon is clicked
+            menuToggle.addEventListener('click', () => {
+                menu.classList.toggle('active');
+            });
+
+            // Close menu when a menu item is clicked
+            menuItems.forEach(item => {
+                item.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Prevent event from bubbling up to document
+                    menu.classList.remove('active');
+                });
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (event) => {
+                if (!event.target.closest('.menu') && !event.target.closest('.menu-toggle')) {
+                    menu.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

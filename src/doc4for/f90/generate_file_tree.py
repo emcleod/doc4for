@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 from typing import List, Union, Optional, Iterator
 from jinja2 import Environment, FileSystemLoader
-from doc4for.f90.generate_inheritance_tree import InheritanceTree
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -132,7 +131,7 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
         print(f'An unexpected error occurred: {e}')
         raise
 
-def generate_file_pages(directory_tree: DirectoryTree, inheritance_tree: InheritanceTree,
+def generate_file_pages(directory_tree: DirectoryTree,
                         template_dir: str = 'templates', base_dir: str = ''):
     """
     Generates HTML files for a given directory tree structure.
@@ -143,8 +142,6 @@ def generate_file_pages(directory_tree: DirectoryTree, inheritance_tree: Inherit
 
     Args:
         directory_tree (DirectoryTree): The directory tree structure to generate HTML files for.
-        inheritance_tree (InheritanceTree): A tree structure containing all types and their inheritance 
-        relationships.
         template_dir (str, optional): The directory containing HTML templates. Defaults to 'templates'.
         base_dir (str, optional): The base directory of the source files. Defaults to an empty string.
 
