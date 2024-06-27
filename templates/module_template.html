@@ -61,17 +61,6 @@
         {% endif %}
       </section>
 
-      <section class="subroutines-summary">
-        <h2>Subroutines</h2>
-        {% if module_data.subroutines %}
-        <ul>
-          {% for subroutine_name, subroutine_details in module_data.subroutines.items() %}
-          <li><strong>{{ subroutine_name }}</strong></li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-      </section>
-
       <section class="functions-summary">
         <h2>Functions</h2>
         {% if module_data.functions %}
@@ -90,6 +79,32 @@
                 <strong><a href="#function-{{ function_name }}">{{ function_name }}</a></strong>
                 <br>
                 <span class="function-description">{{ function_data.details.description }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </section>
+
+      <section class="subroutines-summary">
+        <h2>Subroutines</h2>
+        {% if module_data.subroutines %}
+        <table>
+          <thead>
+            <tr>
+              <th>Attributes</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+            <tr>
+              <td>{{ subroutine_data.details.attributes | join(', ') }}</td>
+              <td>
+                <strong><a href="#subroutine-{{ subroutine_name }}">{{ subroutine_name }}</a></strong>
+                <br>
+                <span class="subroutine-description">{{ subroutine_data.details.description }}</span>
               </td>
             </tr>
             {% endfor %}
@@ -146,6 +161,50 @@
         </section>
         {% endfor %}
       </section>
+
+      <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
+        <h2 id="subroutine-details-heading">Subroutine Details</h2>
+        {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+        <section class="subroutine" id="subroutine-{{ subroutine_name }}" aria-labelledby="{{ subroutine_name }}-heading">
+          <h3 id="{{ subroutine_name }}-heading" class="subroutine-header">
+            {%- if subroutine_data.details.attributes -%}
+            <span class="subroutine-attributes">{{ subroutine_data.details.attributes|join(' ') }}</span>
+            {%- endif -%}
+            <span class="subroutine-name">{{ subroutine_name }}</span>
+          </h3>
+          <div class="subroutine-body">
+            {% if subroutine_data.details %}
+            <p>{{ subroutine_data.details.description }}</p>
+            {% if subroutine_data.details.in %}
+            <p><strong>Inputs:</strong></p>
+            <ul class="subroutine-args">
+              {% for arg_name, arg_details in subroutine_data.details.in.items() %}
+              <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            {% if subroutine_data.details.out %}
+            <p><strong>Outputs:</strong></p>
+            <ul class="subroutine-args">
+              {% for arg_name, arg_details in subroutine_data.details.out.items() %}
+              <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            {% else %}
+            <p>No detailed information available for this subroutine.</p>
+            {% endif %}
+          </div>
+        </section>
+        {% endfor %}
+      </section>
+
       {% endif %}
     </article>
   </main>
