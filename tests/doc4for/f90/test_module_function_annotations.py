@@ -382,7 +382,6 @@ class TestFunctionAnnotations(TestCase):
         results = function['details']['return']
         self.assertEqual(results['res'], {'type': 'integer', 'description': '', 'dimension': ''})
 
-
     def test_in_annotation_name_mismatch_with_description(self):
         self.fs.create_file(
             '/fake/path/in_annotation.f90',

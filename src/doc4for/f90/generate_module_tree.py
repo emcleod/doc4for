@@ -8,12 +8,14 @@ import shutil
 import errno
 import time
 import random
-from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable
+from typing import is_typeddict
+from typing import List, Dict, Any, Tuple, Optional, TypedDict, Callable, Union
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
     Module,
     Comment,
     Function,
+    Subroutine
 )
 from fparser.api import parse as fortran_parser
 from fparser.one.typedecl_statements import TypeDeclarationStatement
@@ -72,13 +74,41 @@ Contains detailed information about a Fortran 90 function.
 Fields:
     details (FunctionDescription): Detailed description of the function.
 """
+
+SubroutineDescription = TypedDict('SubroutineDescription', {
+    'attributes': List[str],
+    'description': str,
+    'in': Dict[str, Argument],
+    'out': Dict[str, Argument]
+})
+"""
+Describes a Fortran 90 subroutines's attributes and arguments, including any
+description in the comments.
+
+Fields:
+    attributes (List[str]): A list of function attributes e.g. pure, elemental, etc.
+    description (str): A description of the function's purpose.
+    in (Dict[str, Argument]): The input (intent(in) or intent(inout) arguments to a function.
+    out (Dict[str, Argument]): The output (intent(out) or intent(inout)) arguments to a function.
+"""
+
+SubroutineDetails = TypedDict('SubroutineDetails', {
+    'details': SubroutineDescription
+})
+"""
+Contains detailed information about a Fortran 90 subroutine.
+
+Fields:
+    details (SubroutineDescription): Detailed description of the subroutine.
+"""
+
 #TODO add @version annotation
 #TODO add @author annotation
 ModuleData = TypedDict('ModuleData', {
     'module_name': str,
     'constants': Dict[str, Any],
     'functions': Dict[str, FunctionDetails],
-    'subroutines': Dict[str, Any],
+    'subroutines': Dict[str, SubroutineDetails],
     'file_name': str,
     'module_description': str
 })
@@ -89,8 +119,7 @@ Fields:
     module_name (str): The name of the module.
     constants (Dict[str, Any]): All public constants defined in the module.
     functions (Dict[str, FunctionDetails]): All public functions in the module.
-    subroutines (Dict[str, Any]): All public subroutines in the module.
-    parent classes of this type
+    subroutines (Dict[str, SubroutineDetails]): All public subroutines in the module.
     file_name (str): The name of the file containing the module.
     module_description (str): A description of the module's purpose.
 """
@@ -201,7 +230,7 @@ def add_dimension_info(dims: List[int]) -> str:
     return ' &times; '.join(dimension_parts)
 
 def populate_argument_info(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                dummy_arg_info: FunctionDescription,
+                dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
                 dims: Optional[List[int]] = None) -> None:
     """Populate the `Argument` type with information from the dummy argument
     declaration.
@@ -214,8 +243,8 @@ def populate_argument_info(decl: str, arg_type: str, intentin: bool, intentout: 
             (`intent(in)` or `intent(inout)`).
         intentout (bool): True if the argument is an output of the function
             (`intent(out)` or `intent(inout)`), excluding the return type.
-        dummy_arg_info (FunctionDescription): A dictionary containing information
-            about the function's arguments, which will be populated in this function.
+        dummy_arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary 
+            containing information about a function or subroutines's arguments, 
             The 'in' and 'out' keys will be populated in this function.
         dims (Optional[List[int]]): An optional list of integers representing the
             dimensions of the argument. An empty list or string are
@@ -255,7 +284,7 @@ def get_return_type(function: Any) -> str:
     """
     return function.typedecl.name if function.typedecl else 'Unknown'
 
-def populate_arguments(function: Any, arg_info: FunctionDescription) -> None:
+def populate_arguments(function: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     """Process the arguments and return type of a function.
 
     This function extracts information about the arguments and return type of a
@@ -265,11 +294,14 @@ def populate_arguments(function: Any, arg_info: FunctionDescription) -> None:
 
     Args:
         function: An `Function` extracted by the parser.
-        arg_info (FunctionDescription): A dictionary containing information about
-            the function's arguments and return type. It populates the following keys:
+        arg_info (Union[FunctionDescription, SubroutineDescription)]: A dictionary 
+        containing information about the function or subroutine's arguments and
+        return type for functions.
+        It populates the following keys:
             - 'in': A dictionary to store input argument information.
             - 'out': A dictionary to store output argument information.
-            - 'return': A dictionary to store the return type information.
+            - 'return': A dictionary to store the return type information if the input is a 
+            FunctionDescription.
 
     Returns:
         None: The function modifies the `arg_info` dictionary in-place.
@@ -289,7 +321,7 @@ def populate_arguments(function: Any, arg_info: FunctionDescription) -> None:
                 if not ':' in decl:  # it's a scalar or assumed size
                     if decl in args:
                         populate_argument_info(decl, arg_type, intentin, intentout, arg_info)
-                    elif decl == result:
+                    elif isinstance(arg_info, dict) and 'return' in arg_info and decl == result:
                         # TODO sort out dimension
                         arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
                 else:
@@ -297,16 +329,16 @@ def populate_arguments(function: Any, arg_info: FunctionDescription) -> None:
                     dim = dimensions[:-1].split(':')
                     if name in args:
                         populate_argument_info(name, arg_type, intentin, intentout, arg_info, dim)
-                    elif name == result:
+                    elif isinstance(arg_info, dict) and 'return' in arg_info and name == result:
                         # TODO sort out dimension
                         arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
 
-    if not arg_info['return']:
+    if isinstance(arg_info, dict) and 'return' in arg_info and not arg_info['return']:
         return_type = get_return_type(function)
         # TODO sort out dimension
         arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 
-def populate_argument_description(comments: List[Comment], arg_info: FunctionDescription) -> None:
+def populate_argument_description(comments: List[Comment], arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     """Populate the description field of arguments and return type using annotations in comments.
 
     This function processes a list of comments and looks for annotations starting with
@@ -316,8 +348,8 @@ def populate_argument_description(comments: List[Comment], arg_info: FunctionDes
 
     Args:
         comments (List[Comment]): A list of Comment objects containing the comments to be processed.
-        arg_info (FunctionDescription): A dictionary containing information about the function's
-            arguments and return type.
+        arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary containing information 
+        about the function or subroutines's arguments and return type if it is a function.
 
     Returns:
         None: The function modifies the `arg_info` dictionary in-place.
@@ -403,7 +435,7 @@ def process_modules(f90_files: List[Path]) -> List[ModuleData]:
                     if isinstance(item, Comment):
                         comment_stack.append(item)
                     elif isinstance(item, Function):
-                        function_name = item.name
+                        function_name: str = item.name
                         attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
                         function_description: FunctionDescription = {
                             'attributes': attributes,
@@ -417,6 +449,22 @@ def process_modules(f90_files: List[Path]) -> List[ModuleData]:
                             populate_argument_description(comment_stack, function_description)
                         module_data['functions'][function_name] = {
                             'details': function_description
+                        }
+                        comment_stack = []  # Reset comment_stack for the next entity
+                    elif isinstance(item, Subroutine):
+                        subroutine_name: str = item.name
+                        attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
+                        subroutine_description: SubroutineDescription = {
+                            'attributes': attributes,
+                            'description': '',
+                            'in': {},
+                            'out': {},
+                        }
+                        populate_arguments(item, subroutine_description)
+                        if comment_stack:
+                            populate_argument_description(comment_stack, subroutine_description)
+                        module_data['subroutines'][subroutine_name] = {
+                            'details': subroutine_description
                         }
                         comment_stack = []  # Reset comment_stack for the next entity
                 modules.append(module_data)

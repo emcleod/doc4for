@@ -1,0 +1,160 @@
+import unittest
+from pathlib import Path
+from pyfakefs.fake_filesystem_unittest import TestCase
+from doc4for.f90.generate_module_tree import process_modules
+
+class TestSubroutines(TestCase):
+    def setUp(self):
+        self.setUpPyfakefs()
+
+    def test_find_pure_subroutines(self):
+        self.fs.create_file(
+            '/fake/path/pure.f90',
+            contents='''\
+module pure_subroutines
+contains
+!!*
+! A test pure subroutine
+!*!
+pure subroutine test()
+end subroutine test
+end module pure_subroutines
+                            ''',
+        )
+        result = process_modules([Path('/fake/path/pure.f90')])
+
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertEqual(module['module_name'], 'pure_subroutines')
+        self.assertEqual(module['file_name'], '/fake/path/pure.f90')
+        self.assertIn('module_description', module)
+        self.assertEqual(len(module['subroutines']), 1)
+        self.assertIn('test', module['subroutines'])
+        subroutine = module['subroutines']['test']
+        self.assertIn('details', subroutine)
+        self.assertIn('attributes', subroutine['details'])
+        self.assertEqual(subroutine['details']['description'], 'A test pure subroutine')
+        attributes = subroutine['details']['attributes']
+        self.assertEqual(attributes, ['pure'])
+
+    def test_find_elemental_subroutines(self):
+        self.fs.create_file(
+            '/fake/path/elemental.f90',
+            contents='''\
+    module elemental_subroutines
+    contains
+    !!*
+    ! An elemental subroutine
+    !*!
+    elemental subroutine elem_sub(x, y)
+        real, intent(in) :: x
+        real, intent(out) :: y
+        y = x * 2
+    end subroutine elem_sub
+    end module elemental_subroutines
+                            ''',
+        )
+        result = process_modules([Path('/fake/path/elemental.f90')])
+
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertEqual(module['module_name'], 'elemental_subroutines')
+        self.assertIn('module_description', module)
+        self.assertEqual(len(module['subroutines']), 1)
+        self.assertIn('elem_sub', module['subroutines'])
+        subroutine = module['subroutines']['elem_sub']
+        self.assertIn('details', subroutine)
+        self.assertIn('attributes', subroutine['details'])
+        attributes = subroutine['details']['attributes']
+        self.assertEqual(attributes, ['elemental'])
+
+    def test_find_recursive_subroutines(self):
+        self.fs.create_file(
+            '/fake/path/recursive.f90',
+            contents='''\
+    module recursive_subroutines
+    contains
+    !!*
+    ! A recursive subroutine
+    !*!
+    recursive subroutine fact(n, res)
+        integer, intent(in) :: n
+        integer, intent(out) :: res
+        if (n <= 1) then
+            res = 1
+        else
+            call fact(n-1, res)
+            res = n * res
+        end if
+    end subroutine fact
+    end module recursive_subroutines
+                            ''',
+        )
+        result = process_modules([Path('/fake/path/recursive.f90')])
+
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertIn('module_description', module)
+        self.assertEqual(module['module_name'], 'recursive_subroutines')
+        self.assertEqual(len(module['subroutines']), 1)
+        self.assertIn('fact', module['subroutines'])
+        subroutine = module['subroutines']['fact']
+        self.assertIn('details', subroutine)
+        self.assertIn('attributes', subroutine['details'])
+        attributes = subroutine['details']['attributes']
+        self.assertEqual(attributes, ['recursive'])
+
+    def test_find_combined_subroutines(self):
+        self.fs.create_file(
+            '/fake/path/combined.f90',
+            contents='''\
+    module combined_subroutines
+    contains
+    !!*
+    ! A pure elemental subroutine
+    !*!
+    pure elemental subroutine square(x, y)
+        real, intent(in) :: x
+        real, intent(out) :: y
+        y = x * x
+    end subroutine square
+
+    !!*
+    ! A recursive subroutine
+    !*!
+    recursive subroutine fact(n, res)
+        integer, intent(in) :: n
+        integer, intent(out) :: res
+        if (n <= 1) then
+            res = 1
+        else
+            call fact(n-1, res)
+            res = n * res
+        end if
+    end subroutine fact
+    end module combined_subroutines
+                            ''',
+        )
+        result = process_modules([Path('/fake/path/combined.f90')])
+
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertIn('module_description', module)
+        self.assertEqual(module['module_name'], 'combined_subroutines')
+        self.assertEqual(len(module['subroutines']), 2)
+        self.assertIn('square', module['subroutines'])
+        square_subroutine = module['subroutines']['square']
+        self.assertIn('details', square_subroutine)
+        self.assertIn('attributes', square_subroutine['details'])
+        square_attributes = square_subroutine['details']['attributes']
+        self.assertEqual(square_attributes, ['pure', 'elemental'])
+
+        self.assertIn('fact', module['subroutines'])
+        fact_subroutine = module['subroutines']['fact']
+        self.assertIn('details', fact_subroutine)
+        self.assertIn('attributes', fact_subroutine['details'])
+        fact_attributes = fact_subroutine['details']['attributes']
+        self.assertEqual(fact_attributes, ['recursive'])
+
+if __name__ == '__main__':
+    unittest.main()
