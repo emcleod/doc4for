@@ -130,7 +130,7 @@ FileData = TypedDict('FileData', {
    'functions': Dict[str, FunctionDetails],
    'subroutines': Dict[str, SubroutineDetails],
    'types': Dict[str, int],  
-   'modules': Dict[str, int],  
+   'modules': List[str],  
    'programs': Dict[str, ProgramDetails],
    'public_interfaces': List[str],
    'use_statements': List[str],

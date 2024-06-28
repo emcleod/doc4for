@@ -9,7 +9,6 @@ class TestModules(TestCase):
         self.setUpPyfakefs()
 
     def test_find_modules_with_single_module(self):
-        # Create a fake Fortran file
         self.fs.create_file(
             '/fake/path/fortran_file.f90',
             contents='''\
@@ -20,11 +19,7 @@ module test
 end module test
 ''',
         )
-
-        # Call the function with the fake file
         result = extract_module_data([Path('/fake/path/fortran_file.f90')])
-
-        # Assertions
         self.assertEqual(len(result), 1)
         module = result[0]
         self.assertEqual(module['module_name'], 'test')
@@ -35,7 +30,6 @@ end module test
         self.assertEqual(module['subroutines'], {})
 
     def test_find_modules_with_multiple_modules(self):
-        # Create fake Fortran files
         self.fs.create_file(
             '/fake/path/file1.f90',
             contents='''\
@@ -57,11 +51,7 @@ module test2
 end module test2
         ''',
         )
-
-        # Call the function with fake files
         result = extract_module_data([Path('/fake/path/file1.f90'), Path('/fake/path/file2.f90')])
-
-        # Assertions
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['module_name'], 'test1')
         self.assertEqual(result[0]['file_name'], '/fake/path/file1.f90')
@@ -71,7 +61,6 @@ end module test2
         self.assertEqual(result[1]['module_description'], ' Module 2\n')
 
     def test_find_modules_with_no_modules(self):
-        # Create a fake Fortran file with no modules
         self.fs.create_file(
             '/fake/path/no_modules.f90',
             contents='''\
@@ -79,11 +68,7 @@ end module test2
 print *, 'Hello, world!'
         ''',
         )
-
-        # Call the function with the fake file
         result = extract_module_data([Path('/fake/path/no_modules.f90')])
-
-        # Assertions
         self.assertEqual(len(result), 0)
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ from doc4for.data_models import (
     is_function_description,
     is_subroutine_description
 )
-from doc4for.html_comment_utils import format_comment_for_html
+from doc4for.comment_utils import format_comment_for_html
 
 def extract_argument_type(item: Any) -> str:
     """Get the type of a dummy argument to a function from its `TypeDeclarationStatement`.

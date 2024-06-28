@@ -22,11 +22,7 @@ from doc4for.data_models import (
     ParameterDescription,
     ParameterDetails
 )
-from fparser.one.typedecl_statements import (
-    Real,
-    Integer
-)
-from doc4for.html_comment_utils import format_comment_for_html
+from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
 
 logging.basicConfig(level=logging.INFO)
@@ -169,7 +165,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             'functions': {},
             'subroutines': {},
             'types': {},
-            'modules': {},
+            'modules': [],
             'programs': {},
             'public_interfaces': [],
             'use_statements': []
@@ -178,7 +174,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             if isinstance(child, Comment):
                 comment_stack.append(child)
             elif isinstance(child, Module):
-                print (child)
+                file_data['modules'].append(child.name)
                 comment_stack = []
             elif isinstance(child, Function):
                 function_name: str = child.name
@@ -196,7 +192,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 file_data['functions'][function_name] = {
                     'details': function_description
                 }
-                comment_stack = []  # Reset comment_stack for the next entity
+                comment_stack = []  
             elif isinstance(child, Subroutine):
                 subroutine_name: str = child.name
                 attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
@@ -212,7 +208,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 file_data['subroutines'][subroutine_name] = {
                     'details': subroutine_description
                 }
-                comment_stack = []  # Reset comment_stack for the next entity
+                comment_stack = []  
             elif isinstance(child, Program):
                 program_name = child.name
                 for decl in child.content:
@@ -227,27 +223,10 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                         }
                         comment_stack = []  
                 comment_stack = []  
-            files.append(file_data)
-            comment_stack = []  
+            #TODO file_description needs to be filled in using only the first comments
+        files.append(file_data)
+        comment_stack = []  
     return files
-
-def is_doc4for_comment(comment_stack: List[Comment]) -> bool:
-    if not comment_stack:
-        return False
-    return comment_stack[0].content.startswith('!*') and comment_stack[-1].content.rstrip().endswith('*!')
-
-def format_comments(comment_stack: List[Comment]) -> str:
-    formatted_comments = []
-    for comment in comment_stack:
-        content = comment.content.strip()
-        if content.startswith('!*'):
-            content = content[2:].strip()
-        elif content.startswith('!'):
-            content = content[1:].strip()
-        if content.endswith('*!'):
-            content = content[:-2].rstrip()
-        formatted_comments.append(format_comment_for_html(content))
-    return '\n'.join(formatted_comments) + '\n'
 
 def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescription:
     item_str = decl.item.line
