@@ -1,6 +1,6 @@
 import unittest
 from typing import Dict, Any
-from doc4for.f90.generate_inheritance_tree import transform_inheritance_tree
+from doc4for.f90.generate_type_tree import transform_inheritance_tree
 
 class TestTransformInheritanceTree(unittest.TestCase):
     def test_empty_tree(self):

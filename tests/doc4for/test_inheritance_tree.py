@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_inheritance_tree import generate_inheritance_tree  
+from doc4for.f90.generate_type_tree import generate_inheritance_tree  
 
 class TestInheritanceTreePopulation(TestCase):
     def setUp(self):

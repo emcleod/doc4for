@@ -36,7 +36,6 @@ def process_type(child: Any, tree: InheritanceTree) -> None:
 def explore_node(node: Any, tree: InheritanceTree) -> None:
     if hasattr(node, 'content'):
         for child in node.content:
-            print (child, type(child))
             if isinstance(child, Type):
                 process_type(child, tree)
             else:

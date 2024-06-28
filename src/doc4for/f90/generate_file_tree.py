@@ -201,12 +201,16 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 file_data['subroutines'][subroutine_name] = subroutine_description
                 comment_stack = []  
             elif isinstance(child, Program):
+                # TODO get information about the modules that are used and any functions / subroutines that 
+                # are called. This can then be listed and linked to in the module page
                 program_details: ProgramDetails = {
                     'program_name': child.name,
                     'file_name': f90_file_str,
                     'program_description': ''
                 }
-                program_name = child.name
+                if is_doc4for_comment(comment_stack):
+                    program_details['program_description'] = format_comments(comment_stack)
+                file_data['programs'][child.name] = program_details
                 comment_stack = []  
         #TODO file_description needs to be filled in using only the first comments
         files.append(file_data)
@@ -214,7 +218,9 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
     return files
 
 def generate_file_pages(directory_tree: DirectoryTree,
-                        template_dir: str = 'templates', base_dir: str = ''):
+                        file_data: Dict[str, FileData],
+                        template_dir: str = 'templates', 
+                        base_dir: str = ''):
     """
     Generates HTML files for a given directory tree structure.
 
@@ -260,7 +266,8 @@ def generate_file_pages(directory_tree: DirectoryTree,
                 file=file_name,
                 relative_path=relative_path,
                 is_index=False,
-                content_data=''
+                content_data='',
+                file_data = file_data[node]
             )
             # Write the output
             output_path = target_directory / f'{file_path.stem}.html'
@@ -281,7 +288,8 @@ def generate_file_pages(directory_tree: DirectoryTree,
         relative_path='',
         is_index=True,
         file='',
-        code=''
+        code='',
+        file_data = {}
     )
     with open('docs/index.html', 'w', encoding='utf-8') as file:
         file.write(index_output)

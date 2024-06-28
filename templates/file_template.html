@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if is_index %}Code Documentation{% else %}{{ file }}{% endif %}</title>
+  <title>{% if is_index %}Code Documentation{% else %}{{ file_data.file_name }}{% endif %}</title>
   <link rel="stylesheet" href="{{ relative_path }}static/css/styles.css">
 </head>
 
@@ -47,45 +47,187 @@
       </nav>
     </aside>
 
-    <!-- Main content area -->
     <article class="content">
       {% if is_index %}
         <h1>Welcome to your code!</h1>
         <p>{{ content_data }}</p>
       {% else %}
-        <h1>{{ file }}</h1>
-        <pre><code class="fortran">{{ code }}</code></pre>
+        <h1>File: {{ file_data.file_name }}</h1>
+        
+        <section class="file-description">
+          <h2>Description</h2>
+          <p>{{ file_data.file_description or "No description available." }}</p>
+        </section>
+
+        {% if file_data.modules %}
+        <section class="modules">
+          <h2>Modules</h2>
+          <ul>
+            {% for module in file_data.modules %}
+              <li><a href="{{ relative_path }}modules/{{ module }}.html">{{ module }}</a></li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+
+        {% if file_data.use_statements %}
+        <section class="use-statements">
+          <h2>Use Statements</h2>
+          <ul>
+            {% for statement in file_data.use_statements %}
+              <li>{{ statement }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+
+        {% if file_data.functions %}
+        <section class="function-details" aria-labelledby="function-details-heading">
+          <h2 id="function-details-heading">Function Details</h2>
+          {% for function_name, function_data in file_data.functions.items() %}
+          <section class="function" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
+            <h3 id="{{ function_name }}-heading" class="function-header">
+              {%- if function_data.attributes -%}
+              <span class="function-attributes">{{ function_data.attributes|join(' ') }}</span>
+              {%- endif -%}
+              <span class="function-name">{{ function_name }}</span>
+            </h3>
+            <div class="function-body">
+              {% if function_data %}
+              <p>{{ function_data.description }}</p>
+              {% if function_data.in %}
+              <p><strong>Inputs:</strong></p>
+              <ul class="function-args">
+                {% for arg_name, arg_details in function_data.in.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if function_data.return %}
+              <p><strong>Returns:</strong></p>
+              <ul class="function-args">
+                {% for return_name, return_details in function_data.return.items() %}
+                <li><span class="arg-name">{{ return_name }}: {{ return_details.type }}</span>
+                  {% if return_details.dimension %}({{ return_details.dimension }}){% endif %}
+                  {% if return_details.description %}- {{ return_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% else %}
+              <p>No detailed information available for this function.</p>
+              {% endif %}
+            </div>
+          </section>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if file_data.subroutines %}
+        <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
+          <h2 id="subroutine-details-heading">Subroutine Details</h2>
+          {% for subroutine_name, subroutine_data in file_data.subroutines.items() %}
+          <section class="subroutine" id="subroutine-{{ subroutine_name }}" aria-labelledby="{{ subroutine_name }}-heading">
+            <h3 id="{{ subroutine_name }}-heading" class="subroutine-header">
+              {%- if subroutine_data.attributes -%}
+              <span class="subroutine-attributes">{{ subroutine_data.attributes|join(' ') }}</span>
+              {%- endif -%}
+              <span class="subroutine-name">{{ subroutine_name }}</span>
+            </h3>
+            <div class="subroutine-body">
+              {% if subroutine_data %}
+              <p>{{ subroutine_data.description }}</p>
+              {% if subroutine_data.in %}
+              <p><strong>Inputs:</strong></p>
+              <ul class="subroutine-args">
+                {% for arg_name, arg_details in subroutine_data.in.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if subroutine_data.out %}
+              <p><strong>Outputs:</strong></p>
+              <ul class="subroutine-args">
+                {% for arg_name, arg_details in subroutine_data.out.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% else %}
+              <p>No detailed information available for this subroutine.</p>
+              {% endif %}
+            </div>
+          </section>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if file_data.programs %}
+        <section class="program-details">
+          <h2>Program Details</h2>
+          {% for program_name, program_data in file_data.programs.items() %}
+            <div class="program" id="program-{{ program_name }}">
+              <h3>{{ program_name }}</h3>
+              <p>{{ program_data.program_description }}</p>
+            </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        <section class="code-section">
+          <button class="expand-button" onclick="toggleCode()">Show Code</button>
+          <pre class="code-content" style="display: none;"><code class="fortran">{{ code }}</code></pre>
+        </section>
+
       {% endif %}
     </article>
   </main>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const menuToggle = document.querySelector('.menu-toggle');
       const menu = document.querySelector('.menu');
       const menuItems = document.querySelectorAll('.menu a');
-    
-      // Toggle menu when hamburger icon is clicked
+
       menuToggle.addEventListener('click', () => {
         menu.classList.toggle('active');
       });
-    
-      // Close menu when a menu item is clicked
+
       menuItems.forEach(item => {
         item.addEventListener('click', (event) => {
-          event.stopPropagation(); // Prevent event from bubbling up to document
+          event.stopPropagation();
           menu.classList.remove('active');
         });
       });
-    
-      // Close menu when clicking outside
+
       document.addEventListener('click', (event) => {
         if (!event.target.closest('.menu') && !event.target.closest('.menu-toggle')) {
           menu.classList.remove('active');
         }
       });
     });
-    </script>
+
+    function toggleCode() {
+      const codeContent = document.querySelector('.code-content');
+      const expandButton = document.querySelector('.expand-button');
+      if (codeContent.style.display === 'none') {
+        codeContent.style.display = 'block';
+        expandButton.textContent = 'Hide Code';
+      } else {
+        codeContent.style.display = 'none';
+        expandButton.textContent = 'Show Code';
+      }
+    }
+  </script>
 </body>
 
 </html>
