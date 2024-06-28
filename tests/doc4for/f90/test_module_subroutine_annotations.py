@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestSubroutineAnnotations(TestCase):
     def setUp(self):
@@ -24,7 +24,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
@@ -49,7 +49,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
@@ -76,7 +76,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
@@ -103,7 +103,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
@@ -130,7 +130,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']
@@ -156,7 +156,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']
@@ -185,7 +185,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
@@ -212,7 +212,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
@@ -238,7 +238,7 @@ class TestSubroutineAnnotations(TestCase):
     end module subroutine_inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']

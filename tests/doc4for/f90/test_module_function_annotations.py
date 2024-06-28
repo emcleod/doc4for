@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestFunctionAnnotations(TestCase):
     def setUp(self):
@@ -26,7 +26,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -52,7 +52,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -82,7 +82,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -107,7 +107,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -137,7 +137,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -164,7 +164,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -195,7 +195,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -221,7 +221,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -251,7 +251,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -279,7 +279,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -315,7 +315,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -343,7 +343,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -375,7 +375,7 @@ class TestFunctionAnnotations(TestCase):
     end module return_type_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/return_type.f90')])
+        result = extract_module_data([Path('/fake/path/return_type.f90')])
 
         module = result[0]
         function = module['functions']['test_return_type']
@@ -400,7 +400,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -430,7 +430,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -455,7 +455,7 @@ class TestFunctionAnnotations(TestCase):
     end module in_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/in_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/in_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_in_annotation']
@@ -486,7 +486,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -513,7 +513,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -546,7 +546,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -575,7 +575,7 @@ class TestFunctionAnnotations(TestCase):
     end module out_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/out_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/out_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_out_annotation']
@@ -606,7 +606,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -635,7 +635,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -672,7 +672,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -702,7 +702,7 @@ class TestFunctionAnnotations(TestCase):
     end module inout_annotation_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_annotation.f90')])
+        result = extract_module_data([Path('/fake/path/inout_annotation.f90')])
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
@@ -735,7 +735,7 @@ class TestFunctionAnnotations(TestCase):
     end module return_type_module
                             ''',
         )
-        result = process_modules([Path('/fake/path/return_type.f90')])
+        result = extract_module_data([Path('/fake/path/return_type.f90')])
 
         module = result[0]
         function = module['functions']['test_return_type']

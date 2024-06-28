@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestSubroutines(TestCase):
     def setUp(self):
@@ -21,7 +21,7 @@ end subroutine test
 end module pure_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/pure.f90')])
+        result = extract_module_data([Path('/fake/path/pure.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -54,7 +54,7 @@ end module pure_subroutines
     end module elemental_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/elemental.f90')])
+        result = extract_module_data([Path('/fake/path/elemental.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -90,7 +90,7 @@ end module pure_subroutines
     end module recursive_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/recursive.f90')])
+        result = extract_module_data([Path('/fake/path/recursive.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -135,7 +135,7 @@ end module pure_subroutines
     end module combined_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/combined.f90')])
+        result = extract_module_data([Path('/fake/path/combined.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]

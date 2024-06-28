@@ -1,8 +1,33 @@
 import os
 import logging
+import re
 from pathlib import Path
-from typing import List, Union, Optional, Iterator
+from typing import List, Union, Optional, Iterator, Any, Dict
 from jinja2 import Environment, FileSystemLoader
+from fparser.api import parse as fortran_parser  # type: ignore
+from fparser.one.block_statements import (
+    Module,
+    Comment,
+    Function,
+    Subroutine,
+    Program
+)
+from fparser.one.typedecl_statements import TypeDeclarationStatement
+from fparser.one.statements import Parameter
+from doc4for.data_models import (
+    FileData, 
+    ProgramDetails,
+    FunctionDescription,
+    SubroutineDescription,
+    ParameterDescription,
+    ParameterDetails
+)
+from fparser.one.typedecl_statements import (
+    Real,
+    Integer
+)
+from doc4for.html_comment_utils import format_comment_for_html
+from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -130,6 +155,116 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
     except Exception as e:
         print(f'An unexpected error occurred: {e}')
         raise
+
+def extract_file_data(f90_files: List[Path]) -> List[FileData]:
+    files: List[FileData] = []
+    for f90_file in f90_files:
+        comment_stack: List[Comment] = []
+        f90_file_str = os.fspath(f90_file)
+        tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
+        file_data: FileData = {
+            'file_name': f90_file_str,
+            'file_description': '',
+            'constants': {},
+            'functions': {},
+            'subroutines': {},
+            'types': {},
+            'modules': {},
+            'programs': {},
+            'public_interfaces': [],
+            'use_statements': []
+        }
+        for child in tree.content:
+            if isinstance(child, Comment):
+                comment_stack.append(child)
+            elif isinstance(child, Module):
+                print (child)
+                comment_stack = []
+            elif isinstance(child, Function):
+                function_name: str = child.name
+                attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
+                function_description: FunctionDescription = {
+                    'attributes': attributes,
+                    'description': '',
+                    'in': {},
+                    'out': {},
+                    'return': {}
+                }
+                update_arguments_with_parsed_data(child, function_description)
+                if comment_stack:
+                    update_arguments_with_comment_data(comment_stack, function_description)
+                file_data['functions'][function_name] = {
+                    'details': function_description
+                }
+                comment_stack = []  # Reset comment_stack for the next entity
+            elif isinstance(child, Subroutine):
+                subroutine_name: str = child.name
+                attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
+                subroutine_description: SubroutineDescription = {
+                    'attributes': attributes,
+                    'description': '',
+                    'in': {},
+                    'out': {},
+                }
+                update_arguments_with_parsed_data(child, subroutine_description)
+                if comment_stack:
+                    update_arguments_with_comment_data(comment_stack, subroutine_description)
+                file_data['subroutines'][subroutine_name] = {
+                    'details': subroutine_description
+                }
+                comment_stack = []  # Reset comment_stack for the next entity
+            elif isinstance(child, Program):
+                program_name = child.name
+                for decl in child.content:
+                    if isinstance(decl, Comment) and decl.content:
+                        comment_stack.append(decl)
+                    if isinstance(decl, TypeDeclarationStatement) and 'parameter' in decl.attrspec:
+                        param_info = extract_parameter_info(decl)
+                        if is_doc4for_comment(comment_stack):
+                            param_info['description'] = format_comments(comment_stack)
+                        file_data['constants'][param_info['name']] = {
+                            'details': param_info
+                        }
+                        comment_stack = []  
+                comment_stack = []  
+            files.append(file_data)
+            comment_stack = []  
+    return files
+
+def is_doc4for_comment(comment_stack: List[Comment]) -> bool:
+    if not comment_stack:
+        return False
+    return comment_stack[0].content.startswith('!*') and comment_stack[-1].content.rstrip().endswith('*!')
+
+def format_comments(comment_stack: List[Comment]) -> str:
+    formatted_comments = []
+    for comment in comment_stack:
+        content = comment.content.strip()
+        if content.startswith('!*'):
+            content = content[2:].strip()
+        elif content.startswith('!'):
+            content = content[1:].strip()
+        if content.endswith('*!'):
+            content = content[:-2].rstrip()
+        formatted_comments.append(format_comment_for_html(content))
+    return '\n'.join(formatted_comments) + '\n'
+
+def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescription:
+    item_str = decl.item.line
+    name_match = re.search(r'::\s*(\w+)\s*=', item_str)
+    if name_match:
+        name = name_match.group(1)
+        value = item_str.split('=', 1)[1].strip()
+    else:
+        # Handle cases where the parameter declaration format is not recognized
+        name = ''
+        value = ''
+    return {
+        'description': '',  
+        'type': str(decl.name),
+        'name': name.strip(),
+        'value': value.strip()
+    }
 
 def generate_file_pages(directory_tree: DirectoryTree,
                         template_dir: str = 'templates', base_dir: str = ''):

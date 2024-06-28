@@ -1,7 +1,7 @@
 import os
 import logging
 from doc4for.f90.generate_file_tree import build_directory_tree, generate_file_pages
-from doc4for.f90.generate_module_tree import process_modules, generate_module_pages
+from doc4for.f90.generate_module_tree import extract_module_data, generate_module_pages
 from doc4for.file_utils import find_files_by_extensions, create_docs_directory
 from doc4for.f90.generate_inheritance_tree import generate_inheritance_tree, generate_inheritance_tree_page
 
@@ -21,7 +21,7 @@ if (create_docs_directory()):
     logger.info("Building pages")
     directories_and_files = build_directory_tree(fortran_files)
     generate_file_pages(directories_and_files)
-    modules = process_modules(fortran_files)
+    modules = extract_module_data(fortran_files)
     generate_module_pages(modules)
     generate_inheritance_tree_page(inheritance_tree)
 else:

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestSubroutineArguments(TestCase):
     def setUp(self):
@@ -24,7 +24,7 @@ class TestSubroutineArguments(TestCase):
     end module scalar_args_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/scalar_args.f90')])
+        result = extract_module_data([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -59,7 +59,7 @@ class TestSubroutineArguments(TestCase):
     end module scalar_args_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/scalar_args.f90')])
+        result = extract_module_data([Path('/fake/path/scalar_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -93,7 +93,7 @@ class TestSubroutineArguments(TestCase):
     end module array_args_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/array_args.f90')])
+        result = extract_module_data([Path('/fake/path/array_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -127,7 +127,7 @@ class TestSubroutineArguments(TestCase):
     end module mixed_args_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/mixed_args.f90')])
+        result = extract_module_data([Path('/fake/path/mixed_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -160,7 +160,7 @@ class TestSubroutineArguments(TestCase):
     end module inout_args_subroutines
                             ''',
         )
-        result = process_modules([Path('/fake/path/inout_args.f90')])
+        result = extract_module_data([Path('/fake/path/inout_args.f90')])
 
         self.assertEqual(len(result), 1)
         module = result[0]

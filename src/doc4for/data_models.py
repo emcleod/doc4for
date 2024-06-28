@@ -79,11 +79,28 @@ Fields:
     details (SubroutineDescription): Detailed description of the subroutine.
 """
 
+ParameterDescription = TypedDict('ParameterDescription', {
+    'description': str,
+    'type': 'str',
+    'name': 'str',
+    'value': 'str'
+})
+
+ParameterDetails = TypedDict('ParameterDetails', {
+    'details': ParameterDescription
+})
+"""
+Contains detailed information about a Fortran 90 subroutine.
+
+Fields:
+    details (SubroutineDescription): Detailed description of the subroutine.
+"""
+
 #TODO add @version annotation
 #TODO add @author annotation
 ModuleData = TypedDict('ModuleData', {
     'module_name': str,
-    'constants': Dict[str, Any],
+    'constants': Dict[str, ParameterDetails],
     'functions': Dict[str, FunctionDetails],
     'subroutines': Dict[str, SubroutineDetails],
     'file_name': str,
@@ -100,6 +117,24 @@ Fields:
     file_name (str): The name of the file containing the module.
     module_description (str): A description of the module's purpose.
 """
+
+ProgramDetails = TypedDict('ProgramDetails', {
+    'name': str,
+    'description': str,
+})
+
+FileData = TypedDict('FileData', {
+   'file_name': str,
+   'file_description': str,
+   'constants': Dict[str, ParameterDetails],
+   'functions': Dict[str, FunctionDetails],
+   'subroutines': Dict[str, SubroutineDetails],
+   'types': Dict[str, int],  
+   'modules': Dict[str, int],  
+   'programs': Dict[str, ProgramDetails],
+   'public_interfaces': List[str],
+   'use_statements': List[str],
+})
 
 def is_function_description(description: Union[FunctionDescription, SubroutineDescription]) -> TypeGuard[FunctionDescription]:
     return isinstance(description, dict) and 'return' in description

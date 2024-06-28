@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_module_tree import process_modules
+from doc4for.f90.generate_module_tree import extract_module_data
 
 
 class TestModules(TestCase):
@@ -22,7 +22,7 @@ end module test
         )
 
         # Call the function with the fake file
-        result = process_modules([Path('/fake/path/fortran_file.f90')])
+        result = extract_module_data([Path('/fake/path/fortran_file.f90')])
 
         # Assertions
         self.assertEqual(len(result), 1)
@@ -59,7 +59,7 @@ end module test2
         )
 
         # Call the function with fake files
-        result = process_modules([Path('/fake/path/file1.f90'), Path('/fake/path/file2.f90')])
+        result = extract_module_data([Path('/fake/path/file1.f90'), Path('/fake/path/file2.f90')])
 
         # Assertions
         self.assertEqual(len(result), 2)
@@ -81,7 +81,7 @@ print *, 'Hello, world!'
         )
 
         # Call the function with the fake file
-        result = process_modules([Path('/fake/path/no_modules.f90')])
+        result = extract_module_data([Path('/fake/path/no_modules.f90')])
 
         # Assertions
         self.assertEqual(len(result), 0)
