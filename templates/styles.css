@@ -93,6 +93,25 @@ section:not(.module-description) {
   color: #555555;
 }
 
+.parameters-summary th:first-child,
+.functions-summary th:first-child,
+.subroutines-summary th:first-child,
+.parameters-summary td:first-child,
+.functions-summary td:first-child,
+.subroutines-summary td:first-child {
+  width: 25%;
+}
+
+.parameters-summary th:nth-child(2),
+.parameters-summary td:nth-child(2) {
+  width: 50%;
+}
+
+.parameters-summary th:nth-child(3),
+.parameters-summary td:nth-child(3) {
+  width: 25%;
+}
+
 .function-header,
 .subroutine-header,
 .parameter-header {

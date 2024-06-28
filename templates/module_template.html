@@ -53,14 +53,35 @@
       <section class="parameters-summary">
         <h2>Parameters</h2>
         {% if module_data.parameters %}
-        <ul>
-          {% for constant_name, constant_value in module_data.parameters.items() %}
-          <li><strong>{{ constant_name }}</strong>: {{ constant_value }}</li>
-          {% endfor %}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for param_name, param_data in module_data.parameters.items() %}
+            <tr>
+              <td>{{ param_data.type }}</td>
+              <td>
+                <strong>{{ param_name }}</strong>
+                {% if param_data.description %}
+                <br>
+                <span class="parameter-description">{{ param_data.description }}</span>
+                {% endif %}
+              </td>
+              <td>{{ param_data.value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No parameters defined in this module.</p>
         {% endif %}
       </section>
-
+      
       <section class="functions-summary">
         <h2>Functions</h2>
         {% if module_data.functions %}
