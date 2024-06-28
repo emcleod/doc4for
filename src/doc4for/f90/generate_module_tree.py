@@ -6,6 +6,7 @@ import shutil
 import errno
 import time
 import random
+import re
 from typing import List, Any
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
@@ -14,15 +15,17 @@ from fparser.one.block_statements import (
     Function,
     Subroutine
 )
+from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 from doc4for.file_utils import check_write_permissions
 from doc4for.data_models import (
     FunctionDescription,
     SubroutineDescription,
+    ParameterDescription,
     ModuleData,
 )
-from doc4for.comment_utils import format_comment_for_html
+from doc4for.comment_utils import format_comment_for_html, is_doc4for_comment, format_comments
 from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
 
 def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
@@ -37,7 +40,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
             elif isinstance(child, Module):
                 module_data: ModuleData = {
                     'module_name': child.name,
-                    'constants': {},
+                    'parameters': {},
                     'functions': {},
                     'subroutines': {},
                     'file_name': f90_file_str,
@@ -64,10 +67,8 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                         update_arguments_with_parsed_data(item, function_description)
                         if comment_stack:
                             update_arguments_with_comment_data(comment_stack, function_description)
-                        module_data['functions'][function_name] = {
-                            'details': function_description
-                        }
-                        comment_stack = []  # Reset comment_stack for the next entity
+                        module_data['functions'][function_name] = function_description
+                        comment_stack = []  
                     elif isinstance(item, Subroutine):
                         subroutine_name: str = item.name
                         attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
@@ -80,13 +81,34 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                         update_arguments_with_parsed_data(item, subroutine_description)
                         if comment_stack:
                             update_arguments_with_comment_data(comment_stack, subroutine_description)
-                        module_data['subroutines'][subroutine_name] = {
-                            'details': subroutine_description
-                        }
-                        comment_stack = []  # Reset comment_stack for the next entity
+                        module_data['subroutines'][subroutine_name] = subroutine_description
+                        comment_stack = []  
+                    elif isinstance(item, TypeDeclarationStatement) and 'parameter' in item.attrspec:
+                        param_info = extract_parameter_info(item)
+                        if is_doc4for_comment(comment_stack):
+                            param_info['description'] = format_comments(comment_stack)
+                            module_data['parameters'][param_info['name']] = param_info                        
+                        comment_stack = []  
                 modules.append(module_data)
-                comment_stack = []  # Reset comment_stack for the next module
+                comment_stack = []  
     return modules
+
+def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescription:
+    item_str = decl.item.line
+    name_match = re.search(r'::\s*(\w+)\s*=', item_str)
+    if name_match:
+        name = name_match.group(1)
+        value = item_str.split('=', 1)[1].strip()
+    else:
+        # Handle cases where the parameter declaration format is not recognized
+        name = ''
+        value = ''
+    return {
+        'description': '',  
+        'type': str(decl.name),
+        'name': name.strip(),
+        'value': value.strip()
+    }
 
 def create_modules_directory(max_retries=5, base_delay=0.1):
     """
@@ -176,44 +198,3 @@ def generate_module_pages(modules: List[ModuleData]):
         )
         with open(os.path.join('docs', 'modules', f'{module["module_name"]}.html'), 'w', encoding='utf-8') as file:
             file.write(output)
-
-# 1. Subroutine vs. Function:
-#    - You can differentiate between subroutines and functions. Subroutines do not have a return value, while functions do.
-#    - This information can be obtained from the `typedecl` attribute of the `Function` object. If `typedecl` is present, it indicates a function; otherwise, it's a subroutine.
-
-# 2. Module Procedures:
-#    - You can identify module procedures, which are functions or subroutines defined within a module.
-#    - Module procedures have a `parent` attribute that refers to the module in which they are defined.
-
-# 3. Attributes:
-#    - In addition to `intent`, you can extract other attributes of variables and arguments, such as `allocatable`, `dimension`, `pointer`, `target`, etc.
-#    - These attributes can be found in the `attrspec` attribute of the `TypeDeclarationStatement` object.
-
-# 4. Assumed-Shape Arrays:
-#    - Assumed-shape arrays are declared with dimensions specified using colons (e.g., `array(:)`).
-#    - You can identify assumed-shape arrays by checking for the presence of colons in the dimension specifier.
-
-# 5. Allocatable Arrays:
-#    - Allocatable arrays are declared with the `allocatable` attribute.
-#    - You can check for the presence of the `allocatable` attribute in the `attrspec` attribute of the `TypeDeclarationStatement` object.
-
-# 6. Assumed-Size Arrays:
-#    - Assumed-size arrays are declared with an asterisk as the last dimension (e.g., `array(10,*)`).
-#    - You can identify assumed-size arrays by checking for the presence of an asterisk in the last dimension specifier.
-
-# 7. Optional Arguments:
-#    - Optional arguments are declared with the `optional` attribute.
-#    - You can check for the presence of the `optional` attribute in the `attrspec` attribute of the `TypeDeclarationStatement` object.
-
-# 8. Derived Types:
-#    - Derived types are user-defined types in Fortran.
-#    - You can identify derived type declarations by checking for the presence of a `Type` object in the parsed code.
-
-# 9. Interfaces and Generic Procedures:
-#    - Interfaces and generic procedures provide a way to overload procedures with different argument types or define a set of procedures with a common name.
-#    - You can identify interfaces and generic procedures by checking for the presence of an `Interface` object in the parsed code.
-
-# 10. Use Statements and External Procedures:
-#     - Use statements indicate modules that are being used within a program unit.
-#     - External procedures are procedures that are defined outside the current program unit and are referenced using the `external` attribute.
-#     - You can identify use statements and external procedures by checking for the presence of `Use` and `External` objects in the parsed code.

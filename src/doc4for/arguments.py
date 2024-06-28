@@ -10,8 +10,7 @@ from doc4for.data_models import (
     Argument,
     FunctionDescription,
     SubroutineDescription,
-    is_function_description,
-    is_subroutine_description
+    is_function_description
 )
 from doc4for.comment_utils import format_comment_for_html
 

@@ -30,7 +30,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
 
@@ -56,7 +56,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
         #TODO
@@ -86,7 +86,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
 
     def test_in_annotation_type_mismatch(self):
@@ -111,7 +111,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         #TODO
         # with self.assertLogs('root', level='WARNING') as cm:
@@ -141,9 +141,9 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
 
     def test_out_annotation_name_mismatch(self):
@@ -168,7 +168,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
         #TODO
@@ -199,7 +199,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
 
     def test_out_annotation_type_mismatch(self):
@@ -225,7 +225,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         #TODO
         # with self.assertLogs('root', level='WARNING') as cm:
@@ -255,8 +255,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
 
@@ -283,8 +283,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
@@ -319,8 +319,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
 
@@ -347,8 +347,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'integer', 'description': '', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -379,7 +379,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_return_type']
-        results = function['details']['return']
+        results = function['return']
         self.assertEqual(results['res'], {'type': 'integer', 'description': '', 'dimension': ''})
 
     def test_in_annotation_name_mismatch_with_description(self):
@@ -404,7 +404,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
         #TODO
@@ -434,7 +434,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
 
     def test_in_annotation_type_mismatch_with_description(self):
@@ -459,7 +459,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_in_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         #TODO
         # with self.assertLogs('root', level='WARNING') as cm:
@@ -490,9 +490,9 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': 'The second variable', 'dimension': ''})
 
     def test_out_annotation_name_mismatch_with_description(self):
@@ -517,7 +517,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
@@ -550,9 +550,9 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        inputs = function['details']['in']
+        inputs = function['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': 'The second variable', 'dimension': ''})
 
     def test_out_annotation_type_mismatch_with_description(self):
@@ -579,7 +579,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_out_annotation']
-        outputs = function['details']['out']
+        outputs = function['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': 'The second variable', 'dimension': ''})
         #TODO
         # with self.assertLogs('root', level='WARNING') as cm:
@@ -610,8 +610,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': 'The second variable', 'dimension': ''})
@@ -639,8 +639,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
@@ -676,8 +676,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': 'The second variable', 'dimension': ''})
@@ -706,8 +706,8 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_inout_annotation']
-        inputs = function['details']['in']
-        outputs = function['details']['out']
+        inputs = function['in']
+        outputs = function['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'integer', 'description': 'The second variable', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': 'The first variable', 'dimension': ''})
@@ -739,7 +739,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module['functions']['test_return_type']
-        results = function['details']['return']
+        results = function['return']
         self.assertEqual(results['res'], {'type': 'integer', 'description': 'The result', 'dimension': ''})
 
 if __name__ == '__main__':

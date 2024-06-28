@@ -31,10 +31,9 @@ end module pure_subroutines
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('test', module['subroutines'])
         subroutine = module['subroutines']['test']
-        self.assertIn('details', subroutine)
-        self.assertIn('attributes', subroutine['details'])
-        self.assertEqual(subroutine['details']['description'], 'A test pure subroutine')
-        attributes = subroutine['details']['attributes']
+        self.assertIn('attributes', subroutine)
+        self.assertEqual(subroutine['description'], 'A test pure subroutine')
+        attributes = subroutine['attributes']
         self.assertEqual(attributes, ['pure'])
 
     def test_find_elemental_subroutines(self):
@@ -63,9 +62,8 @@ end module pure_subroutines
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('elem_sub', module['subroutines'])
         subroutine = module['subroutines']['elem_sub']
-        self.assertIn('details', subroutine)
-        self.assertIn('attributes', subroutine['details'])
-        attributes = subroutine['details']['attributes']
+        self.assertIn('attributes', subroutine)
+        attributes = subroutine['attributes']
         self.assertEqual(attributes, ['elemental'])
 
     def test_find_recursive_subroutines(self):
@@ -99,9 +97,8 @@ end module pure_subroutines
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('fact', module['subroutines'])
         subroutine = module['subroutines']['fact']
-        self.assertIn('details', subroutine)
-        self.assertIn('attributes', subroutine['details'])
-        attributes = subroutine['details']['attributes']
+        self.assertIn('attributes', subroutine)
+        attributes = subroutine['attributes']
         self.assertEqual(attributes, ['recursive'])
 
     def test_find_combined_subroutines(self):
@@ -144,16 +141,14 @@ end module pure_subroutines
         self.assertEqual(len(module['subroutines']), 2)
         self.assertIn('square', module['subroutines'])
         square_subroutine = module['subroutines']['square']
-        self.assertIn('details', square_subroutine)
-        self.assertIn('attributes', square_subroutine['details'])
-        square_attributes = square_subroutine['details']['attributes']
+        self.assertIn('attributes', square_subroutine)
+        square_attributes = square_subroutine['attributes']
         self.assertEqual(square_attributes, ['pure', 'elemental'])
 
         self.assertIn('fact', module['subroutines'])
         fact_subroutine = module['subroutines']['fact']
-        self.assertIn('details', fact_subroutine)
-        self.assertIn('attributes', fact_subroutine['details'])
-        fact_attributes = fact_subroutine['details']['attributes']
+        self.assertIn('attributes', fact_subroutine)
+        fact_attributes = fact_subroutine['attributes']
         self.assertEqual(fact_attributes, ['recursive'])
 
 if __name__ == '__main__':

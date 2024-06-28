@@ -32,9 +32,8 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('add_numbers', module['subroutines'])
         subroutine = module['subroutines']['add_numbers']
-        self.assertIn('details', subroutine)
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -67,9 +66,8 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('add_numbers', module['subroutines'])
         subroutine = module['subroutines']['add_numbers']
-        self.assertIn('details', subroutine)
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
@@ -101,9 +99,8 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('sum_array', module['subroutines'])
         subroutine = module['subroutines']['sum_array']
-        self.assertIn('details', subroutine)
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(len(inputs), 1)
         self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
         self.assertEqual(len(outputs), 1)
@@ -135,9 +132,8 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('multiply_scalar_array', module['subroutines'])
         subroutine = module['subroutines']['multiply_scalar_array']
-        self.assertIn('details', subroutine)
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['scalar'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
@@ -168,9 +164,8 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(module['subroutines']), 1)
         self.assertIn('increment', module['subroutines'])
         subroutine = module['subroutines']['increment']
-        self.assertIn('details', subroutine)
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(len(inputs), 1)
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(len(outputs), 1)

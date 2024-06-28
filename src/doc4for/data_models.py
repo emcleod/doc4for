@@ -42,16 +42,6 @@ Fields:
     return (Dict[str, Argument]): The return value ('result') of a function
 """
 
-FunctionDetails = TypedDict('FunctionDetails', {
-    'details': FunctionDescription
-})
-"""
-Contains detailed information about a Fortran 90 function.
-
-Fields:
-    details (FunctionDescription): Detailed description of the function.
-"""
-
 SubroutineDescription = TypedDict('SubroutineDescription', {
     'attributes': List[str],
     'description': str,
@@ -69,16 +59,6 @@ Fields:
     out (Dict[str, Argument]): The output (intent(out) or intent(inout)) arguments to a function.
 """
 
-SubroutineDetails = TypedDict('SubroutineDetails', {
-    'details': SubroutineDescription
-})
-"""
-Contains detailed information about a Fortran 90 subroutine.
-
-Fields:
-    details (SubroutineDescription): Detailed description of the subroutine.
-"""
-
 ParameterDescription = TypedDict('ParameterDescription', {
     'description': str,
     'type': 'str',
@@ -86,23 +66,13 @@ ParameterDescription = TypedDict('ParameterDescription', {
     'value': 'str'
 })
 
-ParameterDetails = TypedDict('ParameterDetails', {
-    'details': ParameterDescription
-})
-"""
-Contains detailed information about a Fortran 90 subroutine.
-
-Fields:
-    details (SubroutineDescription): Detailed description of the subroutine.
-"""
-
 #TODO add @version annotation
 #TODO add @author annotation
 ModuleData = TypedDict('ModuleData', {
     'module_name': str,
-    'constants': Dict[str, ParameterDetails],
-    'functions': Dict[str, FunctionDetails],
-    'subroutines': Dict[str, SubroutineDetails],
+    'parameters': Dict[str, ParameterDescription],
+    'functions': Dict[str, FunctionDescription],
+    'subroutines': Dict[str, SubroutineDescription],
     'file_name': str,
     'module_description': str
 })
@@ -119,20 +89,18 @@ Fields:
 """
 
 ProgramDetails = TypedDict('ProgramDetails', {
-    'name': str,
-    'description': str,
+    'program_name': str,
+    'file_name': str,
+    'program_description': str,
 })
 
 FileData = TypedDict('FileData', {
    'file_name': str,
    'file_description': str,
-   'constants': Dict[str, ParameterDetails],
-   'functions': Dict[str, FunctionDetails],
-   'subroutines': Dict[str, SubroutineDetails],
-   'types': Dict[str, int],  
+   'functions': Dict[str, FunctionDescription],
+   'subroutines': Dict[str, SubroutineDescription],
    'modules': List[str],  
    'programs': Dict[str, ProgramDetails],
-   'public_interfaces': List[str],
    'use_statements': List[str],
 })
 

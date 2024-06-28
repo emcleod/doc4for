@@ -13,14 +13,12 @@ from fparser.one.block_statements import (
     Program
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from fparser.one.statements import Parameter
 from doc4for.data_models import (
     FileData, 
     ProgramDetails,
     FunctionDescription,
     SubroutineDescription,
-    ParameterDescription,
-    ParameterDetails
+    ParameterDescription
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
@@ -161,13 +159,10 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
         file_data: FileData = {
             'file_name': f90_file_str,
             'file_description': '',
-            'constants': {},
             'functions': {},
             'subroutines': {},
-            'types': {},
             'modules': [],
             'programs': {},
-            'public_interfaces': [],
             'use_statements': []
         }
         for child in tree.content:
@@ -189,9 +184,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 update_arguments_with_parsed_data(child, function_description)
                 if comment_stack:
                     update_arguments_with_comment_data(comment_stack, function_description)
-                file_data['functions'][function_name] = {
-                    'details': function_description
-                }
+                file_data['functions'][function_name] = function_description
                 comment_stack = []  
             elif isinstance(child, Subroutine):
                 subroutine_name: str = child.name
@@ -205,45 +198,20 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 update_arguments_with_parsed_data(child, subroutine_description)
                 if comment_stack:
                     update_arguments_with_comment_data(comment_stack, subroutine_description)
-                file_data['subroutines'][subroutine_name] = {
-                    'details': subroutine_description
-                }
+                file_data['subroutines'][subroutine_name] = subroutine_description
                 comment_stack = []  
             elif isinstance(child, Program):
+                program_details: ProgramDetails = {
+                    'program_name': child.name,
+                    'file_name': f90_file_str,
+                    'program_description': ''
+                }
                 program_name = child.name
-                for decl in child.content:
-                    if isinstance(decl, Comment) and decl.content:
-                        comment_stack.append(decl)
-                    if isinstance(decl, TypeDeclarationStatement) and 'parameter' in decl.attrspec:
-                        param_info = extract_parameter_info(decl)
-                        if is_doc4for_comment(comment_stack):
-                            param_info['description'] = format_comments(comment_stack)
-                        file_data['constants'][param_info['name']] = {
-                            'details': param_info
-                        }
-                        comment_stack = []  
                 comment_stack = []  
-            #TODO file_description needs to be filled in using only the first comments
+        #TODO file_description needs to be filled in using only the first comments
         files.append(file_data)
         comment_stack = []  
     return files
-
-def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescription:
-    item_str = decl.item.line
-    name_match = re.search(r'::\s*(\w+)\s*=', item_str)
-    if name_match:
-        name = name_match.group(1)
-        value = item_str.split('=', 1)[1].strip()
-    else:
-        # Handle cases where the parameter declaration format is not recognized
-        name = ''
-        value = ''
-    return {
-        'description': '',  
-        'type': str(decl.name),
-        'name': name.strip(),
-        'value': value.strip()
-    }
 
 def generate_file_pages(directory_tree: DirectoryTree,
                         template_dir: str = 'templates', base_dir: str = ''):

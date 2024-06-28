@@ -25,7 +25,7 @@ end module test
         self.assertEqual(module['module_name'], 'test')
         self.assertEqual(module['file_name'], '/fake/path/fortran_file.f90')
         self.assertEqual(module['module_description'], ' Test comment\n')
-        self.assertEqual(module['constants'], {})
+        self.assertEqual(module['parameters'], {})
         self.assertEqual(module['functions'], {})
         self.assertEqual(module['subroutines'], {})
 

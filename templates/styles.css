@@ -13,7 +13,6 @@ aside,
 
 main a {
   color: #00008B;
-  /* Dark blue */
   text-decoration: none;
 }
 
@@ -27,7 +26,7 @@ main .content h1 {
 
 a {
   text-decoration: none;
-  color: #333;
+  color: #333333;
 }
 
 .file-name {
@@ -44,66 +43,88 @@ section:not(.module-description) {
   background-color: #f9f9f9;
   padding: 15px;
   margin-bottom: 20px;
-  margin-right: 10px; /*TODO only for big screens */
+  margin-right: 10px;
+  /*TODO only for big screens */
 }
 
-.functions-summary table, .subroutines-summary table {
+.functions-summary table,
+.subroutines-summary table,
+.parameters-summary table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.functions-summary th, .subroutines-summary th {
-  background-color: #ddd;
+.functions-summary th,
+.subroutines-summary th,
+.parameters-summary th {
+  background-color: #dddddd;
   padding: 10px;
   text-align: left;
 }
 
-.functions-summary td, .subroutines-summary td {
+.functions-summary td,
+.subroutines-summary td,
+.parameters-summary td {
   padding: 10px;
   vertical-align: top;
 }
 
-.functions-summary tr:nth-child(even), .subroutines-summary tr:nth-child(even) {
+.functions-summary tr:nth-child(even),
+.subroutines-summary tr:nth-child(even),
+.parameters-summary tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
-.functions-summary tr:nth-child(odd), .subroutines-summary tr:nth-child(odd) {
-  background-color: #ffffff; 
+.functions-summary tr:nth-child(odd),
+.subroutines-summary tr:nth-child(odd),
+.parameters-summary tr:nth-child(odd) {
+  background-color: #ffffff;
 }
 
-.functions-summary, .subroutines-summary .function-description, .subroutine-description {
+.functions-summary,
+.subroutines-summary,
+.function-description,
+.subroutine-description,
+.parameters-summary {
   display: block;
   padding-left: 20px;
   padding-top: 5px;
   font-size: 0.9em;
-  color: #555;
+  color: #555555;
 }
 
-.function-header, .subroutine-header {
-  background-color: #ddd;
+.function-header,
+.subroutine-header,
+.parameter-header {
+  background-color: #dddddd;
   padding: 10px;
   margin-bottom: 0;
   font-family: 'Courier New', Courier, monospace;
 }
 
-.function-attributes, .subroutine-attributes {
+.function-attributes,
+.subroutine-attributes,
+.parameter-attributes {
   font-weight: normal;
   margin-right: 10px;
 }
 
-.function-body, .subroutine-body {
-  background-color: white;
+.function-body,
+.subroutine-body {
+  background-color: #ffffff;
   padding: 15px;
   margin-top: 0;
 }
 
-.function-args, .subroutine-args {
+.function-args,
+.subroutine-args {
   list-style-type: none;
   padding-left: 20px;
 }
 
-.function-args li, .subroutine-args li {
-  line-height: 1.25; 
+.function-args li,
+.subroutine-args li {
+  line-height: 1.25;
   margin-bottom: 0.05em;
 }
 
@@ -112,7 +133,8 @@ section:not(.module-description) {
   color: #006666;
 }
 
-.function-details strong, .subroutine-details strong {
+.function-details strong,
+.subroutine-details strong {
   font-weight: bold;
 }
 
@@ -138,8 +160,8 @@ section:not(.module-description) {
   position: absolute;
   top: 0;
   left: -10px;
-  border-left: 2px solid #333; 
-  border-bottom: 2px solid #333; 
+  border-left: 2px solid #333333;
+  border-bottom: 2px solid #333333;
   width: 20px;
   height: 15px;
 }
@@ -230,15 +252,4 @@ section:not(.module-description) {
     width: 75%;
     overflow-y: auto;
   }
-}
-
-a {
-  text-decoration: none;
-  color: #333;
-}
-
-pre {
-  background-color: #f4f4f4;
-  padding: 15px;
-  overflow-x: auto;
 }

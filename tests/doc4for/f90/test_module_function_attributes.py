@@ -31,10 +31,9 @@ end module pure_functions
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('test', module['functions'])
         function = module['functions']['test']
-        self.assertIn('details', function)
-        self.assertIn('attributes', function['details'])
-        self.assertEqual(function['details']['description'], 'A test pure function')
-        attributes = function['details']['attributes']
+        self.assertIn('attributes', function)
+        self.assertEqual(function['description'], 'A test pure function')
+        attributes = function['attributes']
         self.assertEqual(attributes, ['pure'])
 
     def test_find_elemental_functions(self):
@@ -61,9 +60,8 @@ end module pure_functions
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('elem_func', module['functions'])
         function = module['functions']['elem_func']
-        self.assertIn('details', function)
-        self.assertIn('attributes', function['details'])
-        attributes = function['details']['attributes']
+        self.assertIn('attributes', function)
+        attributes = function['attributes']
         self.assertEqual(attributes, ['elemental'])
 
 
@@ -92,9 +90,8 @@ end module pure_functions
         self.assertEqual(len(module['functions']), 1)
         self.assertIn('fact', module['functions'])
         function = module['functions']['fact']
-        self.assertIn('details', function)
-        self.assertIn('attributes', function['details'])
-        attributes = function['details']['attributes']
+        self.assertIn('attributes', function)
+        attributes = function['attributes']
         self.assertEqual(attributes, ['recursive'])
 
     def test_find_combined_functions(self):
@@ -129,16 +126,14 @@ end module pure_functions
         self.assertEqual(len(module['functions']), 2)
         self.assertIn('square', module['functions'])
         square_function = module['functions']['square']
-        self.assertIn('details', square_function)
-        self.assertIn('attributes', square_function['details'])
-        square_attributes = square_function['details']['attributes']
+        self.assertIn('attributes', square_function)
+        square_attributes = square_function['attributes']
         self.assertEqual(square_attributes, ['pure', 'elemental'])
 
         self.assertIn('fact', module['functions'])
         fact_function = module['functions']['fact']
-        self.assertIn('details', fact_function)
-        self.assertIn('attributes', fact_function['details'])
-        fact_attributes = fact_function['details']['attributes']
+        self.assertIn('attributes', fact_function)
+        fact_attributes = fact_function['attributes']
         self.assertEqual(fact_attributes, ['recursive'])
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
 
@@ -53,7 +53,7 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
@@ -80,9 +80,9 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        outputs = subroutine['details']['out']
+        outputs = subroutine['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
 
     def test_subroutine_out_annotation_name_mismatch(self):
@@ -107,9 +107,9 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        outputs = subroutine['details']['out']
+        outputs = subroutine['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', outputs)
 
@@ -134,8 +134,8 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
 
@@ -160,8 +160,8 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertNotIn('z', inputs)
@@ -189,7 +189,7 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first input', 'dimension': ''})
         self.assertEqual(inputs['y'], {'type': 'real', 'description': 'The second input', 'dimension': ''})
 
@@ -216,9 +216,9 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['details']['in']
+        inputs = subroutine['in']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The input', 'dimension': ''})
-        outputs = subroutine['details']['out']
+        outputs = subroutine['out']
         self.assertEqual(outputs['y'], {'type': 'real', 'description': 'The output', 'dimension': ''})
 
     def test_subroutine_inout_annotation_name_match_with_description(self):
@@ -242,8 +242,8 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['details']['in']
-        outputs = subroutine['details']['out']
+        inputs = subroutine['in']
+        outputs = subroutine['out']
         self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The variable to be updated', 'dimension': ''})
         self.assertEqual(outputs['x'], {'type': 'real', 'description': 'The variable to be updated', 'dimension': ''})
 
