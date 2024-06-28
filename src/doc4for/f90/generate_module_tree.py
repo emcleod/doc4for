@@ -35,7 +35,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
         f90_file_str = os.fspath(f90_file)
         tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
         for child in tree.content:
-            if isinstance(child, Comment):
+            if isinstance(child, Comment) and child.content:
                 comment_stack.append(child)
             elif isinstance(child, Module):
                 module_data: ModuleData = {
@@ -46,13 +46,11 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                     'file_name': f90_file_str,
                     'module_description': ''
                 }
-                # collect module comments
-                if (comment_stack and comment_stack[0].content.startswith('!*') and comment_stack[-1].content.endswith('*!')):
-                    module_data['module_description'] = '\n'.join(
-                        format_comment_for_html(comment.content) for comment in comment_stack[1:-1] if format_comment_for_html(comment.content)) + '\n'
-                comment_stack = []  # Reset comment_stack for the next entity
+                if is_doc4for_comment(comment_stack):
+                    module_data['module_description'] = format_comments(comment_stack)
+                comment_stack = []  
                 for item in child.content:
-                    if isinstance(item, Comment):
+                    if isinstance(item, Comment) and item.content:
                         comment_stack.append(item)
                     elif isinstance(item, Function):
                         function_name: str = item.name
@@ -87,7 +85,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                         param_info = extract_parameter_info(item)
                         if is_doc4for_comment(comment_stack):
                             param_info['description'] = format_comments(comment_stack)
-                            module_data['parameters'][param_info['name']] = param_info                        
+                        module_data['parameters'][param_info['name']] = param_info                        
                         comment_stack = []  
                 modules.append(module_data)
                 comment_stack = []  

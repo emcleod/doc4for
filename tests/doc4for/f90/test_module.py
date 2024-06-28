@@ -24,7 +24,7 @@ end module test
         module = result[0]
         self.assertEqual(module['module_name'], 'test')
         self.assertEqual(module['file_name'], '/fake/path/fortran_file.f90')
-        self.assertEqual(module['module_description'], ' Test comment\n')
+        self.assertEqual(module['module_description'], '\nTest comment\n\n')
         self.assertEqual(module['parameters'], {})
         self.assertEqual(module['functions'], {})
         self.assertEqual(module['subroutines'], {})
@@ -55,10 +55,10 @@ end module test2
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['module_name'], 'test1')
         self.assertEqual(result[0]['file_name'], '/fake/path/file1.f90')
-        self.assertEqual(result[0]['module_description'], ' Module 1\n')
+        self.assertEqual(result[0]['module_description'], '\nModule 1\n\n')
         self.assertEqual(result[1]['module_name'], 'test2')
         self.assertEqual(result[1]['file_name'], '/fake/path/file2.f90')
-        self.assertEqual(result[1]['module_description'], ' Module 2\n')
+        self.assertEqual(result[1]['module_description'], '\nModule 2\n\n')
 
     def test_find_modules_with_no_modules(self):
         self.fs.create_file(

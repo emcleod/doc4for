@@ -166,7 +166,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             'use_statements': []
         }
         for child in tree.content:
-            if isinstance(child, Comment):
+            if isinstance(child, Comment) and child.content:
                 comment_stack.append(child)
             elif isinstance(child, Module):
                 file_data['modules'].append(child.name)

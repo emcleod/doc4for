@@ -25,7 +25,10 @@ def format_comment_for_html(comment: str) -> str:
 def is_doc4for_comment(comment_stack: List[Comment]) -> bool:
     if not comment_stack:
         return False
-    return comment_stack[0].content.startswith('!*') and comment_stack[-1].content.rstrip().endswith('*!')
+    for comment in comment_stack:
+        if comment.content.startswith('!*') and comment_stack[-1].content.rstrip().endswith('*!'):
+            return True
+    return False
 
 def format_comments(comment_stack: List[Comment]) -> str:
     formatted_comments = []
