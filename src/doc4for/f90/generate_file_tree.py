@@ -10,15 +10,15 @@ from fparser.one.block_statements import (
     Comment,
     Function,
     Subroutine,
-    Program
+    Program,
+    Use
 )
-from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.data_models import (
     FileData, 
     ProgramDetails,
     FunctionDescription,
     SubroutineDescription,
-    ParameterDescription
+    Uses
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
@@ -164,54 +164,73 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             'modules': [],
             'programs': {}
         }
+        first_non_comment_node = True
         for child in tree.content:
             if isinstance(child, Comment) and child.content:
                 comment_stack.append(child)
-            elif isinstance(child, Module):
-                file_data['modules'].append(child.name)
-                comment_stack = []
-            elif isinstance(child, Function):
-                function_name: str = child.name
-                attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
-                function_description: FunctionDescription = {
-                    'attributes': attributes,
-                    'description': '',
-                    'in': {},
-                    'out': {},
-                    'return': {}
-                }
-                update_arguments_with_parsed_data(child, function_description)
-                if comment_stack:
-                    update_arguments_with_comment_data(comment_stack, function_description)
-                file_data['functions'][function_name] = function_description
-                comment_stack = []  
-            elif isinstance(child, Subroutine):
-                subroutine_name: str = child.name
-                attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
-                subroutine_description: SubroutineDescription = {
-                    'attributes': attributes,
-                    'description': '',
-                    'in': {},
-                    'out': {},
-                }
-                update_arguments_with_parsed_data(child, subroutine_description)
-                if comment_stack:
-                    update_arguments_with_comment_data(comment_stack, subroutine_description)
-                file_data['subroutines'][subroutine_name] = subroutine_description
-                comment_stack = []  
-            elif isinstance(child, Program):
-                program_details: ProgramDetails = {
-                    'program_name': child.name,
-                    'file_name': f90_file_str,
-                    'program_description': '',
-                    'imports': [],
-                    'procedure_calls': []
-                }
-                if is_doc4for_comment(comment_stack):
-                    program_details['program_description'] = format_comments(comment_stack)
-                file_data['programs'][child.name] = program_details
-                comment_stack = []  
-        #TODO file_description needs to be filled in using only the first comments
+            else:
+                if first_non_comment_node and comment_stack and is_doc4for_comment(comment_stack):
+                    file_data['file_description'] = format_comments(comment_stack)
+                    comment_stack = []
+                first_non_comment_node = False
+                if isinstance(child, Module):
+                    file_data['modules'].append(child.name)
+                    comment_stack = []
+                elif isinstance(child, Function):
+                    function_name: str = child.name
+                    attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
+                    function_description: FunctionDescription = {
+                        'attributes': attributes,
+                        'description': '',
+                        'in': {},
+                        'out': {},
+                        'return': {}
+                    }
+                    update_arguments_with_parsed_data(child, function_description)
+                    if comment_stack:
+                        update_arguments_with_comment_data(comment_stack, function_description)
+                    file_data['functions'][function_name] = function_description
+                    comment_stack = []  
+                elif isinstance(child, Subroutine):
+                    subroutine_name: str = child.name
+                    attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
+                    subroutine_description: SubroutineDescription = {
+                        'attributes': attributes,
+                        'description': '',
+                        'in': {},
+                        'out': {},
+                    }
+                    update_arguments_with_parsed_data(child, subroutine_description)
+                    if comment_stack:
+                        update_arguments_with_comment_data(comment_stack, subroutine_description)
+                    file_data['subroutines'][subroutine_name] = subroutine_description
+                    comment_stack = []  
+                elif isinstance(child, Program):
+                    program_details: ProgramDetails = {
+                        'program_name': child.name,
+                        'file_name': f90_file_str,
+                        'program_description': '',
+                        'uses': {},
+                        'procedure_calls': []
+                    }
+                    if is_doc4for_comment(comment_stack):
+                        program_details['program_description'] = format_comments(comment_stack)
+                    for program_child in child.content:
+                        if isinstance(program_child, Use):
+                            module_name = program_child.name
+                            if module_name not in program_details['uses']:
+                                uses: Uses = {
+                                    'module_name': program_child.name,
+                                    'selections': []
+                                }
+                                program_details['uses'][module_name] = uses
+                            if not program_child.items and program_details['uses'][module_name]['selections']:
+                                # everything in the module is used, so any selections are overwritten
+                                program_details['uses'][module_name]['selections'] = []
+                            else:
+                                program_details['uses'][module_name]['selections'].extend(program_child.items)
+                    file_data['programs'][child.name] = program_details
+                    comment_stack = []  
         files.append(file_data)
         comment_stack = []  
     return files

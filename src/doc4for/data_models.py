@@ -23,6 +23,11 @@ Fields:
     dimension (Optional[str]): The dimension of a vector or matrix argument, if applicable.
 """
 
+Uses = TypedDict('Uses', {
+    'module_name': str,
+    'selections': List[str]
+})
+
 FunctionDescription = TypedDict('FunctionDescription', {
     'attributes': List[str],
     'description': str,
@@ -92,7 +97,7 @@ ProgramDetails = TypedDict('ProgramDetails', {
     'program_name': str,
     'file_name': str,
     'program_description': str,
-    'imports': List[str],
+    'uses': Dict[str, Uses],
     'procedure_calls': List[Dict[str, str]]  
 })
 
