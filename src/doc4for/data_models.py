@@ -92,6 +92,8 @@ ProgramDetails = TypedDict('ProgramDetails', {
     'program_name': str,
     'file_name': str,
     'program_description': str,
+    'imports': List[str],
+    'procedure_calls': List[Dict[str, str]]  
 })
 
 FileData = TypedDict('FileData', {
@@ -100,8 +102,7 @@ FileData = TypedDict('FileData', {
    'functions': Dict[str, FunctionDescription],
    'subroutines': Dict[str, SubroutineDescription],
    'modules': List[str],  
-   'programs': Dict[str, ProgramDetails],
-   'use_statements': List[str],
+   'programs': Dict[str, ProgramDetails]
 })
 
 def is_function_description(description: Union[FunctionDescription, SubroutineDescription]) -> TypeGuard[FunctionDescription]:

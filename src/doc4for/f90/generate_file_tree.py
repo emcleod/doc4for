@@ -162,8 +162,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             'functions': {},
             'subroutines': {},
             'modules': [],
-            'programs': {},
-            'use_statements': []
+            'programs': {}
         }
         for child in tree.content:
             if isinstance(child, Comment) and child.content:
@@ -201,12 +200,12 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                 file_data['subroutines'][subroutine_name] = subroutine_description
                 comment_stack = []  
             elif isinstance(child, Program):
-                # TODO get information about the modules that are used and any functions / subroutines that 
-                # are called. This can then be listed and linked to in the module page
                 program_details: ProgramDetails = {
                     'program_name': child.name,
                     'file_name': f90_file_str,
-                    'program_description': ''
+                    'program_description': '',
+                    'imports': [],
+                    'procedure_calls': []
                 }
                 if is_doc4for_comment(comment_stack):
                     program_details['program_description'] = format_comments(comment_stack)
