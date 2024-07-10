@@ -55,12 +55,11 @@
         <h1>File: {{ file_data.file_name }}</h1>
         
         <section class="file-description">
-          <h2>Description</h2>
-          <p>{{ file_data.file_description or "No description available." }}</p>
+          <p>{{ file_data.file_description }}</p>
         </section>
 
         {% if file_data.modules %}
-        <section class="modules">
+        <section class="modules-summary">
           <h2>Modules</h2>
           <ul>
             {% for module in file_data.modules %}
@@ -68,6 +67,17 @@
             {% endfor %}
           </ul>
         </section>
+        {% endif %}
+
+        {% if file_data.programs %}
+          <section class="programs-summary">
+            <h2>Programs</h2>
+            <ul>
+              {% for program_name, program_data in file_data.programs.items() %}
+                <li><a href="#program-{{ program_name }}">{{ program_name }}</a></li>
+              {% endfor %}
+            </ul>
+          </section>
         {% endif %}
 
         {% if file_data.use_statements %}
@@ -189,17 +199,42 @@
         {% endif %}
 
         {% if file_data.programs %}
-        <section class="program-details">
-          <h2>Program Details</h2>
+        <section class="program-details" aria-labelledby="program-details-heading">
+          <h2 id="program-details-heading">Program Details</h2>
           {% for program_name, program_data in file_data.programs.items() %}
-            <div class="program" id="program-{{ program_name }}">
-              <h3>{{ program_name }}</h3>
-              <p>{{ program_data.program_description }}</p>
+          <section class="program" id="program-{{ program_name }}" aria-labelledby="{{ program_name }}-heading">
+            <h3 id="{{ program_name }}-heading" class="program-header">
+              <span class="program-name">{{ program_name }}</span>
+              {% if program_data.program_description %}
+                - <span class="program-description">{{ program_data.program_description }}</span>
+              {% endif %}
+            </h3>
+            <div class="program-body">
+              {% if program_data %}
+              {% if program_data.uses %}
+              <p><strong>Uses:</strong></p>
+              <ul class="program-uses">
+                {% for module_name, use_data in program_data.uses.items() %}
+                <li>
+                  <span class="module-name">
+                    <a href="{{ relative_path }}modules/{{ module_name }}.html">{{ module_name }}</a>
+                  </span>
+                  {% if use_data.only %}
+                    (Only: {{ use_data.only|join(', ') }})
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% else %}
+              <p>No detailed information available for this program.</p>
+              {% endif %}
             </div>
+          </section>
           {% endfor %}
         </section>
         {% endif %}
-
+                
         <section class="code-section">
           <button class="expand-button" onclick="toggleCode()">Show Code</button>
           <pre class="code-content" style="display: none;"><code class="fortran">{{ code }}</code></pre>

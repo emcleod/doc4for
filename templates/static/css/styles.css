@@ -39,7 +39,7 @@ pre {
   overflow-x: auto;
 }
 
-section:not(.module-description) {
+section:not(.module-description):not(.file-description) {
   background-color: #f9f9f9;
   padding: 15px;
   margin-bottom: 20px;
@@ -47,18 +47,40 @@ section:not(.module-description) {
   /*TODO only for big screens */
 }
 
+.modules-summary,
+.programs-summary {
+  background-color: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 20px;
+  margin-right: 10px;
+  font-size: 14pt;
+  color: inherit;
+}
+
+.modules-summary ul,
+.programs-summary ul,
+.program-details ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.modules-summary li,
+.programs-summary li,
+.program-details li {
+  margin-bottom: 5px;
+}
+
 .functions-summary table,
 .subroutines-summary table,
-.parameters-summary table,
-.programs-summary table {
+.parameters-summary table {
   width: 100%;
   border-collapse: collapse;
 }
 
 .functions-summary th,
 .subroutines-summary th,
-.parameters-summary th,
-.programs-summary th {
+.parameters-summary th {
   background-color: #dddddd;
   padding: 10px;
   text-align: left;
@@ -66,23 +88,20 @@ section:not(.module-description) {
 
 .functions-summary td,
 .subroutines-summary td,
-.parameters-summary td,
-.programs-summary th {
+.parameters-summary td {
   padding: 10px;
   vertical-align: top;
 }
 
 .functions-summary tr:nth-child(even),
 .subroutines-summary tr:nth-child(even),
-.parameters-summary tr:nth-child(even),
-.programs-summary tr:nth-child(even) {
+.parameters-summary tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
 .functions-summary tr:nth-child(odd),
 .subroutines-summary tr:nth-child(odd),
-.parameters-summary tr:nth-child(odd),
-.programs-summary tr:nth-child(odd) {
+.parameters-summary tr:nth-child(odd) {
   background-color: #ffffff;
 }
 
@@ -91,7 +110,6 @@ section:not(.module-description) {
 .function-description,
 .subroutine-description,
 .parameters-summary,
-.programs-summary,
 .programs-description {
   display: block;
   padding-left: 20px;
@@ -103,11 +121,9 @@ section:not(.module-description) {
 .parameters-summary th:first-child,
 .functions-summary th:first-child,
 .subroutines-summary th:first-child,
-.programs-summary th:first-child,
 .parameters-summary td:first-child,
 .functions-summary td:first-child,
-.subroutines-summary td:first-child,
-.programs-summary td:first-child {
+.subroutines-summary td:first-child {
   width: 25%;
 }
 
@@ -123,8 +139,7 @@ section:not(.module-description) {
 
 .function-header,
 .subroutine-header,
-.parameter-header,
-.programs-header {
+.parameter-header {
   background-color: #dddddd;
   padding: 10px;
   margin-bottom: 0;
@@ -133,8 +148,7 @@ section:not(.module-description) {
 
 .function-attributes,
 .subroutine-attributes,
-.parameter-attributes,
-.programs-attributes {
+.parameter-attributes {
   font-weight: normal;
   margin-right: 10px;
 }
@@ -168,6 +182,25 @@ section:not(.module-description) {
 .subroutine-details strong,
 .program-details strong {
   font-weight: bold;
+}
+
+.program-name {
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.program-description {
+  font-size: 0.9em;
+  font-weight: normal;
+}
+
+.program-body > p {
+  margin-bottom: 5px;  
+}
+
+.program-uses li {
+  margin-bottom: 5px;
+  padding-left: 20px;  
 }
 
 .inheritance-tree {
