@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Tuple, Optional, Callable, Union
 from fparser.one.block_statements import (
-    Comment,
+    Comment
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.data_models import (
@@ -153,7 +153,7 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     if intentout or not intentin:
         dummy_arg_info['out'][decl] = arg_info
 
-def update_arguments_with_parsed_data(function: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
+def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     """Process the arguments and return type of a function.
 
     This function extracts information about the arguments and return type of a
@@ -162,7 +162,7 @@ def update_arguments_with_parsed_data(function: Any, arg_info: Union[FunctionDes
     of the arguments. It also handles the return type of the function.
 
     Args:
-        function: An `Function` extracted by the parser.
+        procedure: A procedure (function or subroutine) extracted by the parser.
         arg_info (Union[FunctionDescription, SubroutineDescription)]: A dictionary 
         containing information about the function or subroutine's arguments and
         return type for functions.
@@ -179,9 +179,9 @@ def update_arguments_with_parsed_data(function: Any, arg_info: Union[FunctionDes
         - Handle assumed size arrays.
         - Properly handle the dimensions of arguments and return types.
     """
-    args: List[str] = function.args
-    result: str = function.result
-    for item in function.content:
+    args: List[str] = procedure.args
+    result: str = procedure.result
+    for item in procedure.content:
         if isinstance(item, TypeDeclarationStatement):
             arg_type = extract_argument_type(item)
             intentin, intentout = determine_argument_intent(item)
@@ -203,7 +203,7 @@ def update_arguments_with_parsed_data(function: Any, arg_info: Union[FunctionDes
                         arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
 
     if is_function_description(arg_info) and not arg_info['return']:
-        return_type = extract_return_type(function)
+        return_type = extract_return_type(procedure)
         # TODO sort out dimension
         arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 

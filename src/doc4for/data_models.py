@@ -34,7 +34,9 @@ FunctionDescription = TypedDict('FunctionDescription', {
     'arguments': List[str],
     'in': Dict[str, Argument],
     'out': Dict[str, Argument],
-    'return': Dict[str, Argument]
+    'return': Dict[str, Argument],
+    'binding_type': Optional[str],  # 'deferred', 'non-deferred', 'type-bound', or 'final'
+    'interface': Optional[str]  # Name of the interface if applicable
 })
 """
 Describes a Fortran 90 function's attributes, arguments and return values, including any
@@ -53,7 +55,9 @@ SubroutineDescription = TypedDict('SubroutineDescription', {
     'description': str,
     'arguments': List[str],
     'in': Dict[str, Argument],
-    'out': Dict[str, Argument]
+    'out': Dict[str, Argument],
+    'binding_type': Optional[str],  # 'deferred', 'non-deferred', 'type-bound', or 'final'
+    'interface': Optional[str]  # Name of the interface if applicable
 })
 """
 Describes a Fortran 90 subroutines's attributes and arguments, including any
@@ -70,7 +74,33 @@ ParameterDescription = TypedDict('ParameterDescription', {
     'description': str,
     'type': 'str',
     'name': 'str',
-    'value': 'str'
+    'value': 'str',
+    'dimension': Optional[str],
+})
+
+DataComponent = TypedDict('DataComponent', {
+    'name': str,
+    'type': str,
+    'description': str,
+    'dimension': Optional[str],
+    'visibility': str,  # 'public' or 'private'
+    'initial_value': Optional[str],
+})
+
+GenericInterface = TypedDict('GenericInterface', {
+    'name': str,
+    'procedures': List[str]
+})
+
+TypeDescription = TypedDict('TypeDescription', {
+    'type_name': str,
+    'attributes': List[str],  # e.g., ['abstract', 'public']
+    'description': str,
+    'data_components': Dict[str, DataComponent],
+    'procedures': Dict[str, Union[FunctionDescription, SubroutineDescription]],
+    'generic_interfaces': List[GenericInterface],
+    'final_procedures': List[str],
+    'extends': Optional[str]  # Name of the parent type if it extends another type
 })
 
 #TODO add @version annotation
@@ -80,6 +110,7 @@ ModuleData = TypedDict('ModuleData', {
     'parameters': Dict[str, ParameterDescription],
     'functions': Dict[str, FunctionDescription],
     'subroutines': Dict[str, SubroutineDescription],
+    'types': Dict[str, TypeDescription],
     'file_name': str,
     'module_description': str
 })
@@ -107,6 +138,7 @@ FileData = TypedDict('FileData', {
    'file_description': str,
    'functions': Dict[str, FunctionDescription],
    'subroutines': Dict[str, SubroutineDescription],
+   'types': Dict[str, TypeDescription],
    'modules': List[str],  
    'programs': Dict[str, ProgramDetails]
 })

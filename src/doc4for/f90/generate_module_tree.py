@@ -13,7 +13,8 @@ from fparser.one.block_statements import (
     Module,
     Comment,
     Function,
-    Subroutine
+    Subroutine,
+    Type
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
@@ -23,10 +24,12 @@ from doc4for.data_models import (
     FunctionDescription,
     SubroutineDescription,
     ParameterDescription,
+    TypeDescription,
     ModuleData,
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
+from doc4for.type_utils import update_type_with_parsed_data
 
 def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
     modules: List[ModuleData] = []
@@ -43,6 +46,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                     'parameters': {},
                     'functions': {},
                     'subroutines': {},
+                    'types': {},
                     'file_name': f90_file_str,
                     'module_description': ''
                 }
@@ -61,7 +65,9 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                             'arguments': item.args,
                             'in': {},
                             'out': {},
-                            'return': {}
+                            'return': {},
+                            'binding_type': '',
+                            'interface': ''
                         }
                         update_arguments_with_parsed_data(item, function_description)
                         if comment_stack:
@@ -77,12 +83,31 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                             'arguments': item.args,
                             'in': {},
                             'out': {},
+                            'binding_type': '',
+                            'interface': ''
                         }
                         update_arguments_with_parsed_data(item, subroutine_description)
                         if comment_stack:
                             update_arguments_with_comment_data(comment_stack, subroutine_description)
                         module_data['subroutines'][subroutine_name] = subroutine_description
                         comment_stack = []  
+                    elif isinstance(item, Type):
+                        type_name: str = item.name
+                        type_description: TypeDescription = {
+                            'type_name': type_name,
+                            'attributes': [],
+                            'description': '',
+                            'data_components': {},
+                            'procedures': {},
+                            'generic_interfaces': [],
+                            'final_procedures': [],
+                            'extends': None
+                        }
+                        update_type_with_parsed_data(item, type_description)
+                        if comment_stack:
+                            type_description['description'] = format_comments(comment_stack)
+                        module_data['types'][type_name] = type_description
+                        comment_stack = []
                     elif isinstance(item, TypeDeclarationStatement) and 'parameter' in item.attrspec:
                         param_info = extract_parameter_info(item)
                         if is_doc4for_comment(comment_stack):
@@ -107,7 +132,8 @@ def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescripti
         'description': '',  
         'type': str(decl.name),
         'name': name.strip(),
-        'value': value.strip()
+        'value': value.strip(),
+        'dimension': ''
     }
 
 def create_modules_directory(max_retries=5, base_delay=0.1):
