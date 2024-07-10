@@ -100,6 +100,20 @@ program my_program
     use my_module, only: test1
 end program my_program
 ''')
+        self.fs.create_file(
+            '/fake/path/my_module.f90',
+            contents='''\
+module my_module
+contains
+    subroutine test1()
+        print *, "You are here"
+    end subroutine test1
+    subroutine test2()
+        print *, "You are here"
+    end subroutine test2
+end module my_module
+'''
+        )
         result = extract_file_data([Path('/fake/path/main.f90')])
         self.assertEqual(len(result), 1)
         file_data = result[0]
@@ -122,6 +136,20 @@ program my_program
     use iso_fortran_env, only: real32
 end program my_program
 ''')
+        self.fs.create_file(
+            '/fake/path/my_module.f90',
+            contents='''\
+module my_module
+contains
+    subroutine test1()
+        print *, "You are here"
+    end subroutine test1
+    subroutine test2()
+        print *, "You are here"
+    end subroutine test2
+end module my_module
+'''
+        )
         result = extract_file_data([Path('/fake/path/main.f90')])
         self.assertEqual(len(result), 1)
         file_data = result[0]
@@ -145,6 +173,17 @@ program my_program
     use iso_fortran_env
 end program my_program
 ''')
+        self.fs.create_file(
+            '/fake/path/my_module.f90',
+            contents='''\
+module my_module
+contains
+    subroutine test1()
+        print *, "You are here"
+    end subroutine test1
+end module my_module
+'''
+        )
         result = extract_file_data([Path('/fake/path/main.f90')])
         self.assertEqual(len(result), 1)
         file_data = result[0]

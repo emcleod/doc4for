@@ -30,5 +30,8 @@ if (create_docs_directory()):
     modules = extract_module_data(fortran_files)
     generate_module_pages(modules)
     generate_inheritance_tree_page(inheritance_tree)
+    for data in file_data:
+        if 'vector' in data["file_name"]:
+            print(data['programs'])
 else:
     logger.info("Nothing written")

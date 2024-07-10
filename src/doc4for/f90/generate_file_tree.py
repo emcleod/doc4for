@@ -21,7 +21,8 @@ from doc4for.data_models import (
     Uses
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
-from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
+from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
+from doc4for.procedure_utils import extract_procedure_calls
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -215,6 +216,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                     }
                     if is_doc4for_comment(comment_stack):
                         program_details['program_description'] = format_comments(comment_stack)
+                    program_details['procedure_calls'] = extract_procedure_calls(child)
                     for program_child in child.content:
                         if isinstance(program_child, Use):
                             module_name = program_child.name

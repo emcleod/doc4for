@@ -26,7 +26,7 @@ from doc4for.data_models import (
     ModuleData,
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
-from doc4for.arguments import update_arguments_with_comment_data, update_arguments_with_parsed_data
+from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
 
 def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
     modules: List[ModuleData] = []
