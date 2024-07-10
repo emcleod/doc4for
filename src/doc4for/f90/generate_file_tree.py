@@ -183,6 +183,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                     function_description: FunctionDescription = {
                         'attributes': attributes,
                         'description': '',
+                        'arguments': child.args,
                         'in': {},
                         'out': {},
                         'return': {}
@@ -198,6 +199,7 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                     subroutine_description: SubroutineDescription = {
                         'attributes': attributes,
                         'description': '',
+                        'arguments': child.args,
                         'in': {},
                         'out': {},
                     }

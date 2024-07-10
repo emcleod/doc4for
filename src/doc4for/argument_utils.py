@@ -227,7 +227,7 @@ def update_with_annotation_description(parts: List[str], arg_info: Union[Functio
     if isinstance(arg_info, dict) and 'return' in arg_info and parts[0] == '@return':
         if len(arg_info['return']) > 1:
             print(f'Warning: more than one @return annotation found: {parts[0]} {arg_info["return"]}')
-        next(iter(arg_info['return'].values()))['description'] = ' '.join(parts[1:])
+        next(iter(arg_info['return'].values()))['description'] = ' '.join(parts[3:])
         return
     arg_name, annotation_type = parts[1].rstrip(':'), parts[2]
     comment_annotation_type = parts[0][1:]  # Remove '@' prefix
@@ -257,8 +257,6 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     Returns:
         None: The function modifies the `arg_info` dictionary in-place.
 
-    TODO:
-        - Check that there isn't more than one return statement.
     """
     annotation_processors: Dict[str, Callable] = {
         '@in': lambda parts, info: update_with_annotation_description(parts, info, ['in']),
@@ -268,7 +266,6 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     }
 
     for comment in comments:
-        #TODO check that there isn't more than one return statement
         content = comment.content.strip()
         if content.startswith(ANNOTATION_PREFIX):
             parts = content.split()

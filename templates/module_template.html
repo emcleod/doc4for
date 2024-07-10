@@ -41,11 +41,11 @@
 
       <section class="module-description">
         {% if module_data.derived_types %}
-          {% for derived_type_name, derived_type_data in module_data.derived_types.items() %}
-            {% if derived_type_data.parent_module %}
-              <p class="derived-from">Derived from: {{ derived_type_data.parent_module }}</p>
-            {% endif %}
-          {% endfor %}
+        {% for derived_type_name, derived_type_data in module_data.derived_types.items() %}
+        {% if derived_type_data.parent_module %}
+        <p class="derived-from">Derived from: {{ derived_type_data.parent_module }}</p>
+        {% endif %}
+        {% endfor %}
         {% endif %}
         <p>{{ module_data.module_description }}</p>
       </section>
@@ -81,7 +81,7 @@
         <p>No parameters defined in this module.</p>
         {% endif %}
       </section>
-      
+
       <section class="functions-summary">
         <h2>Functions</h2>
         {% if module_data.functions %}
@@ -97,14 +97,19 @@
             <tr>
               <td>{{ function_data.attributes | join(', ') }}</td>
               <td>
-                <strong><a href="#function-{{ function_name }}">{{ function_name }}</a></strong>
-                <br>
+                <strong><a href="#function-{{ function_name }}">{{ function_name }}
+                  {%- if function_data.arguments is defined -%}
+                  ({{ function_data.arguments|join(', ') }})
+                  {%- endif -%}                
+                  <br></a></strong>
                 <span class="function-description">{{ function_data.description }}</span>
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+        {% else %}
+        <p>No functions defined in this module.</p>
         {% endif %}
       </section>
 
@@ -123,109 +128,126 @@
             <tr>
               <td>{{ subroutine_data.attributes | join(', ') }}</td>
               <td>
-                <strong><a href="#subroutine-{{ subroutine_name }}">{{ subroutine_name }}</a></strong>
-                <br>
+                <strong><a href="#subroutine-{{ subroutine_name }}">{{ subroutine_name }}
+                  {%- if subroutine_data.arguments is defined -%}
+                  ({{ subroutine_data.arguments|join(', ') }})
+                  {%- endif -%}                
+                  <br></a></strong>
                 <span class="subroutine-description">{{ subroutine_data.description }}</span>
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+        {% else %}
+        <p>No subroutines defined in this module.</p>
         {% endif %}
       </section>
 
-      <section class="function-details" aria-labelledby="function-details-heading">
-        <h2 id="function-details-heading">Function Details</h2>
-        {% for function_name, function_data in module_data.functions.items() %}
-        <section class="function" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
-          <h3 id="{{ function_name }}-heading" class="function-header">
-            {%- if function_data.attributes -%}
-            <span class="function-attributes">{{ function_data.attributes|join(' ') }}</span>
-            {%- endif -%}
-            <span class="function-name">{{ function_name }}</span>
-          </h3>
-          <div class="function-body">
-            {% if function_data %}
-            <p>{{ function_data.description }}</p>
-            {% if function_data.in %}
-            <!--TODO  think about changing this to
-              Arguments:
-                 in: arg1: real - description
-                 out: arg2: integer - description
-                 return: res: real - description
-            -->
-            <!--TODO only display if there are values -->
-            <!-- TODO this should use input and output -->
-            <p><strong>Inputs:</strong></p>
-            <ul class="function-args">
-              {% for arg_name, arg_details in function_data.in.items() %}
-              <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
-                {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                - {{ arg_details.description }}</li> <!--TODO remove dash if no description -->
-              {% endfor %}
-            </ul>
-            {% endif %}
-            {% if function_data.return %}
-            <p><strong>Returns:</strong></p>
-            <ul class="function-args">
-              {% for return_name, return_details in function_data.return.items() %}
-              <li><span class="arg-name">{{ return_name }}: {{ return_details.type }}</span>
-                {% if return_details.dimension %}({{ return_details.dimension }}){% endif %}
-                - {{ return_details.description }}</li><!--TODO remove dash if no description -->
-              {% endfor %}
-            </ul>
-            {% endif %}
-            {% else %}
-            <p>No detailed information available for this function.</p>
-            {% endif %}
-          </div>
+      {% if module_data.functions %}
+        <section class="function-details" aria-labelledby="function-details-heading">
+          <h2 id="function-details-heading">Function Details</h2>
+          {% for function_name, function_data in module_data.functions.items() %}
+          <section class="function" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
+            <h3 id="{{ function_name }}-heading" class="function-header">
+              {%- if function_data.attributes -%}
+              <span class="function-attributes">{{ function_data.attributes|join(' ') }}</span>
+              {%- endif -%}
+              <span class="function-name">{{ function_name }}
+                {%- if function_data.arguments is defined -%}
+                ({{ function_data.arguments|join(', ') }})
+                {%- endif -%}            </h3>
+            <div class="function-body">
+              {% if function_data %}
+              <p>{{ function_data.description }}</p>
+              {% if function_data.in %}
+              <p><strong>Inputs:</strong></p>
+              <ul class="function-args">
+                {% for arg_name, arg_details in function_data.in.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if function_data.out %}
+              <p><strong>Outputs:</strong></p>
+              <ul class="function-args">
+                {% for arg_name, arg_details in function_data.out.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if function_data.return %}
+              <p><strong>Returns:</strong></p>
+              <ul class="function-args">
+                {% for return_name, return_details in function_data.return.items() %}
+                <li><span class="arg-name">{{ return_name }}: {{ return_details.type }}</span>
+                  {% if return_details.dimension %}({{ return_details.dimension }}){% endif %}
+                  {% if return_details.description %} - {{ return_details.description }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% else %}
+              <p>No detailed information available for this function.</p>
+              {% endif %}
+            </div>
+          </section>
+          {% endfor %}
         </section>
-        {% endfor %}
-      </section>
+      {% endif %}
 
-      <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
-        <h2 id="subroutine-details-heading">Subroutine Details</h2>
-        {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
-        <section class="subroutine" id="subroutine-{{ subroutine_name }}" aria-labelledby="{{ subroutine_name }}-heading">
-          <h3 id="{{ subroutine_name }}-heading" class="subroutine-header">
-            {%- if subroutine_data.attributes -%}
-            <span class="subroutine-attributes">{{ subroutine_data.attributes|join(' ') }}</span>
-            {%- endif -%}
-            <span class="subroutine-name">{{ subroutine_name }}</span>
-          </h3>
-          <div class="subroutine-body">
-            {% if subroutine_data %}
-            <p>{{ subroutine_data.description }}</p>
-            {% if subroutine_data.in %}
-            <p><strong>Inputs:</strong></p>
-            <ul class="subroutine-args">
-              {% for arg_name, arg_details in subroutine_data.in.items() %}
-              <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
-                {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
-              </li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-            {% if subroutine_data.out %}
-            <p><strong>Outputs:</strong></p>
-            <ul class="subroutine-args">
-              {% for arg_name, arg_details in subroutine_data.out.items() %}
-              <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
-                {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
-              </li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-            {% else %}
-            <p>No detailed information available for this subroutine.</p>
-            {% endif %}
-          </div>
+      {% if module_data.subroutines %}
+        <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
+          <h2 id="subroutine-details-heading">Subroutine Details</h2>
+          {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+          <section class="subroutine" id="subroutine-{{ subroutine_name }}"
+            aria-labelledby="{{ subroutine_name }}-heading">
+            <h3 id="{{ subroutine_name }}-heading" class="subroutine-header">
+              {%- if subroutine_data.attributes -%}
+              <span class="subroutine-attributes">{{ subroutine_data.attributes|join(' ') }}</span>
+              {%- endif -%}
+              <span class="subroutine-name">{{ subroutine_name }}
+                {%- if subroutine_data.arguments is defined -%}
+                ({{ subroutine_data.arguments|join(', ') }})
+                {%- endif -%}
+            </h3>
+            <div class="subroutine-body">
+              {% if subroutine_data %}
+              <p>{{ subroutine_data.description }}</p>
+              {% if subroutine_data.in %}
+              <p><strong>Inputs:</strong></p>
+              <ul class="subroutine-args">
+                {% for arg_name, arg_details in subroutine_data.in.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if subroutine_data.out %}
+              <p><strong>Outputs:</strong></p>
+              <ul class="subroutine-args">
+                {% for arg_name, arg_details in subroutine_data.out.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% else %}
+              <p>No detailed information available for this subroutine.</p>
+              {% endif %}
+            </div>
+          </section>
+          {% endfor %}
         </section>
-        {% endfor %}
-      </section>
-
+      {% endif %}
+      
       {% endif %}
     </article>
   </main>

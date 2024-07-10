@@ -90,7 +90,10 @@
               {%- if function_data.attributes -%}
               <span class="function-attributes">{{ function_data.attributes|join(' ') }}</span>
               {%- endif -%}
-              <span class="function-name">{{ function_name }}</span>
+              <span class="function-name">{{ function_name }}
+                {%- if function_data.arguments is defined -%}
+                ({{ function_data.arguments|join(', ') }})
+                {%- endif -%}
             </h3>
             <div class="function-body">
               {% if function_data %}
@@ -101,7 +104,18 @@
                 {% for arg_name, arg_details in function_data.in.items() %}
                 <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
                   {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if function_data.out %}
+              <p><strong>Outputs:</strong></p>
+              <ul class="function-args">
+                {% for arg_name, arg_details in function_data.out.items() %}
+                <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+                  {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
                 </li>
                 {% endfor %}
               </ul>
@@ -112,7 +126,7 @@
                 {% for return_name, return_details in function_data.return.items() %}
                 <li><span class="arg-name">{{ return_name }}: {{ return_details.type }}</span>
                   {% if return_details.dimension %}({{ return_details.dimension }}){% endif %}
-                  {% if return_details.description %}- {{ return_details.description }}{% endif %}
+                  {% if return_details.description %} - {{ return_details.description }}{% endif %}
                 </li>
                 {% endfor %}
               </ul>
@@ -135,7 +149,10 @@
               {%- if subroutine_data.attributes -%}
               <span class="subroutine-attributes">{{ subroutine_data.attributes|join(' ') }}</span>
               {%- endif -%}
-              <span class="subroutine-name">{{ subroutine_name }}</span>
+              <span class="subroutine-name">{{ subroutine_name }}
+                {%- if subroutine_data.arguments is defined -%}
+                ({{ subroutine_data.arguments|join(', ') }})
+                {%- endif -%}
             </h3>
             <div class="subroutine-body">
               {% if subroutine_data %}
@@ -146,7 +163,7 @@
                 {% for arg_name, arg_details in subroutine_data.in.items() %}
                 <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
                   {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
                 </li>
                 {% endfor %}
               </ul>
@@ -157,7 +174,7 @@
                 {% for arg_name, arg_details in subroutine_data.out.items() %}
                 <li><span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
                   {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
-                  {% if arg_details.description %}- {{ arg_details.description }}{% endif %}
+                  {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
                 </li>
                 {% endfor %}
               </ul>

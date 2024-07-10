@@ -58,6 +58,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                         function_description: FunctionDescription = {
                             'attributes': attributes,
                             'description': '',
+                            'arguments': item.args,
                             'in': {},
                             'out': {},
                             'return': {}
@@ -73,6 +74,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                         subroutine_description: SubroutineDescription = {
                             'attributes': attributes,
                             'description': '',
+                            'arguments': item.args,
                             'in': {},
                             'out': {},
                         }

@@ -725,7 +725,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with return type
-    ! @return The result
+    ! @return res: integer The result
     !*!
     function test_return_type(x, y) result(res)
         real, intent(in) :: x, y

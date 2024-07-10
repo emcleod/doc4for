@@ -31,6 +31,7 @@ Uses = TypedDict('Uses', {
 FunctionDescription = TypedDict('FunctionDescription', {
     'attributes': List[str],
     'description': str,
+    'arguments': List[str],
     'in': Dict[str, Argument],
     'out': Dict[str, Argument],
     'return': Dict[str, Argument]
@@ -50,6 +51,7 @@ Fields:
 SubroutineDescription = TypedDict('SubroutineDescription', {
     'attributes': List[str],
     'description': str,
+    'arguments': List[str],
     'in': Dict[str, Argument],
     'out': Dict[str, Argument]
 })

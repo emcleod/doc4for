@@ -7,6 +7,42 @@ class TestFunctionArguments(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
+    def test_find_function_with_no_args(self):
+        self.fs.create_file(
+            '/fake/path/scalar_args.f90',
+            contents='''\
+    module no_args_functions
+    contains
+    !!*
+    ! A function with no arguments
+    !*!
+    function add_numbers() 
+        real :: x
+        real :: y
+        real :: add_numbers
+        x = 2
+        y = 3
+        add_numbers = x + y
+    end function add_numbers
+    end module no_args_functions
+                            ''',
+        )
+        result = extract_module_data([Path('/fake/path/scalar_args.f90')])
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertEqual(module['module_name'], 'no_args_functions')
+        self.assertEqual(len(module['functions']), 1)
+        self.assertIn('add_numbers', module['functions'])
+        function = module['functions']['add_numbers']
+        inputs = function['in']
+        outputs = function['out']
+        results = function['return']
+        self.assertEqual(len(inputs), 0)
+        self.assertEqual(len(outputs), 0)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results['add_numbers'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(function['arguments'], [])
+
     def test_find_function_with_scalar_args_1(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
