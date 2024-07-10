@@ -97,8 +97,7 @@ ProgramDetails = TypedDict('ProgramDetails', {
     'program_name': str,
     'file_name': str,
     'program_description': str,
-    'uses': Dict[str, Uses],
-    'procedure_calls': List[Dict[str, str]]  
+    'uses': Dict[str, Uses]
 })
 
 FileData = TypedDict('FileData', {

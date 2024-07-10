@@ -211,12 +211,10 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
                         'program_name': child.name,
                         'file_name': f90_file_str,
                         'program_description': '',
-                        'uses': {},
-                        'procedure_calls': []
+                        'uses': {}
                     }
                     if is_doc4for_comment(comment_stack):
                         program_details['program_description'] = format_comments(comment_stack)
-                    program_details['procedure_calls'] = extract_procedure_calls(child)
                     for program_child in child.content:
                         if isinstance(program_child, Use):
                             module_name = program_child.name
