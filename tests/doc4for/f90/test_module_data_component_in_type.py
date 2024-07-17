@@ -498,6 +498,8 @@ end module array_module
         character(kind=selected_char_kind("ISO_10646")), public :: unicode_char
         !!* The fourth one *!
         character(len=10, kind=selected_char_kind("ASCII")), public :: ascii_string
+        !!* The fifth one *!
+        character(kind=selected_char_kind("ASCII"), len=30), public :: other_ascii_string
     contains
         procedure, public :: init
     end type character_type
@@ -514,7 +516,7 @@ end module array_module
         self.assertEqual(type['type_name'], 'character_type')
         self.assertEqual(type['attributes'], ['public'])
         data_components = type['data_components']
-        self.assertEqual(len(data_components), 4)
+        self.assertEqual(len(data_components), 5)
         self.assertEqual(data_components['fixed_length_string']['name'], 'fixed_length_string')
         self.assertEqual(data_components['fixed_length_string']['type'], 'character')
         self.assertEqual(data_components['fixed_length_string']['len'], '20')
@@ -533,6 +535,11 @@ end module array_module
         self.assertEqual(data_components['ascii_string']['attributes'], ['public'])
         self.assertEqual(data_components['ascii_string']['description'], 'The fourth one\n')
         self.assertEqual(data_components['ascii_string']['len'], '10')
+        self.assertEqual(data_components['other_ascii_string']['name'], 'other_ascii_string')
+        self.assertEqual(data_components['other_ascii_string']['type'], 'character')
+        self.assertEqual(data_components['other_ascii_string']['attributes'], ['public'])
+        self.assertEqual(data_components['other_ascii_string']['description'], 'The fifth one\n')
+        self.assertEqual(data_components['other_ascii_string']['len'], '30')
         procedures = type['procedures']
         self.assertEqual(len(procedures), 1)
         self.assertEqual(procedures['init']['name'], 'init')
