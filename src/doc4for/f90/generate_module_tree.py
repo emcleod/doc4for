@@ -14,7 +14,8 @@ from fparser.one.block_statements import (
     Comment,
     Function,
     Subroutine,
-    Type
+    Type,
+    Public
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader
@@ -53,9 +54,12 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                 if is_doc4for_comment(comment_stack):
                     module_data['module_description'] = format_comments(comment_stack)
                 comment_stack = []  
+                public_declarations = []
                 for item in child.content:
                     if isinstance(item, Comment) and item.content:
                         comment_stack.append(item)
+                    elif isinstance(item, Public):
+                        public_declarations.extend(item.items)
                     elif isinstance(item, Function):
                         function_name: str = item.name
                         attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
@@ -99,10 +103,12 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
                             'description': '',
                             'data_components': {},
                             'procedures': {},
-                            'generic_interfaces': [],
-                            'final_procedures': [],
+                            'generic_interfaces': {},
                             'extends': None
                         }
+                        type_description['attributes'].extend(item.specs)
+                        if type_name in public_declarations:
+                            type_description['attributes'].append('public')
                         update_type_with_parsed_data(item, type_description)
                         if comment_stack:
                             type_description['description'] = format_comments(comment_stack)

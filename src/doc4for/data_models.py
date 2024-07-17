@@ -9,10 +9,14 @@ IGNORE_PREFIX = '!*'
 IGNORE_SUFFIX = '*!'
 """Suffix used to mark the end of a section to be ignored."""
 
+Dimension = TypedDict('Dimension', {
+    'dimensions': List[Union[int, str]]
+})
+
 Argument = TypedDict('Argument', {
     'type': str,
     'description': str,
-    'dimension': Optional[str]
+    'dimension': Optional[str] #TODO replace with Dimension
 })
 """
 Represents an argument of a Fortran 90 function.
@@ -81,26 +85,36 @@ ParameterDescription = TypedDict('ParameterDescription', {
 DataComponent = TypedDict('DataComponent', {
     'name': str,
     'type': str,
+    'kind': Optional[str],
     'description': str,
-    'dimension': Optional[str],
-    'visibility': str,  # 'public' or 'private'
+    'dimension': Optional[Dimension],
+    'len': Optional[str],
     'initial_value': Optional[str],
+    'attributes': List[str]
 })
 
 GenericInterface = TypedDict('GenericInterface', {
+    'generic_spec': str,
+    'description': str,
+    'attributes': List[str],
+    'specific_procedures': List[str]
+})
+
+ProcedureDescription = TypedDict('ProcedureDescription', {
     'name': str,
-    'procedures': List[str]
+    'description': Optional[str],
+    'attributes': List[str],  
+    'is_final': bool
 })
 
 TypeDescription = TypedDict('TypeDescription', {
     'type_name': str,
-    'attributes': List[str],  # e.g., ['abstract', 'public']
+    'attributes': List[str],  
     'description': str,
     'data_components': Dict[str, DataComponent],
-    'procedures': Dict[str, Union[FunctionDescription, SubroutineDescription]],
-    'generic_interfaces': List[GenericInterface],
-    'final_procedures': List[str],
-    'extends': Optional[str]  # Name of the parent type if it extends another type
+    'procedures': Dict[str, ProcedureDescription],
+    'generic_interfaces': Dict[str, GenericInterface],
+    'extends': Optional[str] 
 })
 
 #TODO add @version annotation
