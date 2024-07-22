@@ -1,6 +1,5 @@
 import os
 import logging
-import re
 from pathlib import Path
 from typing import List, Union, Optional, Iterator, Any, Dict
 from jinja2 import Environment, FileSystemLoader
@@ -11,18 +10,12 @@ from fparser.one.block_statements import (
     Function,
     Subroutine,
     Program,
-    Use
+    Type
 )
-from doc4for.data_models import (
-    FileData, 
-    ProgramDetails,
-    FunctionDescription,
-    SubroutineDescription,
-    Uses
-)
+from fparser.one.typedecl_statements import TypeDeclarationStatement
+from doc4for.data_models import FileDescription
 from doc4for.comment_utils import is_doc4for_comment, format_comments
-from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
-from doc4for.procedure_utils import extract_procedure_calls
+from doc4for.f90.populate_data_models import parse_function, parse_subroutine, parse_program, parse_type, parse_parameter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -151,18 +144,19 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
         print(f'An unexpected error occurred: {e}')
         raise
 
-def extract_file_data(f90_files: List[Path]) -> List[FileData]:
-    files: List[FileData] = []
+def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
+    files: List[FileDescription] = []
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
         f90_file_str = os.fspath(f90_file)
         tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
-        file_data: FileData = {
+        file_data: FileDescription = {
             'file_name': f90_file_str,
             'file_description': '',
             'functions': {},
             'subroutines': {},
             'modules': [],
+            'types': {},
             'programs': {}
         }
         first_non_comment_node = True
@@ -172,73 +166,32 @@ def extract_file_data(f90_files: List[Path]) -> List[FileData]:
             else:
                 if first_non_comment_node and comment_stack and is_doc4for_comment(comment_stack):
                     file_data['file_description'] = format_comments(comment_stack)
-                    comment_stack = []
+                    comment_stack.clear()
                 first_non_comment_node = False
-                if isinstance(child, Module):
-                    file_data['modules'].append(child.name)
-                    comment_stack = []
-                elif isinstance(child, Function):
-                    function_name: str = child.name
-                    attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
-                    function_description: FunctionDescription = {
-                        'attributes': attributes,
-                        'description': '',
-                        'arguments': child.args,
-                        'in': {},
-                        'out': {},
-                        'return': {}
-                    }
-                    update_arguments_with_parsed_data(child, function_description)
-                    if comment_stack:
-                        update_arguments_with_comment_data(comment_stack, function_description)
-                    file_data['functions'][function_name] = function_description
-                    comment_stack = []  
-                elif isinstance(child, Subroutine):
-                    subroutine_name: str = child.name
-                    attributes: List[str] = [attr.strip().lower() for attr in child.prefix.split() if attr.strip()]
-                    subroutine_description: SubroutineDescription = {
-                        'attributes': attributes,
-                        'description': '',
-                        'arguments': child.args,
-                        'in': {},
-                        'out': {},
-                    }
-                    update_arguments_with_parsed_data(child, subroutine_description)
-                    if comment_stack:
-                        update_arguments_with_comment_data(comment_stack, subroutine_description)
-                    file_data['subroutines'][subroutine_name] = subroutine_description
-                    comment_stack = []  
-                elif isinstance(child, Program):
-                    program_details: ProgramDetails = {
-                        'program_name': child.name,
-                        'file_name': f90_file_str,
-                        'program_description': '',
-                        'uses': {}
-                    }
-                    if is_doc4for_comment(comment_stack):
-                        program_details['program_description'] = format_comments(comment_stack)
-                    for program_child in child.content:
-                        if isinstance(program_child, Use):
-                            module_name = program_child.name
-                            if module_name not in program_details['uses']:
-                                uses: Uses = {
-                                    'module_name': program_child.name,
-                                    'selections': []
-                                }
-                                program_details['uses'][module_name] = uses
-                            if not program_child.items and program_details['uses'][module_name]['selections']:
-                                # everything in the module is used, so any selections are overwritten
-                                program_details['uses'][module_name]['selections'] = []
-                            else:
-                                program_details['uses'][module_name]['selections'].extend(program_child.items)
-                    file_data['programs'][child.name] = program_details
-                    comment_stack = []  
+                match child:
+                    case Module():
+                        file_data['modules'].append(child.name)
+                    case Function():
+                        file_data['functions'][child.name] = parse_function(child, comment_stack)
+                    case Subroutine():
+                        file_data['subroutines'][child.name] = parse_subroutine(child, comment_stack)
+                    case Program():
+                        file_data['programs'][child.name] = parse_program(child, comment_stack, f90_file_str)
+                    case Type():
+                        type_description = parse_type(child, comment_stack, []) # TODO public
+                        file_data['types'][type_description['type_name']] = type_description
+                    # case TypeDeclarationStatement(): # TODO
+                        # parameter_description = parse_parameter(item, comment_stack)
+                        # file_data['parameters'][parameter_description['name']] = parse_parameter(item, comment_stack)
+                    case _:
+                        pass
+                comment_stack.clear()
         files.append(file_data)
-        comment_stack = []  
+        comment_stack.clear()
     return files
 
 def generate_file_pages(directory_tree: DirectoryTree,
-                        file_data: Dict[str, FileData],
+                        file_data: Dict[str, FileDescription],
                         template_dir: str = 'templates', 
                         base_dir: str = ''):
     """

@@ -6,7 +6,6 @@ import shutil
 import errno
 import time
 import random
-import re
 from typing import List, Any
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
@@ -18,131 +17,62 @@ from fparser.one.block_statements import (
     Public
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
 from doc4for.file_utils import check_write_permissions
-from doc4for.data_models import (
-    FunctionDescription,
-    SubroutineDescription,
-    ParameterDescription,
-    TypeDescription,
-    ModuleData,
+from doc4for.data_models import ModuleDescription
+from doc4for.f90.populate_data_models import (
+    parse_module,
+    parse_function, 
+    parse_subroutine, 
+    parse_type, 
+    parse_parameter
 )
-from doc4for.comment_utils import is_doc4for_comment, format_comments
-from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
-from doc4for.type_utils import update_type_with_parsed_data
 
-def extract_module_data(f90_files: List[Path]) -> List[ModuleData]:
-    modules: List[ModuleData] = []
+def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
+    modules: List[ModuleDescription] = []
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
-        f90_file_str = os.fspath(f90_file)
-        tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
+        f90_file_path: str = os.fspath(f90_file)
+        tree: Any = fortran_parser(f90_file_path, ignore_comments=False)
         for child in tree.content:
             if isinstance(child, Comment) and child.content:
                 comment_stack.append(child)
             elif isinstance(child, Module):
-                module_data: ModuleData = {
-                    'module_name': child.name,
-                    'parameters': {},
-                    'functions': {},
-                    'subroutines': {},
-                    'types': {},
-                    'file_name': f90_file_str,
-                    'module_description': ''
-                }
-                if is_doc4for_comment(comment_stack):
-                    module_data['module_description'] = format_comments(comment_stack)
-                comment_stack = []  
-                public_declarations = []
-                for item in child.content:
-                    if isinstance(item, Comment) and item.content:
-                        comment_stack.append(item)
-                    elif isinstance(item, Public):
-                        public_declarations.extend(item.items)
-                    elif isinstance(item, Function):
-                        function_name: str = item.name
-                        attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
-                        function_description: FunctionDescription = {
-                            'attributes': attributes,
-                            'description': '',
-                            'arguments': item.args,
-                            'in': {},
-                            'out': {},
-                            'return': {},
-                            'binding_type': '',
-                            'interface': ''
-                        }
-                        update_arguments_with_parsed_data(item, function_description)
-                        if comment_stack:
-                            update_arguments_with_comment_data(comment_stack, function_description)
-                        module_data['functions'][function_name] = function_description
-                        comment_stack = []  
-                    elif isinstance(item, Subroutine):
-                        subroutine_name: str = item.name
-                        attributes: List[str] = [attr.strip().lower() for attr in item.prefix.split() if attr.strip()]
-                        subroutine_description: SubroutineDescription = {
-                            'attributes': attributes,
-                            'description': '',
-                            'arguments': item.args,
-                            'in': {},
-                            'out': {},
-                            'binding_type': '',
-                            'interface': ''
-                        }
-                        update_arguments_with_parsed_data(item, subroutine_description)
-                        if comment_stack:
-                            update_arguments_with_comment_data(comment_stack, subroutine_description)
-                        module_data['subroutines'][subroutine_name] = subroutine_description
-                        comment_stack = []  
-                    elif isinstance(item, Type):
-                        type_name: str = item.name
-                        type_description: TypeDescription = {
-                            'type_name': type_name,
-                            'attributes': [],
-                            'description': '',
-                            'data_components': {},
-                            'procedures': {},
-                            'generic_interfaces': {},
-                            'extends': None
-                        }
-                        type_description['attributes'].extend(item.specs)
-                        if type_name in public_declarations:
-                            type_description['attributes'].append('public')
-                        update_type_with_parsed_data(item, type_description)
-                        if comment_stack:
-                            type_description['description'] = format_comments(comment_stack)
-                        module_data['types'][type_name] = type_description
-                        comment_stack = []
-                    elif isinstance(item, TypeDeclarationStatement) and 'parameter' in item.attrspec:
-                        param_info = extract_parameter_info(item)
-                        if is_doc4for_comment(comment_stack):
-                            param_info['description'] = format_comments(comment_stack)
-                        module_data['parameters'][param_info['name']] = param_info                        
-                        comment_stack = []  
+                module_data: ModuleDescription = parse_module(child, comment_stack, f90_file_path)
+                comment_stack.clear()
+                # TODO have a flag that lets private declarations be shown as well
+                parse_module_content(comment_stack, child, module_data)
                 modules.append(module_data)
-                comment_stack = []  
+                comment_stack.clear() 
     return modules
 
-def extract_parameter_info(decl: TypeDeclarationStatement) -> ParameterDescription:
-    item_str = decl.item.line
-    name_match = re.search(r'::\s*(\w+)\s*=', item_str)
-    if name_match:
-        name = name_match.group(1)
-        value = item_str.split('=', 1)[1].strip()
-    else:
-        # Handle cases where the parameter declaration format is not recognized
-        name = ''
-        value = ''
-    return {
-        'description': '',  
-        'type': str(decl.name),
-        'name': name.strip(),
-        'value': value.strip(),
-        'dimension': ''
-    }
+def parse_module_content(comment_stack: List[Comment], module: Any, module_data: ModuleDescription) -> None:
+    public_declarations: List[str] = []
+    for item in module.content:
+        if isinstance(item, Comment) and item.content:
+            comment_stack.append(item)
+        elif isinstance(item, Public):
+             public_declarations.extend(item.items)
+        else:
+            if isinstance(item, TypeDeclarationStatement) and 'parameter' not in item.attrspec:
+                continue
+            match item:
+                case Function():
+                    module_data['functions'][item.name] = parse_function(item, comment_stack)
+                case Subroutine():
+                    module_data['subroutines'][item.name] = parse_subroutine(item, comment_stack)
+                case Type():
+                    type_description = parse_type(item, comment_stack, public_declarations)
+                    module_data['types'][type_description['type_name']] = type_description
+                case TypeDeclarationStatement():
+                    parameter_description = parse_parameter(item, comment_stack)
+                    module_data['parameters'][parameter_description['name']] = parse_parameter(item, comment_stack)
+                case _:
+                    pass
+            comment_stack.clear()
 
-def create_modules_directory(max_retries=5, base_delay=0.1):
+def create_modules_directory(max_retries: int = 5, base_delay: float = 0.1):
     """
     Creates a 'modules' directory in the 'docs' directory if it doesn't exist.
     If it exists, clears its contents.
@@ -162,7 +92,7 @@ def create_modules_directory(max_retries=5, base_delay=0.1):
         PermissionError: If the program doesn't have write permissions.
         OSError: If there's an issue creating the directory or removing its contents after all retries.
     """
-    modules_dir = os.path.join('docs', 'modules')
+    modules_dir: str = os.path.join('docs', 'modules')
     if not check_write_permissions(os.path.dirname(modules_dir)):
         raise PermissionError("No write permissions in the docs directory.")
     for attempt in range(max_retries):
@@ -206,12 +136,12 @@ def clear_directory(directory):
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
 
-def generate_module_pages(modules: List[ModuleData]):
+def generate_module_pages(modules: List[ModuleDescription]) -> None:
     create_modules_directory()
-    env = Environment(loader=FileSystemLoader('templates'))
-    template = env.get_template('module_template.html')
-    module_names = [module['module_name'] for module in modules]
-    output = template.render(
+    env: Environment = Environment(loader=FileSystemLoader('templates'))
+    template: Template = env.get_template('module_template.html')
+    module_names: List[str] = [module['module_name'] for module in modules]
+    output: str = template.render(
         module_names=module_names,
         module_data={},
         content_data='Welcome to your modules!',

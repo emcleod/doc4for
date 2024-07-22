@@ -147,7 +147,9 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     """
     if dims is None:
         dims = []
-    arg_info: Argument = {'type': arg_type, 'description': '', 'dimension': format_dimension_string(dims)}
+    arg_info: Argument = {'type': arg_type, 
+                          'description': '', 
+                          'dimension': format_dimension_string(dims)}
     if intentin or not intentout:
         dummy_arg_info['in'][decl] = arg_info
     if intentout or not intentin:

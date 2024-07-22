@@ -119,7 +119,7 @@ TypeDescription = TypedDict('TypeDescription', {
 
 #TODO add @version annotation
 #TODO add @author annotation
-ModuleData = TypedDict('ModuleData', {
+ModuleDescription = TypedDict('ModuleDescription', {
     'module_name': str,
     'parameters': Dict[str, ParameterDescription],
     'functions': Dict[str, FunctionDescription],
@@ -140,21 +140,21 @@ Fields:
     module_description (str): A description of the module's purpose.
 """
 
-ProgramDetails = TypedDict('ProgramDetails', {
+ProgramDescription = TypedDict('ProgramDescription', {
     'program_name': str,
     'file_name': str,
     'program_description': str,
     'uses': Dict[str, Uses]
 })
 
-FileData = TypedDict('FileData', {
+FileDescription = TypedDict('FileDescription', {
    'file_name': str,
    'file_description': str,
    'functions': Dict[str, FunctionDescription],
    'subroutines': Dict[str, SubroutineDescription],
    'types': Dict[str, TypeDescription],
    'modules': List[str],  
-   'programs': Dict[str, ProgramDetails]
+   'programs': Dict[str, ProgramDescription]
 })
 
 def is_function_description(description: Union[FunctionDescription, SubroutineDescription]) -> TypeGuard[FunctionDescription]:
