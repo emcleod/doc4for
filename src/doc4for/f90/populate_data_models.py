@@ -108,7 +108,14 @@ def parse_type(type: Type, comment_stack: List[Comment], public_declarations: Li
         'generic_interfaces': {},
         'extends': None
     }
-    type_description['attributes'].extend(type.specs)
+    if any(spec.startswith('extends') for spec in type.specs):
+        extends_spec = next(spec for spec in type.specs if spec.startswith('extends'))
+        match = re.search(r'extends\s*\(\s*(\w+)\s*\)', extends_spec)
+        if match:
+            base_type = match.group(1)
+            type_description['extends'] = base_type
+    else:
+        type_description['attributes'].extend(type.specs)
     if type_name in public_declarations:
         type_description['attributes'].append('public')
     update_type_with_parsed_data(type, type_description)

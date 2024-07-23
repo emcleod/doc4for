@@ -82,6 +82,49 @@
         {% endif %}
       </section>
 
+      <section class="types-summary">
+        <h2>Types</h2>
+        {% if module_data.types %}
+        {% set has_extends = true %}
+        {% for type_data in module_data.types.values() %}
+          {% if type_data.extends is not none %}
+            {% set has_extends = true %}
+          {% endif %}
+        {% endfor %}
+        <table>
+          <thead>
+            <tr>
+              <th>Attributes</th>
+              {% if has_extends %}
+              <th>Extends</th>
+              {% endif %}
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for type_name, type_data in module_data.types.items() %}
+            <tr>
+              <td>{{ type_data.attributes | join(', ') }}</td>
+              {% if has_extends %}
+              <td>
+                {% if type_data.extends is not none %}
+                {{ type_data.extends }}
+                {% endif %}
+              </td>
+              {% endif %}
+              <td>
+                <strong><a href="#type-{{ type_name }}">{{ type_name }}<br></a></strong>
+                <span class="type-description">{{ type_data.description }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No types defined in this module.</p>
+        {% endif %}
+      </section>
+
       <section class="functions-summary">
         <h2>Functions</h2>
         {% if module_data.functions %}

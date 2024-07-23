@@ -782,6 +782,7 @@ end module array_module
         procedures = type['procedures']
         self.assertEqual(len(procedures), 1)
         self.assertEqual(procedures['init']['name'], 'init')
+        
 #     def test_public_data_components_declared_first_no_comments(self):
 #         self.fs.create_file(
 #             '/fake/path/types.f90',

@@ -48,6 +48,7 @@ end module complex
             module['module_description'], '\nModule with constants and procedures\n\n'
         )
         self.assertIn('PI', module['parameters'])
+        self.assertEqual('3.14159', module['parameters']['PI']['value'])
         self.assertIn('square', module['functions'])
         self.assertIn('greet', module['subroutines'])
 

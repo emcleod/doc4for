@@ -50,7 +50,8 @@ section:not(.module-description) {
 .functions-summary table,
 .subroutines-summary table,
 .parameters-summary table,
-.programs-summary table {
+.programs-summary table
+.types-summary table {
   width: 100%;
   border-collapse: collapse;
 }
@@ -58,7 +59,8 @@ section:not(.module-description) {
 .functions-summary th,
 .subroutines-summary th,
 .parameters-summary th,
-.programs-summary th {
+.programs-summary th
+.types-summary th {
   background-color: #dddddd;
   padding: 10px;
   text-align: left;
@@ -67,7 +69,8 @@ section:not(.module-description) {
 .functions-summary td,
 .subroutines-summary td,
 .parameters-summary td,
-.programs-summary th {
+.programs-summary td,
+.types-summary td {
   padding: 10px;
   vertical-align: top;
 }
@@ -75,14 +78,16 @@ section:not(.module-description) {
 .functions-summary tr:nth-child(even),
 .subroutines-summary tr:nth-child(even),
 .parameters-summary tr:nth-child(even),
-.programs-summary tr:nth-child(even) {
+.programs-summary tr:nth-child(even),
+.types-summary tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
 .functions-summary tr:nth-child(odd),
 .subroutines-summary tr:nth-child(odd),
 .parameters-summary tr:nth-child(odd),
-.programs-summary tr:nth-child(odd) {
+.programs-summary tr:nth-child(odd),
+.types-summary tr:nth-child(odd) {
   background-color: #ffffff;
 }
 
@@ -92,7 +97,8 @@ section:not(.module-description) {
 .subroutine-description,
 .parameters-summary,
 .programs-summary,
-.programs-description {
+.programs-description,
+.types-summary {
   display: block;
   padding-left: 20px;
   padding-top: 5px;
@@ -107,7 +113,8 @@ section:not(.module-description) {
 .parameters-summary td:first-child,
 .functions-summary td:first-child,
 .subroutines-summary td:first-child,
-.programs-summary td:first-child {
+.programs-summary td:first-child,
+.types-summary td:first-child {
   width: 25%;
 }
 
@@ -124,7 +131,8 @@ section:not(.module-description) {
 .function-header,
 .subroutine-header,
 .parameter-header,
-.programs-header {
+.programs-header,
+.types-header {
   background-color: #dddddd;
   padding: 10px;
   margin-bottom: 0;
