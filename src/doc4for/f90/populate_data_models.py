@@ -1,4 +1,4 @@
-from typing import List, Protocol, List, Union, Dict, Callable, TypeVar, Type
+from typing import List, Type
 import re
 from fparser.one.block_statements import (
     Module,
@@ -23,7 +23,6 @@ from doc4for.data_models import (
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.argument_utils import update_arguments_with_comment_data, update_arguments_with_parsed_data
 from doc4for.type_utils import update_type_with_parsed_data
-
 
 def parse_program(program: Program, comment_stack: List[Comment], file_name: str) -> ProgramDescription:
     program_details: ProgramDescription = {

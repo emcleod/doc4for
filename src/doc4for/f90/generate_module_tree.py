@@ -6,7 +6,8 @@ import shutil
 import errno
 import time
 import random
-from typing import List, Any
+from enum import Enum, auto
+from typing import List, Dict, Any, Tuple
 from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
     Module,
@@ -14,7 +15,9 @@ from fparser.one.block_statements import (
     Function,
     Subroutine,
     Type,
-    Public
+    Public,
+    Private,
+    Protected
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader, Template
@@ -28,9 +31,17 @@ from doc4for.f90.populate_data_models import (
     parse_type, 
     parse_parameter
 )
+
+class Visibility(Enum):
+    PUBLIC = auto()
+    PROTECTED = auto()
+    PRIVATE = auto()
+
 # TODO nested modules - have a tree in the menu structure and link in a list at the 
 # top of the page
+# TODO have a flag that lets private declarations be shown as well
 def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
+    visibility: Dict[str, Visibility] = {} # TODO name, object_type,visibility?
     modules: List[ModuleDescription] = []
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
@@ -42,19 +53,22 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
             elif isinstance(child, Module):
                 module_data: ModuleDescription = parse_module(child, comment_stack, f90_file_path)
                 comment_stack.clear()
-                # TODO have a flag that lets private declarations be shown as well
-                parse_module_content(comment_stack, child, module_data)
+                parse_module_content(comment_stack, child, module_data, visibility)
                 modules.append(module_data)
                 comment_stack.clear() 
     return modules
 
-def parse_module_content(comment_stack: List[Comment], module: Any, module_data: ModuleDescription) -> None:
-    public_declarations: List[str] = []
+def parse_module_content(comment_stack: List[Comment], module: Any, module_data: ModuleDescription, visibility: Dict[str, Visibility], 
+                         is_public: bool = True) -> None:
+    public_declarations: List[str] = [] #TODO get rid of this
     for item in module.content:
         if isinstance(item, Comment) and item.content:
             comment_stack.append(item)
         elif isinstance(item, Public):
+             is_public = True
              public_declarations.extend(item.items)
+        elif isinstance(item, Private):
+            is_public = False
         else:
             if isinstance(item, TypeDeclarationStatement) and 'parameter' not in item.attrspec:
                 continue
