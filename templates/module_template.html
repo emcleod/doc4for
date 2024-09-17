@@ -187,11 +187,112 @@
         {% endif %}
       </section>
 
+
+      {% if module_data.types %}
+      <section class="types-details" aria-labelledby="types-details-heading">
+        <h2 id="types-details-heading">Type Details</h2>
+        {% for type_name, type_data in module_data.types.items() %}
+        <section class="type" id="type-{{ type_name }}" aria-labelledby="{{ type_name }}-heading">
+          <h3 id="{{ type_name }}-heading" class="type-header">
+            {% if type_data.attributes %}
+            <span class="type-attributes">{{ type_data.attributes|join(' ') }}</span>
+            {% endif %}
+            <span class="type-name">{{ type_name }}</span>
+          </h3>
+          {% if type_data.extends %}
+          <p class="type-extends">extends: {{ type_data.extends }}</p>
+          {% endif %}
+          <div class="type-body">
+            <p>{{ type_data.description }}</p>
+            {% if type_data.data_components %}
+            <section class="data-components">
+              <h4>Data Components</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Attributes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for data_component_name, data_component in type_data.data_components.items() %}
+                  <tr>
+                    <td>{{ data_component_name }}</td>
+                    <td>{{ data_component.type }}</td>
+                    <td>{{ data_component.description }}</td>
+                    <td>{{ data_component.attributes|join(', ') }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+            {% endif %}
+            {% if type_data.procedures %}
+            <section class="procedures">
+              <h4>Procedures</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Attributes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for procedure_name, procedure_data in type_data.procedures.items() %}
+                  <tr>
+                    <td><a href="#procedure-{{ procedure_name }}">{{ procedure_name }}</a></td>
+                    <td>{{ procedure_data.description }}</td>
+                    <td>{{ procedure_data.attributes|join(', ') }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+            {% endif %}
+            {% if type_data.generic_interfaces %}
+            <section class="generic-interfaces">
+              <h4>Generic Interfaces</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Specific Procedures</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for generic_interface_name, generic_interface_data in type_data.generic_interfaces.items() %}
+                  <tr>
+                    <td>{{ generic_interface_name }}</td>
+                    <td>{{ generic_interface_data.description }}</td>
+                    <td>
+                      <ul>
+                        {% for procedure_name in generic_interface_data.specific_procedures %}
+                        <li><a href="#procedure-{{ procedure_name }}">{{ procedure_name }}</a></li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+            {% endif %}
+          </div>
+        </section>
+        {% endfor %}
+      </section>
+      {% endif %}
+      
+
       {% if module_data.functions %}
         <section class="function-details" aria-labelledby="function-details-heading">
           <h2 id="function-details-heading">Function Details</h2>
           {% for function_name, function_data in module_data.functions.items() %}
-          <section class="function" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
+          <section class="procedure" id="procedure-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
             <h3 id="{{ function_name }}-heading" class="function-header">
               {%- if function_data.attributes -%}
               <span class="function-attributes">{{ function_data.attributes|join(' ') }}</span>
@@ -246,7 +347,7 @@
         <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
           <h2 id="subroutine-details-heading">Subroutine Details</h2>
           {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
-          <section class="subroutine" id="subroutine-{{ subroutine_name }}"
+          <section class="procedure" id="procedure-{{ subroutine_name }}"
             aria-labelledby="{{ subroutine_name }}-heading">
             <h3 id="{{ subroutine_name }}-heading" class="subroutine-header">
               {%- if subroutine_data.attributes -%}

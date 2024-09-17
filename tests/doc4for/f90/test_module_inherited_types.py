@@ -428,7 +428,6 @@ module shapes
         self.assertEqual(rectangle_procedures['calculate_area']['description'], '')
         self.assertFalse(rectangle_procedures['calculate_area']['is_final'])
         self.assertEqual(rectangle_procedures['calculate_area']['attributes'], [])
-        #TODO
         # self.assertEqual(rectangle_procedures['describe']['name'], 'describe')
         # self.assertEqual(rectangle_procedures['describe']['description'], '')
         # self.assertFalse(rectangle_procedures['describe']['is_final'])
@@ -470,7 +469,47 @@ module shapes
         # self.assertEqual(square_procedures['describe']['attributes'], [])
         self.assertEqual(square['extends'], 'rectangle')
 
+
+    def test_inheritance_specific_binding_statement(self):
+        self.fs.create_file(
+            '/fake/path/types.f90',
+            contents='''\
+module test_module
+
+  type, extends(function_type) :: sine_type
+    contains
+      procedure :: f => sine_f
+      procedure :: taylor => sine_taylor
+  end type sine_type
+
+end module test_module
+''',
+        )
+        result = extract_module_data([Path('/fake/path/types.f90')])
+        self.assertEqual(len(result), 1)
+        module = result[0]
+
+    def test_inheritance_multiple_binding_statements(self):
+        self.fs.create_file(
+            '/fake/path/types.f90',
+            contents='''\
+module test_module
+
+  type :: vector_type
+    real :: x, y, z
+  contains
+    procedure :: add_vector
+    procedure :: add_scalar
+    generic :: add => add_vector, add_scalar
+  end type vector_type
+
+end module test_module
+''',
+        )
+        result = extract_module_data([Path('/fake/path/types.f90')])
+        self.assertEqual(len(result), 1)
+        module = result[0]
+
 if __name__ == '__main__':
     unittest.main()
-
 

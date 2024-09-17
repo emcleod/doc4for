@@ -100,6 +100,7 @@ def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription, c
         'description': get_formatted_description(comment_stack),
         'attributes': [attr.lower() for attr in item.attrs],
         'is_final': False,
+        'bound_to': item.bname
     }
     type_info['procedures'][item.name] = procedure_description
     comment_stack.clear()
@@ -118,7 +119,8 @@ def handle_module_procedure(item: ModuleProcedure, type_info: TypeDescription, c
             'name': name,
             'description': get_formatted_description(comment_stack),
             'attributes': [], #TODO
-            'is_final': False
+            'is_final': False,
+            'bound_to': None
         }
         type_info['procedures'][name] = procedure_description
     comment_stack.clear()
@@ -156,6 +158,7 @@ def handle_final_binding(item: FinalBinding, type_info: TypeDescription, comment
             'description': get_formatted_description(comment_stack),
             'attributes': ['final'],
             'is_final': True,
+            'bound_to': None
         }
     type_info['procedures'][final_name] = procedure_description
     comment_stack.clear()

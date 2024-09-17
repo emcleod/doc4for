@@ -104,7 +104,8 @@ ProcedureDescription = TypedDict('ProcedureDescription', {
     'name': str,
     'description': Optional[str],
     'attributes': List[str],  
-    'is_final': bool
+    'is_final': bool,
+    'bound_to': Optional[Union[str, List[str]]]
 })
 
 TypeDescription = TypedDict('TypeDescription', {

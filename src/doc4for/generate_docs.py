@@ -32,9 +32,6 @@ if (create_docs_directory()):
     modules: List[ModuleDescription] = extract_module_data(fortran_files)
     generate_module_pages(modules)
     generate_inheritance_tree_page(inheritance_tree)
-    for module in modules:
-        if module["module_name"] == 'sine_module':
-            print (module)
     
 else:
     logger.info("Nothing written")
