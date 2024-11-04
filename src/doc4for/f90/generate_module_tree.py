@@ -80,6 +80,13 @@ def parse_module_content(comment_stack: List[Comment], module: Any, module_data:
                 case Type():
                     type_description = parse_type(item, comment_stack, public_declarations)
                     module_data['types'][type_description['type_name']] = type_description
+                # case TypeDeclarationStatement():
+                #     if is_parameter(child):
+                #         parameter_description = parse_parameter(child, comment_stack)
+                #         module_data['parameters'][parameter_description['name']] = parameter_description
+                #     else:
+                #         variable_description = parse_variable(child, comment_stack)
+                #         module_data['variables'][variable_description['name']] = variable_description                
                 case TypeDeclarationStatement():
                     parameter_description = parse_parameter(item, comment_stack)
                     module_data['parameters'][parameter_description['name']] = parse_parameter(item, comment_stack)

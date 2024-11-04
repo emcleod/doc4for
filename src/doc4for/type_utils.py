@@ -297,6 +297,7 @@ def parse_dimension_string(dim_str: str) -> Optional[List[Union[int, str]]]:
             return None
     return dimensions
 
+#TODO this is wrong - replace with implementation in populate_data_models
 def extract_kind(type_spec: str) -> Optional[str]:
     """
     Extract the 'kind' value from a declaration, if it is present. For example,

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from doc4for.f90.generate_file_tree import is_doc4for_comment, format_comments
 from doc4for.comment_utils import format_comment_for_html
 
-class TestConstants(TestCase):
+class TestComments(TestCase):
 
     def test_comment_wrong_start(self):
         item1 = Mock(comment='! Start of comment\n')

@@ -10,12 +10,17 @@ from fparser.one.block_statements import (
     Function,
     Subroutine,
     Program,
-    Type
+    BlockData
 )
-from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.data_models import FileDescription
 from doc4for.comment_utils import is_doc4for_comment, format_comments
-from doc4for.f90.populate_data_models import parse_function, parse_subroutine, parse_program, parse_type, parse_parameter
+from doc4for.f90.populate_data_models import (
+  parse_function, 
+  parse_subroutine, 
+  parse_program, 
+  parse_module,
+  parse_block_data
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -155,9 +160,9 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
             'file_description': '',
             'functions': {},
             'subroutines': {},
-            'modules': [],
-            'types': {},
-            'programs': {}
+            'modules': {},
+            'programs': {},
+            'block_data': {}
         }
         first_non_comment_node = True
         for child in tree.content:
@@ -170,19 +175,15 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
                 first_non_comment_node = False
                 match child:
                     case Module():
-                        file_data['modules'].append(child.name)
+                        file_data['modules'][child.name] = parse_module(child, comment_stack, f90_file_str)
                     case Function():
                         file_data['functions'][child.name] = parse_function(child, comment_stack)
                     case Subroutine():
                         file_data['subroutines'][child.name] = parse_subroutine(child, comment_stack)
                     case Program():
                         file_data['programs'][child.name] = parse_program(child, comment_stack, f90_file_str)
-                    case Type():
-                        type_description = parse_type(child, comment_stack, []) # TODO public
-                        file_data['types'][type_description['type_name']] = type_description
-                    # case TypeDeclarationStatement(): # TODO
-                        # parameter_description = parse_parameter(item, comment_stack)
-                        # file_data['parameters'][parameter_description['name']] = parse_parameter(item, comment_stack)
+                    case BlockData():
+                        file_data['block_data'][child.name] = parse_block_data(child, comment_stack)
                     case _:
                         pass
                 comment_stack.clear()
@@ -267,10 +268,5 @@ def generate_file_pages(directory_tree: DirectoryTree,
     with open('docs/index.html', 'w', encoding='utf-8') as file:
         file.write(index_output)
 
-# TODO add error handling
-# TODO add logging
-# TODO remove hard-coding of e.g. template directory and base directory, but use defaults
-# TODO allow general configuration e.g. style file, output directory name
 # TODO check docstring formatting
 # TODO remove duplicated code in this and module tree generator for directory creation
-# TODO large directories / files - stream the input to improve performance
