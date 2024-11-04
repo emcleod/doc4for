@@ -31,9 +31,15 @@ share/python-wheels/
 *pylint*
 MANIFEST
 
+# pyptoject.toml build artifacts
+.pytest_cache/
+*.pyc
+.ruff_cache/
+
 # PyInstaller
 *.manifest
 *.spec
+
 
 # Installer logs
 pip-log.txt
