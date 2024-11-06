@@ -14,7 +14,7 @@ from doc4for.data_models import (
     ProcedureDescription,
     GenericInterface,
     DataComponent,
-    Dimension
+    Dimension_TEMP
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 
@@ -238,7 +238,7 @@ def get_name_and_initial_value(entity_decl: str) -> Tuple[str, Optional[str]]:
         return re.sub(r'\s*\(\s*(:(?:\s*,\s*:)*)\s*\)\s*$', '', words[-1]), None
     return words[-1].strip(), None
 
-def extract_dimension(entity_decl: str, attributes: List[str]) -> Optional[Dimension]:
+def extract_dimension(entity_decl: str, attributes: List[str]) -> Optional[Dimension_TEMP]:
     """
     Extract dimension information from an entity declaration and attributes.
 
@@ -259,7 +259,7 @@ def extract_dimension(entity_decl: str, attributes: List[str]) -> Optional[Dimen
                 return {'dimensions': dimensions}
     return None
 
-def dimension_from_declaration(s: str) -> Optional[Dimension]:
+def dimension_from_declaration(s: str) -> Optional[Dimension_TEMP]:
     """
     Extract dimension information from a declaration string.
 

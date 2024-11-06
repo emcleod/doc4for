@@ -115,7 +115,8 @@ def parse_block_data(
             # }
 
         elif isinstance(item, TypeDeclarationStatement):
-            pass
+            temp = parse_variable(item, [])
+            x = 1
             # var_type = item.get_type()
             # for item in item.items:
             #     var_info = {
@@ -236,11 +237,9 @@ def parse_type(
         type_description["description"] = format_comments(comment_stack)
     return type_description
 
-
 def parse_variable(
     declaration: TypeDeclarationStatement, comment_stack: List[Comment]
 ) -> List[VariableDescription]:
-    item_str = declaration.item.line
     description = (
         format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
     )
@@ -248,40 +247,31 @@ def parse_variable(
     shared_attributes = get_attributes(declaration)
     kind = extract_kind(declaration)
 
+    # Extract dimension from attributes
+    dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
+    
+    # Remove 'dimension' from shared_attributes if present
+    shared_attributes = [attr for attr in shared_attributes if not attr.startswith("dimension(")]
+
     variable_descriptions: List[VariableDescription] = []
 
-    if "::" in item_str:
-        var_part = item_str.split("::", 1)[1].strip()
-    else:
-        base_with_kind = base_type
-        if "(" in item_str:
-            type_end = len(base_type)
-            if item_str.find("(") == type_end:
-                base_with_kind = item_str[: item_str.find(")") + 1]
-            else:
-                base_with_kind = base_type
-        elif "*" in item_str:
-            base_with_kind = (
-                item_str[: item_str.find("*")]
-                + item_str[item_str.find("*") : item_str.find(" ", item_str.find("*"))]
-            )
-
-        var_part = item_str[len(base_with_kind) :].strip()
-
-    var_declarations = [v.strip() for v in var_part.split(",")]
-
-    for var_decl in var_declarations:
-        if "=" in var_decl:
-            name, initial_value = [x.strip() for x in var_decl.split("=", 1)]
+    # fparser gives us each entity declaration separately
+    for entity in declaration.entity_decls:
+        if "=" in entity:
+            full_name, initial_value = [x.strip() for x in entity.split("=", 1)]
         else:
-            name = var_decl.strip()
+            full_name = entity.strip()
             initial_value = None
 
         # Extract dimension using the new method
-        dimension = extract_variable_dimension(name)
+        dimension = extract_variable_dimension(full_name)
+
+        # Use dimension from attributes if not found in name
+        if not dimension and dimension_from_attr:
+            dimension = dimension_from_attr
 
         # Remove any parenthetical expressions from the name
-        name = re.sub(r"\([^)]*\)", "", name).strip()
+        name = re.sub(r"\(.*\)", "", full_name).strip()
 
         # Handle allocatable arrays
         if "allocatable" in shared_attributes and "(:)" in name:
@@ -300,7 +290,6 @@ def parse_variable(
         variable_descriptions.append(variable_description)
 
     return variable_descriptions
-
 
 # TODO public declaration should be handled here?
 def parse_parameter(
@@ -371,6 +360,12 @@ def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
         return star_value or kind_value or None
     return None
 
+def extract_dimension_from_attributes(attributes: List[str]) -> Optional[Dimension]:
+    for attr in attributes:
+        if attr.startswith("dimension("):
+            dim_str = attr[len("dimension("):-1]
+            return extract_variable_dimension(f"x({dim_str})")
+    return None
 
 def extract_variable_dimension(name: str) -> Optional[Dimension]:
     """Extract dimension information from a variable name with array specification.
@@ -382,27 +377,96 @@ def extract_variable_dimension(name: str) -> Optional[Dimension]:
         Optional[Dimension]: The dimension information if present, None otherwise
 
     Examples:
-        "x(10)"     -> {'dimensions': [10]}
-        "x(10,20)"  -> {'dimensions': [10, 20]}
-        "x"         -> None
+        Simple dimensions:
+            "x(10)"     -> {'dimensions': [{'lower': '1', 'upper': '10'}]}
+            "x(10,20)"  -> {'dimensions': [{'lower': '1', 'upper': '10'}, 
+                                          {'lower': '1', 'upper': '20'}]}
+        
+        Explicit bounds:
+            "x(0:10)"   -> {'dimensions': [{'lower': '0', 'upper': '10'}]}
+            "x(-5:5)"   -> {'dimensions': [{'lower': '-5', 'upper': '5'}]}
+        
+        Variable bounds:
+            "x(n)"      -> {'dimensions': [{'lower': '1', 'upper': 'n'}]}
+            "x(-n:n)"   -> {'dimensions': [{'lower': '-n', 'upper': 'n'}]}
+        
+        Expressions:
+            "x(2*n+1)"  -> {'dimensions': [{'lower': '1', 'upper': '2*n+1'}]}
+            "x(0:n-1)"  -> {'dimensions': [{'lower': '0', 'upper': 'n-1'}]}
+
+        Allocatable arrays:
+            "x(:)"      -> {'dimensions': [{'lower': None, 'upper': None}]}
+            "x(:,:)"    -> {'dimensions': [{'lower': None, 'upper': None},
+                                         {'lower': None, 'upper': None}]}
+        
+        Not an array:
+            "x"         -> None
     """
+   # Return None if this isn't an array declaration
     if "(" not in name or ")" not in name:
         return None
 
-    # Extract what's inside the parentheses
-    dim_match = re.search(r"\(([^)]+)\)", name)
-    if not dim_match:
+    # Function to find matching parenthesis
+    def find_matching_parenthesis(s, start=0):
+        count = 0
+        for i in range(start, len(s)):
+            if s[i] == '(':
+                count += 1
+            elif s[i] == ')':
+                count -= 1
+                if count == 0:
+                    return i
+        return -1
+
+    # Find the outermost closing parenthesis
+    end = find_matching_parenthesis(name, name.index('('))
+    if end == -1:
         return None
 
-    dim_str = dim_match.group(1)
+    dim_str = name[name.index('(')+1:end]
 
-    # Split on comma for multi-dimensional arrays
+    # Function to split dimensions, respecting nested parentheses
+    def split_dimensions(s):
+        result = []
+        current = ""
+        count = 0
+        for char in s:
+            if char == ',' and count == 0:
+                result.append(current.strip())
+                current = ""
+            else:
+                current += char
+                if char == '(':
+                    count += 1
+                elif char == ')':
+                    count -= 1
+        result.append(current.strip())
+        return result
+
+    dim_parts = split_dimensions(dim_str)
+
+    # Process each dimension specification
     dims = []
-    for d in dim_str.split(","):
-        # For now, just handle simple integer dimensions
-        try:
-            dims.append(int(d.strip()))
-        except ValueError:
-            continue  # Skip non-integer dimensions for now
+    for d in dim_parts:
+        d = d.strip()
+        if d == ':':
+            # Handle allocatable dimensions
+            dims.append({
+                "lower": None,
+                "upper": None
+            })
+        elif ":" in d:
+            # Handle explicit bounds (e.g., "0:10", "-n:n")
+            lower, upper = d.split(":")
+            dims.append({
+                "lower": lower.strip(),
+                "upper": upper.strip()
+            })
+        else:
+            # Handle implicit lower bound (defaults to 1)
+            dims.append({
+                "lower": "1",
+                "upper": d.strip()
+            })
 
     return {"dimensions": dims} if dims else None

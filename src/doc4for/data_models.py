@@ -10,7 +10,16 @@ IGNORE_SUFFIX = "*!"
 """Suffix used to mark the end of a section to be ignored."""
 
 # TODO don't need a dict
-Dimension = TypedDict("Dimension", {"dimensions": List[Union[int, str]]})
+Dimension_TEMP = TypedDict("Dimension_TEMP", {"dimensions": List[Union[int, str]]})
+
+ArrayBound = TypedDict("ArrayBound", {
+    "lower": Optional[str],  # None for allocatable, should be 1 by default
+    "upper": Optional[str]   # None for allocatable
+})
+
+Dimension = TypedDict("Dimension", {
+    "dimensions": List[ArrayBound]
+})
 
 Argument = TypedDict(
     "Argument",
@@ -102,7 +111,7 @@ DataComponent = TypedDict(
         "type": str,
         "kind": Optional[str],
         "description": str,
-        "dimension": Optional[Dimension],
+        "dimension": Optional[Dimension_TEMP],
         "len": Optional[str],
         "initial_value": Optional[str],
         "attributes": List[str],
