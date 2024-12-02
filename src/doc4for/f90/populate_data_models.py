@@ -1,5 +1,6 @@
 from typing import List, Type, Dict, Optional, Tuple
 import re
+from functools import wraps
 from fparser.one.block_statements import (
     Module,
     Comment,
@@ -24,7 +25,10 @@ from doc4for.data_models import (
     Uses,
     VariableDescription,
     BlockDataDescription,
-    Dimension
+    Dimension,
+    ArrayBound,
+    Expression,
+    ExpressionType
 )
 from doc4for.comment_utils import is_doc4for_comment, format_comments
 from doc4for.argument_utils import (
@@ -33,6 +37,15 @@ from doc4for.argument_utils import (
 )
 from doc4for.type_utils import update_type_with_parsed_data, extract_dimension
 
+def handle_dimension_errors(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            # For now, just re-raise, but could log or handle differently in future
+            raise
+    return wrapper
 
 def parse_program(
     program: Program, comment_stack: List[Comment], file_name: str
@@ -361,12 +374,14 @@ def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
     return None
 
 def extract_dimension_from_attributes(attributes: List[str]) -> Optional[Dimension]:
+    """Extract dimension information from a list of attributes."""
     for attr in attributes:
-        if attr.startswith("dimension("):
-            dim_str = attr[len("dimension("):-1]
+        if attr.startswith("dimension(") and attr.endswith(")"):
+            dim_str = attr[10:-1]  # 10 is len("dimension(")
             return extract_variable_dimension(f"x({dim_str})")
     return None
 
+@handle_dimension_errors
 def extract_variable_dimension(name: str) -> Optional[Dimension]:
     """Extract dimension information from a variable name with array specification.
 
@@ -380,7 +395,7 @@ def extract_variable_dimension(name: str) -> Optional[Dimension]:
         Simple dimensions:
             "x(10)"     -> {'dimensions': [{'lower': '1', 'upper': '10'}]}
             "x(10,20)"  -> {'dimensions': [{'lower': '1', 'upper': '10'}, 
-                                          {'lower': '1', 'upper': '20'}]}
+                                        {'lower': '1', 'upper': '20'}]}
         
         Explicit bounds:
             "x(0:10)"   -> {'dimensions': [{'lower': '0', 'upper': '10'}]}
@@ -397,76 +412,179 @@ def extract_variable_dimension(name: str) -> Optional[Dimension]:
         Allocatable arrays:
             "x(:)"      -> {'dimensions': [{'lower': None, 'upper': None}]}
             "x(:,:)"    -> {'dimensions': [{'lower': None, 'upper': None},
-                                         {'lower': None, 'upper': None}]}
+                                        {'lower': None, 'upper': None}]}
         
         Not an array:
             "x"         -> None
-    """
-   # Return None if this isn't an array declaration
+    """    
+    dim_str = extract_dimension_string(name)
+    if dim_str is None:
+        return None
+    
+    dims = [parse_dimension_spec(d) for d in split_dimensions(dim_str)]
+    return {"dimensions": dims} if dims else None
+
+def extract_dimension_string(name: str) -> Optional[str]:
+    """Extract the dimension specification string from a variable name."""
     if "(" not in name or ")" not in name:
         return None
-
-    # Function to find matching parenthesis
-    def find_matching_parenthesis(s, start=0):
-        count = 0
-        for i in range(start, len(s)):
-            if s[i] == '(':
-                count += 1
-            elif s[i] == ')':
-                count -= 1
-                if count == 0:
-                    return i
-        return -1
-
-    # Find the outermost closing parenthesis
-    end = find_matching_parenthesis(name, name.index('('))
+    
+    start = name.index('(')
+    end = find_matching_parenthesis(name, start)
     if end == -1:
         return None
+    
+    return name[start + 1: end]
 
-    dim_str = name[name.index('(')+1:end]
+def find_matching_parenthesis(s: str, start: int = 0) -> int:
+    """Find the index of the matching closing parenthesis.
+    
+    Args:
+        s: The string to search in
+        start: The index of the opening parenthesis
+    
+    Returns:
+        The index of the matching closing parenthesis, or -1 if not found
+    """
+    count = 0
+    for i in range(start, len(s)):
+        if s[i] == '(':
+            count += 1
+        elif s[i] == ')':
+            count -= 1
+            if count == 0:
+                return i
+    return -1
 
-    # Function to split dimensions, respecting nested parentheses
-    def split_dimensions(s):
-        result = []
-        current = ""
-        count = 0
-        for char in s:
-            if char == ',' and count == 0:
-                result.append(current.strip())
-                current = ""
-            else:
-                current += char
-                if char == '(':
-                    count += 1
-                elif char == ')':
-                    count -= 1
-        result.append(current.strip())
-        return result
 
-    dim_parts = split_dimensions(dim_str)
-
-    # Process each dimension specification
-    dims = []
-    for d in dim_parts:
-        d = d.strip()
-        if d == ':':
-            # Handle allocatable dimensions
-            dims.append({
-                "lower": None,
-                "upper": None
-            })
-        elif ":" in d:
-            # Handle explicit bounds (e.g., "0:10", "-n:n")
-            lower, upper = d.split(":")
-            dims.append({
-                "lower": lower.strip(),
-                "upper": upper.strip()
-            })
+def split_dimensions(s: str) -> List[str]:
+    """Split dimension specifications, respecting nested parentheses."""
+    result = []
+    current = ""
+    paren_count = 0
+    
+    for char in s:
+        if char == ',' and paren_count == 0:
+            result.append(current.strip())
+            current = ""
         else:
-            # Handle implicit lower bound (defaults to 1)
-            dims.append({
-                "lower": "1",
-                "upper": d.strip()
-            })
+            current += char
+            if char == '(':
+                paren_count += 1
+            elif char == ')':
+                paren_count -= 1
+    
+    result.append(current.strip())
+    
+    # Replace any empty strings with ':'
+    return [':' if not dim else dim for dim in result]
 
-    return {"dimensions": dims} if dims else None
+def split_args(s: str) -> List[str]:
+    """Split function arguments, respecting nested parentheses.
+    
+    Args:
+        s: The argument string
+    
+    Returns:
+        A list of individual arguments
+    
+    Examples:
+        split_args("1, 2")            -> ["1", "2"]
+        split_args("f(1,2), 3")       -> ["f(1,2)", "3"]
+        split_args("1, g(2,h(3,4))") -> ["1", "g(2,h(3,4))"]
+    """
+    result = []
+    current = ""
+    paren_count = 0
+    
+    for char in s:
+        if char == ',' and paren_count == 0:
+            result.append(current.strip())
+            current = ""
+        else:
+            current += char
+            if char == '(':
+                paren_count += 1
+            elif char == ')':
+                paren_count -= 1
+    
+    if current:
+        result.append(current.strip())
+    return result
+
+def parse_expression(expr: str) -> Expression:
+    if '(' in expr:
+        # This is a function call
+        fname = expr[:expr.index('(')]
+        args_str = expr[expr.index('(')+1:expr.rindex(')')]
+        args = [parse_expression(arg.strip()) for arg in split_args(args_str)]
+        return Expression(
+            expr_type=ExpressionType.FUNCTION_CALL,
+            value=expr,
+            function_name=fname,
+            arguments=args
+        )
+    elif expr.isdigit() or expr[0] in '+-' and expr[1:].isdigit():
+        # This is a literal
+        return Expression(expr_type=ExpressionType.LITERAL, value=expr)
+    else:
+        # This is a variable
+        return Expression(expr_type=ExpressionType.VARIABLE, value=expr)
+
+def parse_dimension_spec(d: str) -> ArrayBound:
+    """Parse a single dimension specification into an ArrayBound."""
+    d = d.strip()
+
+    # assumed size, first index is 1 with no upper bound
+    if d == '*':
+        return {"lower": Expression(ExpressionType.LITERAL, "1"), "upper": None, "stride": None}
+ 
+    # allocatable, no explicit dimensions
+    if d == ':':
+        return {"lower": None, "upper": None, "stride": None}
+    
+    if ':' in d:
+        parts = [p.strip() for p in d.split(':')]
+        if len(parts) == 2:
+            lower, upper = parts
+            return {
+                "lower": parse_expression(lower) if lower else None,
+                "upper": parse_expression(upper) if upper else None,
+                "stride": None
+            }
+        elif len(parts) == 3:
+            lower, upper, stride = parts
+            return {
+                "lower": parse_expression(lower) if lower else None,
+                "upper": parse_expression(upper) if upper else None,
+                "stride": parse_expression(stride) if stride else None
+            }
+    
+    return {
+        "lower": Expression(ExpressionType.LITERAL, "1"),
+        "upper": parse_expression(d),
+        "stride": None
+    }
+
+#TODO: this is to link any function calls in dimensions to their definition -
+# will need to have a function list for this to work
+# def process_dimensions_for_documentation(dims: List[ArrayBound], 
+#                                         function_registry: Dict[str, 'FunctionInfo']):
+#     function_references = []
+#     for dim in dims:
+#         for bound in (dim['lower'], dim['upper'], dim['stride']):
+#             if bound and bound.expr_type == ExpressionType.FUNCTION_CALL:
+#                 if bound.function_name in function_registry:
+#                     function_references.append({
+#                         'name': bound.function_name,
+#                         'info': function_registry[bound.function_name]
+#                     })
+#     return function_references
+
+# {% for dim in dimensions %}
+#   {% if dim.upper.expr_type == 'function_call' %}
+#     <a href="#function-{{ dim.upper.function_name }}">{{ dim.upper.value }}</a>
+#   {% else %}
+#     {{ dim.upper.value }}
+#   {% endif %}
+# {% endfor %}

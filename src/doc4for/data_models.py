@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional, TypedDict, Union, TypeGuard
-
+from dataclasses import dataclass
+from enum import Enum
 ANNOTATION_PREFIX = "@"
 """Prefix used to identify annotations in comments."""
 
@@ -12,10 +13,26 @@ IGNORE_SUFFIX = "*!"
 # TODO don't need a dict
 Dimension_TEMP = TypedDict("Dimension_TEMP", {"dimensions": List[Union[int, str]]})
 
+#TODO use dataclasses instead of typed dicts?
+
+class ExpressionType(Enum):
+    LITERAL = "literal"
+    VARIABLE = "variable"
+    FUNCTION_CALL = "function_call"
+
+@dataclass
+class Expression:
+    expr_type: ExpressionType
+    value: str
+    function_name: Optional[str] = None
+    arguments: Optional[List['Expression']] = None
+
+
 ArrayBound = TypedDict("ArrayBound", {
     "lower": Optional[str],  # None for allocatable, should be 1 by default
-    "upper": Optional[str]   # None for allocatable
-})
+    "upper": Optional[str],  # None for allocatable
+    "stride": Optional[str]  # None if no stride is specified
+}, total=False)
 
 Dimension = TypedDict("Dimension", {
     "dimensions": List[ArrayBound]
