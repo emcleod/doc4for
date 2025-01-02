@@ -1,0 +1,26 @@
+{
+    "output_dir": "docs",
+    "extensions": ["f90", "f95", "f03", "f08", "f77"],
+    "output_formats": {
+      "html": {
+        "enabled": true,
+        "use_default_css": true,
+        "custom_css": null,
+        "template": "default",
+        "syntax_highlighting": true,
+        "template_dir": null,
+        "single_page": false
+      },
+      "pdf": {
+        "enabled": false
+      },
+      "markdown": {
+        "enabled": false
+      }
+    },
+    "exclude_dirs": ["docs", ".git", "__pycache__", "build", "dist", "myenv"],
+    "author": null,
+    "title": null,
+    "version": null,
+    "include_private": false
+  }

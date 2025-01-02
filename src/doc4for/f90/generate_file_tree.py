@@ -22,7 +22,6 @@ from doc4for.f90.populate_data_models import (
   parse_block_data
 )
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DirectoryTree:

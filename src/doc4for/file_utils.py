@@ -7,32 +7,38 @@ from pathlib import Path
 from typing import List, Union, Set
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
 logger = logging.getLogger(__name__)
 
-def find_files_by_extensions(directory: Union[str, Path], extensions: Set[str] = {'f90'}) -> List[Path]:
+def find_files_by_extensions(directory: Union[str, Path], 
+                            extensions: Set[str] = {'f90'},
+                            exclude_dirs: Set[str] = set()) -> List[Path]:
     """
-    Finds all files with the specified extensions in a directory and its subdirectories.
+    Finds all files with the specified extensions in a directory and its subdirectories,
+    excluding specified directories.
 
     Args:
         directory (Union[str, Path]): The path to the top-level directory
         extensions (Set[str]): The file extensions to search for (e.g., {'f90', 'f95'})
+        exclude_dirs (Set[str]): Directories to exclude from the search
     Returns:
         A list of relative paths to any files that have been found.
     """
     directory = Path(directory)
     # Convert all extensions to lowercase for case-insensitive matching
     lowercase_extensions = {ext.lower().lstrip('.') for ext in extensions}
+    # Convert exclude_dirs to absolute paths for comparison
+    exclude_paths = {directory / exclude_dir for exclude_dir in exclude_dirs}
     
-    files = [
-        file_path.relative_to(directory)
-        for file_path in directory.rglob('*')
-        if file_path.is_file() and file_path.suffix.lower().lstrip('.') in lowercase_extensions
-    ]
+    files = []
+    for file_path in directory.rglob('*'):
+        # Check if file is in an excluded directory
+        if any(exclude_path in file_path.parents for exclude_path in exclude_paths):
+            continue
+        
+        if (file_path.is_file() and 
+            file_path.suffix.lower().lstrip('.') in lowercase_extensions):
+            files.append(file_path.relative_to(directory))
+    
     return files
 
 def check_write_permissions(path: Union[str, Path]) -> bool:

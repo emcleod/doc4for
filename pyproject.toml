@@ -26,5 +26,7 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[project.scripts]
+doc4for = "doc4for.generate_docs:main"
 
 #pip install -e . --config-settings editable_mode=compat

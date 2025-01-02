@@ -234,7 +234,8 @@ def update_with_annotation_description(parts: List[str], arg_info: Union[Functio
     arg_name, annotation_type = parts[1].rstrip(':'), parts[2]
     comment_annotation_type = parts[0][1:]  # Remove '@' prefix
     if not any(arg_name in arg_info[annotation_type] for annotation_type in annotation_types):
-        print(f'Warning: {comment_annotation_type} annotation {arg_name} found that is not present in arguments {[arg_info[t].keys() for t in annotation_types]}')
+        #TODO this error message is wrong
+        print(f'Warning: "{comment_annotation_type}" annotation "{arg_name}" found that is not present in arguments {[arg_info[t].keys() for t in annotation_types]}')
     else:
         for annotation_type in annotation_types:
             if arg_name in arg_info[annotation_type]:
