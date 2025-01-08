@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import Dict, Any, Set
 from pathlib import Path
 
@@ -9,14 +10,34 @@ logger = logging.getLogger(__name__)
 ConfigDict = Dict[str, Any]
 FormatDict = Dict[str, Dict[str, Any]]
 
+def normalize_path(path: str) -> str:
+    """Normalize a path to absolute path with consistent separators."""
+    return str(Path(path).resolve())
+
+def normalize_extensions(extensions: list) -> list:
+    """Convert all extensions to lowercase."""
+    return [ext.lower() for ext in extensions]
+
+def normalize_dirs(dirs: list) -> list:
+    """Convert all directory names to lowercase."""
+    return [d.lower() for d in dirs]
+
 DEFAULT_CONFIG: ConfigDict = {
-    "output_dir": "docs",
-    "extensions": ["f90", "f95", "f03", "f08"],
+    "output_dir": normalize_path("docs"),
+    "extensions": normalize_extensions(["f90", "f95", "f03", "f08"]),
     "output_formats": {
         "html": {
             "enabled": True,
-            "use_default_css": True,
-            "custom_css": None,
+            "templates": {
+                "root_dir": normalize_path("templates"),
+                "static": {
+                    "css": normalize_path("static/css"),
+                    "images": normalize_path("static/images")
+                }
+            },
+            "syntax_highlighting": True,
+            "template_dir": None,
+            "single_page": False
         },
         "pdf": {
             "enabled": False,
@@ -25,10 +46,11 @@ DEFAULT_CONFIG: ConfigDict = {
             "enabled": False,
         },
     },
-    "exclude_dirs": ["docs", ".git", "__pycache__", "build", "dist"],
+    "exclude_dirs": normalize_dirs(["docs", ".git", "__pycache__", "build", "dist"]),
     "author": None,
     "title": None,
-    "version": None
+    "version": None,
+    "include_private": False
 }
 
 def validate_config(config: ConfigDict) -> None:
@@ -62,18 +84,61 @@ def validate_config(config: ConfigDict) -> None:
     
     # Check html format structure
     html_config: Dict[str, Any] = formats["html"]
-    required_html_keys: Set[str] = {"enabled", "use_default_css", "custom_css"}
+    required_html_keys: Set[str] = {"enabled", "templates", "syntax_highlighting", 
+                                    "template_dir", "single_page"}
     missing_html_keys: Set[str] = required_html_keys - set(html_config.keys())
     if missing_html_keys:
         raise ValueError(f"Missing required HTML configuration keys: {missing_html_keys}")
     
+    # Validate templates structure
+    if "templates" in html_config:
+        _validate_templates_structure(html_config["templates"])
+    
     # Check other format structures 
-    # TODO change this when we generate other output types
     for format_name in ["pdf", "markdown"]:
         format_config: Dict[str, Any] = formats[format_name]
         if "enabled" not in format_config:
             raise ValueError(f"{format_name.upper()} format configuration missing 'enabled' field")
 
+def _validate_templates_structure(templates_config: Dict[str, Any]) -> None:
+    """
+    Validate the structure of templates configuration.
+    
+    Args:
+        templates_config: The templates configuration dictionary to validate.
+    
+    Raises:
+        ValueError: If the templates structure is invalid or required paths don't exist.
+    """
+    required_keys: Set[str] = {"root_dir", "static"}
+    missing_keys: Set[str] = required_keys - set(templates_config.keys())
+    if missing_keys:
+        raise ValueError(f"Missing required templates keys: {missing_keys}")
+    
+    static_config: Dict[str, Any] = templates_config["static"]
+    required_static_keys: Set[str] = {"css", "images"}
+    missing_static_keys: Set[str] = required_static_keys - set(static_config.keys())
+    if missing_static_keys:
+        raise ValueError(f"Missing required static configuration keys: {missing_static_keys}")
+    
+    # Check if root_dir exists
+    root_dir: Path = Path(normalize_path(templates_config["root_dir"]))
+    if not root_dir.exists() or not root_dir.is_dir():
+        raise ValueError(f"Templates root directory does not exist: {root_dir}")
+    
+    # Check if CSS directory exists
+    css_path = normalize_path(templates_config["static"]["css"])
+    css_dir: Path = Path(css_path)
+    if not css_dir.exists() or not css_dir.is_dir():
+        raise ValueError(f"CSS directory does not exist: {css_dir}")
+    
+    # Images can be None or an existing directory
+    if templates_config["static"]["images"] is not None:
+        images_path = normalize_path(templates_config["static"]["images"])
+        images_dir: Path = Path(images_path)
+        if not images_dir.exists() or not images_dir.is_dir():
+            raise ValueError(f"Images directory does not exist: {images_dir}")
+                
 def deep_update(base_dict: ConfigDict, update_dict: ConfigDict) -> None:
     """
     Recursively update a dictionary with values from another dictionary.
@@ -95,22 +160,15 @@ def deep_update(base_dict: ConfigDict, update_dict: ConfigDict) -> None:
         else:
             base_dict[k] = v
 
-def load_configuration(config_file_name: str) -> ConfigDict:
+def load_configuration(config_file_name: str = 'doc4for.json') -> ConfigDict:
     """
     Load configuration from file, falling back to defaults if necessary.
     
-    The function looks for a file named 'doc4for.json' in the current directory.
-    If found, it loads and validates the configuration, merging it with defaults.
-    If any issues are encountered, it falls back to the default configuration.
-    
     Args:
-        The name of the JSON configuration file.
-
-    Returns:
-        The loaded configuration, either from file or defaults.
+        config_file_name: The name of the configuration file to load (default: 'doc4for.json')
     
-    Raises:
-        ValueError: If the merged configuration fails validation.
+    Returns:
+        Dict[str, Any]: The loaded configuration, either from file or defaults
     
     Example:
         >>> config = load_configuration()
@@ -123,7 +181,12 @@ def load_configuration(config_file_name: str) -> ConfigDict:
     if config_file.exists():
         try:
             with open(config_file, 'r') as f:
-                user_config: ConfigDict = json.load(f)
+                content = f.read().strip()
+                if not content:
+                    logger.warning("Configuration file is empty. Using defaults.")
+                    return DEFAULT_CONFIG.copy()
+                
+                user_config: ConfigDict = json.loads(content)
                 
                 if not user_config:
                     logger.warning("Configuration file is empty. Using defaults.")
@@ -136,13 +199,33 @@ def load_configuration(config_file_name: str) -> ConfigDict:
                     # Remove unknown keys
                     user_config = {k: v for k, v in user_config.items() 
                                   if k in DEFAULT_CONFIG}
-                
+
+                # Normalize extensions and exclude_dirs in user config
+                if 'extensions' in user_config:
+                    user_config['extensions'] = normalize_extensions(user_config['extensions'])
+                if 'exclude_dirs' in user_config:
+                    user_config['exclude_dirs'] = normalize_dirs(user_config['exclude_dirs'])
+                                
                 # For partial configurations, don't validate until after merge
                 deep_update(config, user_config)
                 
         except json.JSONDecodeError as e:
             logger.warning(f"Error reading configuration file: {e}. Using defaults.")
             return DEFAULT_CONFIG.copy()
+    
+    # Normalize paths in the final config
+    config['output_dir'] = normalize_path(config['output_dir'])
+    if config['output_formats']['html']['templates']['root_dir']:
+        config['output_formats']['html']['templates']['root_dir'] = \
+            normalize_path(config['output_formats']['html']['templates']['root_dir'])
+    
+    css_path = config['output_formats']['html']['templates']['static']['css']
+    if css_path:
+        config['output_formats']['html']['templates']['static']['css'] = normalize_path(css_path)
+    
+    images_path = config['output_formats']['html']['templates']['static']['images']
+    if images_path:
+        config['output_formats']['html']['templates']['static']['images'] = normalize_path(images_path)
     
     try:
         validate_config(config)
@@ -151,3 +234,4 @@ def load_configuration(config_file_name: str) -> ConfigDict:
         raise
     
     return config
+

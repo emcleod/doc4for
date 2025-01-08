@@ -16,32 +16,29 @@ class TestConfigurationStructure(unittest.TestCase):
             "output_formats": {
                 "html": {
                     "enabled": True,
-                    "use_default_css": True,
-                    "custom_css": None,
-                    # "template": "default",
-                    # "syntax_highlighting": True,
-                    # "template_dir": None,
-                    # "single_page": False
+                    "templates": {
+                        "root_dir": "templates",
+                        "static": {
+                            "css": "static/css",
+                            "images": "static/images"
+                        }
+                    },
+                    "syntax_highlighting": False,
+                    "template_dir": None,
+                    "single_page": False
                 },
                 "pdf": {
                     "enabled": False,
-                    # "paper_size": "a4",
-                    # "font": "Times New Roman",
-                    # "font_size": 11,
-                    # "template": "default",
-                    # "latex_engine": "pdflatex"
                 },
                 "markdown": {
                     "enabled": False,
-                    # "include_toc": True,
-                    # "code_fence_style": "```fortran",
-                    # "flavor": "github"
                 },
             },
             "exclude_dirs": ["docs", ".git", "__pycache__", "build", "dist"],
             "author": None,
             "title": None,
-            "version": None
+            "version": None,
+            "include_private": False
         }
 
         # Get the actual default configuration
