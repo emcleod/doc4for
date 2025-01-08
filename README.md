@@ -17,9 +17,13 @@ Here's a basic configuration file:
   "output_formats": {
     "html": {
       "enabled": true,
-      "use_default_css": true,
-      "custom_css": null,
-      "template": "default",
+      "templates": {
+        "root_dir": "templates",
+        "static": {
+          "css": "static/css",
+          "images": "static/images"
+        }
+      },
       "syntax_highlighting": true,
       "template_dir": null,
       "single_page": false
@@ -31,10 +35,11 @@ Here's a basic configuration file:
       "enabled": false
     }
   },
-  "exclude_dirs": ["docs", ".git", "__pycache__", "build", "dist"],
+  "exclude_dirs": ["docs", ".git", "__pycache__", "build", "dist", "myenv"],
   "author": null,
   "title": null,
-  "version": null
+  "version": null,
+  "include_private": false
 }
 ```
 

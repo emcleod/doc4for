@@ -1,7 +1,6 @@
 import unittest
 import json
 import copy
-from pathlib import Path
 from unittest.mock import patch, mock_open
 from doc4for.config.configuration import (
     load_configuration,
@@ -68,7 +67,7 @@ class TestConfiguration(unittest.TestCase):
 
         # Mock these specific paths
         directories = [root_dir, css_dir, images_dir]
-        
+
         def mock_exists(path):
             return str(path) in directories
 
@@ -77,15 +76,15 @@ class TestConfiguration(unittest.TestCase):
 
         # Mock that the config file doesn't exist and directories do exist
         with patch('pathlib.Path.exists', new=mock_exists), \
-            patch('pathlib.Path.is_dir', new=mock_is_dir):
+                patch('pathlib.Path.is_dir', new=mock_is_dir):
             config = load_configuration()
-            
+
             # Use a fresh copy of DEFAULT_CONFIG as expected
             expected_config = self.deep_copy_config()
-            
+
             self.maxDiff = None
             self.assertEqual(config, expected_config)
-                        
+
     def test_load_configuration_with_user_file(self):
         """Test that user configuration overrides defaults"""
         user_config = {
@@ -221,6 +220,7 @@ class TestConfiguration(unittest.TestCase):
 
     def test_other_format_enabled_field(self):
         """Test that PDF and Markdown formats have 'enabled' field"""
+        display_names = {"pdf": "PDF", "markdown": "Markdown"}
         with patch('pathlib.Path.exists', return_value=True), \
                 patch('pathlib.Path.is_dir', return_value=True):
             for format_name in ["pdf", "markdown"]:
@@ -229,7 +229,7 @@ class TestConfiguration(unittest.TestCase):
                     del config["output_formats"][format_name]["enabled"]
 
                     with self.assertRaisesRegex(ValueError,
-                                                f"{format_name.upper()} format configuration missing 'enabled' field"):
+                                                f"{display_names[format_name]} format configuration missing 'enabled' field"):
                         validate_config(config)
 
     def test_load_configuration_with_user_file(self):
