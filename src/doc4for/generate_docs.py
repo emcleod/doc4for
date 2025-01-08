@@ -10,6 +10,7 @@ from doc4for.f90.generate_module_tree import extract_module_data, generate_modul
 from doc4for.file_utils import find_files_by_extensions, create_docs_directory
 from doc4for.f90.generate_type_tree import generate_inheritance_tree, generate_inheritance_tree_page
 from doc4for.config import load_configuration
+from doc4for import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,9 @@ def main():
     parser.add_argument('-c', '--config', 
                         default='doc4for.json',
                         help='Path to the configuration file (default: doc4for.json in current directory)')
+    parser.add_argument('-v', '--version',
+                        action='version',
+                        version=f'%(prog)s {__version__}')
     args = parser.parse_args()
     
     config = load_configuration(args.config)
