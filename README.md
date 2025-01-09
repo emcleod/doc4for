@@ -50,26 +50,31 @@ Here's a basic configuration file:
 * `author`: (Optional) Documentation author name
 * `title`: (Optional) Documentation title
 * `version`: (Optional) Version of the documented code
+* `include_private`: Whether to include private entities in the documentation (default: false)
 
 ### HTML Output Options
 * `enabled`: Whether to generate HTML documentation
-* `use_default_css`: Use built-in CSS styling
-* `custom_css`: Path to a custom CSS file (overrides default if provided)
-* `template`: Template to use for HTML generation
+* `templates`: Configuration for template directories
+  * `root_dir`: Root directory for templates
+  * `static`: Directories for static assets
+    * `css`: Directory for CSS files
+    * `images`: Directory for image files
 * `syntax_highlighting`: Enable syntax highlighting in code blocks
 * `template_dir`: Custom template directory
 * `single_page`: Generate all documentation in a single HTML file
 
 ### Future Output Formats
-Support for PDF and Markdown output is planned for future releases.
+Support for PDF and Markdown output is planned for future releases. Currently, these options
+are included in the configuration but are not functional.
 
 ## Default Behavior
 If no configuration file is found, doc4for will use sensible defaults:
 
-*Look for `.f90`, `.f95`, `.f03`, `.f08`, and `.f77` files
-*Generate HTML documentation
-*Output to a docs directory
-*Exclude common directories like `.git`, `__pycache__`, etc.
+* Look for `.f90`, `.f95`, `.f03`, `.f08`, and `.f77` files
+* Generate HTML documentation
+* Output to a docs directory
+* Exclude common directories like `.git`, `__pycache__`, etc.
+* Use default templates and styling
 
 ## Example Usage
 1. Create a `doc4for.json` file in your project directory
