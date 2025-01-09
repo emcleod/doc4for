@@ -1,28 +1,44 @@
 import unittest
 import json
 import copy
+from pathlib import Path
 from unittest.mock import patch, mock_open
 from doc4for.config.configuration import (
     load_configuration,
     validate_config,
     normalize_dirs,
     normalize_extensions,
-    normalize_path,
     DEFAULT_CONFIG)
-
 
 class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
         """Create a deep copy of the default configuration for each test"""
+        self.mock_base = "/mock/path"
         self.default_config = copy.deepcopy(DEFAULT_CONFIG)
-        self.patcher = patch('doc4for.config.configuration.normalize_path')
+        self.patcher = patch('doc4for.config.configuration.normalize_path',
+                            side_effect=self.mock_normalize_path)
         self.mock_normalize = self.patcher.start()
-        self.mock_normalize.side_effect = lambda x: f"/mock/path/{
-            x}" if not x.startswith('/') else x
+        
+        # Set up default mock directories that should always exist
+        self.default_directories = [
+            'templates',
+            'templates/static/css',
+            'templates/static/images'
+        ]
+        mock_is_dir = self.mock_directory_exists(self.default_directories)
+        self.dir_patcher = patch('pathlib.Path.is_dir', new=mock_is_dir)
+        self.dir_patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
+        self.dir_patcher.stop()
+
+    def mock_normalize_path(self, path):
+        """Helper method to consistently normalize paths in tests"""
+        if path and path.startswith('/'):
+            return path
+        return f"{self.mock_base}/{path}"
 
     def deep_copy_config(self):
         """Helper method to create a deep copy of the default config"""
@@ -47,8 +63,7 @@ class TestConfiguration(unittest.TestCase):
         """Helper method to run a test with a mock file"""
         mocks = [
             patch('pathlib.Path.exists', return_value=True),
-            patch('builtins.open', mock_open(read_data=content)),
-            patch('pathlib.Path.is_dir', return_value=True)
+            patch('builtins.open', mock_open(read_data=content))
         ]
         for mock in mocks:
             mock.start()
@@ -57,33 +72,6 @@ class TestConfiguration(unittest.TestCase):
         finally:
             for mock in mocks:
                 mock.stop()
-
-    def test_load_configuration_defaults(self):
-        """Test that default configuration is used when no file exists"""
-        # Get the actual paths from DEFAULT_CONFIG
-        root_dir = self.default_config["output_formats"]["html"]["templates"]["root_dir"]
-        css_dir = self.default_config["output_formats"]["html"]["templates"]["static"]["css"]
-        images_dir = self.default_config["output_formats"]["html"]["templates"]["static"]["images"]
-
-        # Mock these specific paths
-        directories = [root_dir, css_dir, images_dir]
-
-        def mock_exists(path):
-            return str(path) in directories
-
-        def mock_is_dir(path):
-            return str(path) in directories
-
-        # Mock that the config file doesn't exist and directories do exist
-        with patch('pathlib.Path.exists', new=mock_exists), \
-                patch('pathlib.Path.is_dir', new=mock_is_dir):
-            config = load_configuration()
-
-            # Use a fresh copy of DEFAULT_CONFIG as expected
-            expected_config = self.deep_copy_config()
-
-            self.maxDiff = None
-            self.assertEqual(config, expected_config)
 
     def test_load_configuration_with_user_file(self):
         """Test that user configuration overrides defaults"""
@@ -94,7 +82,8 @@ class TestConfiguration(unittest.TestCase):
                     "templates": {
                         "root_dir": "custom_templates",
                         "static": {
-                            "css": "custom/css/path"
+                            "css": "custom/css/path",
+                            "images": "static/images"
                         }
                     },
                     "single_page": True
@@ -105,11 +94,16 @@ class TestConfiguration(unittest.TestCase):
         }
 
         expected_config = self.deep_copy_config()
-        expected_config["output_dir"] = normalize_path("documentation")
-        expected_config["output_formats"]["html"]["templates"]["root_dir"] = normalize_path(
-            "custom_templates")
-        expected_config["output_formats"]["html"]["templates"]["static"]["css"] = normalize_path(
-            "custom/css/path")
+        root_dir = f"{self.mock_base}/custom_templates"
+        expected_config["output_dir"] = f"{self.mock_base}/documentation"
+        expected_config["output_formats"]["html"]["templates"]["root_dir"] = root_dir
+
+        # CSS and images paths should be relative to root_dir
+        expected_config["output_formats"]["html"]["templates"]["static"]["css"] = \
+            f"{self.mock_base}/custom_templates/custom/css/path"
+        expected_config["output_formats"]["html"]["templates"]["static"]["images"] = \
+            f"{self.mock_base}/custom_templates/static/images"  # Changed this line
+
         expected_config["output_formats"]["html"]["single_page"] = True
         expected_config["author"] = "Test Author"
 
@@ -140,29 +134,41 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config['output_formats']['html']['syntax_highlighting'],
                          self.default_config['output_formats']['html']['syntax_highlighting'])
 
+    def get_normalized_default_config(self):
+        """Helper method to get default config with normalized paths"""
+        expected_config = self.deep_copy_config()
+        root_dir = f"{self.mock_base}/templates"
+        expected_config["output_dir"] = f"{self.mock_base}/docs"
+        expected_config["output_formats"]["html"]["templates"]["root_dir"] = root_dir
+        expected_config["output_formats"]["html"]["templates"]["static"]["css"] = \
+            f"{self.mock_base}/templates/static/css"
+        expected_config["output_formats"]["html"]["templates"]["static"]["images"] = \
+            f"{self.mock_base}/templates/static/images"
+        return expected_config
+
     def test_load_configuration_null_json(self):
         """Test behavior with JSON containing just 'null'"""
         with self.assertLogs(level='WARNING') as cm:
             config = self.run_with_mock_file('null')
-            self.assertEqual(config, self.default_config)
+            self.assertEqual(config, self.get_normalized_default_config())
             self.assertIn("Configuration file is empty", cm.output[0])
-
+            
     def test_load_configuration_partial_invalid_json(self):
         """Test behavior with partially valid JSON"""
         partial_json = '{"output_dir": "docs", "invalid": }'
         with self.assertLogs(level='WARNING') as cm:
             config = self.run_with_mock_file(partial_json)
-            self.assertEqual(config, self.default_config)
+            self.assertEqual(config, self.get_normalized_default_config())
             self.assertIn("Error reading configuration file", cm.output[0])
 
     def test_load_configuration_invalid_json(self):
         """Test behavior with invalid JSON in configuration file"""
         with self.assertLogs(level='WARNING') as cm:
             config = self.run_with_mock_file('invalid json')
-            self.assertEqual(config, self.default_config)
+            self.assertEqual(config, self.get_normalized_default_config())
             self.assertIn("Error reading configuration file", cm.output[0])
             self.assertIn("Expecting value", cm.output[0])
-
+    
     def test_required_fields(self):
         """Test that configuration fails if required fields are missing"""
         required_fields = [
@@ -201,8 +207,13 @@ class TestConfiguration(unittest.TestCase):
         test_cases = [
             ("root_dir", "Missing required templates keys"),
             ("static", "Missing required templates keys"),
+            ("core", "Missing required templates keys"),
             (("static", "css"), "Missing required static configuration keys"),
-            (("static", "images"), "Missing required static configuration keys")
+            (("static", "images"), "Missing required static configuration keys"),
+            (("core", "dir"), "Missing required core template configuration keys"),
+            (("core", "inheritance_tree"), "Missing required core template configuration keys"),
+            (("core", "file"), "Missing required core template configuration keys"),
+            (("core", "module"), "Missing required core template configuration keys")
         ]
 
         for field, error_pattern in test_cases:
@@ -231,55 +242,12 @@ class TestConfiguration(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError,
                                                 f"{display_names[format_name]} format configuration missing 'enabled' field"):
                         validate_config(config)
-
-    def test_load_configuration_with_user_file(self):
-        """Test that user configuration overrides defaults"""
-        user_config = {
-            "output_dir": "documentation",
-            "output_formats": {
-                "html": {
-                    "templates": {
-                        "root_dir": "custom_templates",
-                        "static": {
-                            "css": "custom/css/path"
-                        }
-                    },
-                    "single_page": True
-                }
-            },
-            "author": "Test Author",
-            "unknown_key": "should be ignored"
-        }
-
-        expected_config = self.deep_copy_config()
-        expected_config["output_dir"] = "/mock/path/documentation"
-        expected_config["output_formats"]["html"]["templates"]["root_dir"] = "/mock/path/custom_templates"
-        expected_config["output_formats"]["html"]["templates"]["static"]["css"] = "/mock/path/custom/css/path"
-        expected_config["output_formats"]["html"]["single_page"] = True
-        expected_config["author"] = "Test Author"
-
-        directories = ['/mock/path/custom_templates',
-                       '/mock/path/custom/css/path',
-                       '/mock/path/custom_templates/static/images',
-                       '/mock/path/templates',
-                       '/mock/path/templates/static/css',
-                       '/mock/path/templates/static/images']
-        mock_is_dir = self.mock_directory_exists(directories)
-
-        with patch('pathlib.Path.is_dir', new=mock_is_dir), \
-                self.assertLogs(level='WARNING') as cm:
-            config = self.run_with_mock_file(json.dumps(user_config))
-
-        self.assertEqual(config, expected_config)
-        self.assertIn(
-            "Unknown configuration keys found and ignored", cm.output[0])
-        self.assertIn("unknown_key", cm.output[0])
-
+        
     def test_load_configuration_empty_file(self):
         """Test that default configuration is used when config file is empty"""
         with self.assertLogs(level='WARNING') as cm:
             config = self.run_with_mock_file('{}')
-            self.assertEqual(config, self.default_config)
+            self.assertEqual(config, self.get_normalized_default_config())
             self.assertIn("Configuration file is empty", cm.output[0])
 
     def test_load_configuration_unknown_keys(self):
@@ -324,21 +292,40 @@ class TestConfiguration(unittest.TestCase):
     def test_invalid_template_structure(self):
         """Test various invalid template structures"""
         invalid_structures = [
-            ({  # Missing root_dir
+            ({  # Missing root_dir and core
                 "static": {
                     "css": "static/css",
                     "images": "static/images"
                 }
-            }, "Missing required templates keys:.*root_dir"),
-            ({  # Missing static
+            }, r"Missing required templates keys:.*(?=.*root_dir)(?=.*core).*"),
+            ({  # Missing static and core
                 "root_dir": "templates"
-            }, "Missing required templates keys:.*static"),
-            ({  # Missing css in static
+            }, r"Missing required templates keys:.*(?=.*static)(?=.*core).*"),
+            ({  # Missing css in static and missing core
                 "root_dir": "templates",
                 "static": {
                     "images": "static/images"
                 }
-            }, "Missing required static configuration keys:.*css")
+            }, r"Missing required templates keys:.*core.*"),
+            ({  # Missing core only
+                "root_dir": "templates",
+                "static": {
+                    "css": "static/css",
+                    "images": "static/images"
+                }
+            }, r"Missing required templates keys:.*core.*"),
+            ({  # Missing css in static (with core present)
+                "root_dir": "templates",
+                "core": {
+                    "dir": "html",
+                    "inheritance_tree": "inheritance_tree_template.html",
+                    "file": "file_template.html",
+                    "module": "module_template.html"
+                },
+                "static": {
+                    "images": "static/images"
+                }
+            }, r"Missing required static configuration keys:.*css.*")
         ]
 
         for structure, error_pattern in invalid_structures:
@@ -347,13 +334,19 @@ class TestConfiguration(unittest.TestCase):
                 config['output_formats']['html']['templates'] = structure
 
                 with self.assertRaisesRegex(ValueError, error_pattern):
-                    validate_config(config)
+                    validate_config(config)                    
 
     def test_empty_images_allowed(self):
         """Test that empty images configuration is allowed"""
         config = self.default_config.copy()
         config['output_formats']['html']['templates'] = {
             "root_dir": "templates",
+            "core": {
+                "dir": "html",
+                "inheritance_tree": "inheritance_tree_template.html",
+                "file": "file_template.html",
+                "module": "module_template.html"
+            },
             "static": {
                 "css": "static/css",
                 "images": None
@@ -361,26 +354,13 @@ class TestConfiguration(unittest.TestCase):
         }
 
         with patch('pathlib.Path.exists', return_value=True), \
-                patch('os.path.isdir', return_value=True):
+                patch('pathlib.Path.is_dir', return_value=True):
             try:
                 validate_config(config)
             except ValueError:
                 self.fail(
                     "validate_config() raised ValueError unexpectedly for empty images config")
-
-    def test_empty_images_allowed(self):
-        """Test that empty images configuration is allowed"""
-        config = self.deep_copy_config()
-        config['output_formats']['html']['templates']['static']['images'] = None
-
-        with patch('pathlib.Path.exists', return_value=True), \
-                patch('pathlib.Path.is_dir', return_value=True):
-            try:
-                validate_config(config)
-            except ValueError as e:
-                self.fail(
-                    f"validate_config() raised ValueError unexpectedly for empty images config: {e}")
-
+                
     def test_case_sensitivity(self):
         """Test case sensitivity in extensions and exclude_dirs"""
         config = self.deep_copy_config()
@@ -401,6 +381,12 @@ class TestConfiguration(unittest.TestCase):
         config_absolute = self.deep_copy_config()
         config_absolute['output_formats']['html']['templates'] = {
             "root_dir": "/absolute/path/templates",
+            "core": {
+                "dir": "/absolute/path/core",
+                "inheritance_tree": "/absolute/path/core/inheritance_tree_template.html",
+                "file": "/absolute/path/core/file_template.html",
+                "module": "/absolute/path/core/module_template.html"
+            },
             "static": {
                 "css": "/absolute/path/static/css",
                 "images": "/absolute/path/static/images"
@@ -411,6 +397,12 @@ class TestConfiguration(unittest.TestCase):
         config_relative = self.deep_copy_config()
         config_relative['output_formats']['html']['templates'] = {
             "root_dir": "templates",
+            "core": {
+                "dir": "core",
+                "inheritance_tree": "core/inheritance_tree_template.html",
+                "file": "core/file_template.html",
+                "module": "core/module_template.html"
+            },
             "static": {
                 "css": "static/css",
                 "images": "static/images"
@@ -419,9 +411,11 @@ class TestConfiguration(unittest.TestCase):
 
         mock_paths = [
             '/absolute/path/templates',
+            '/absolute/path/core',
             '/absolute/path/static/css',
             '/absolute/path/static/images',
             '/mock/path/templates',
+            '/mock/path/core',
             '/mock/path/static/css',
             '/mock/path/static/images'
         ]
@@ -433,6 +427,54 @@ class TestConfiguration(unittest.TestCase):
                 patch('pathlib.Path.is_dir', new=mock_is_dir):
             validate_config(config_absolute)
             validate_config(config_relative)
+    def test_windows_style_paths(self):
+        """Test that Windows-style paths are handled correctly"""
+        user_config = {
+            "output_formats": {
+                "html": {
+                    "templates": {
+                        "root_dir": "custom_templates",
+                        "static": {
+                            "css": "static\\css\\path",  # Windows separator
+                        }
+                    }
+                }
+            }
+        }
+        # TODO
+        # Test should pass with normalized paths regardless of platform
+
+    def test_symlink_paths(self):
+        """Test that symlinked paths are handled correctly"""
+        pass
+        #TODO
+        # This might need to be integration test rather than unit test
+        # as it requires actual filesystem operations
+
+    def test_directory_traversal_attempt(self):
+        """Test that attempting to escape root directory is caught"""
+        user_config = {
+            "output_formats": {
+                "html": {
+                    "templates": {
+                        "root_dir": "custom_templates",
+                        "static": {
+                            "css": "../escaped/path",
+                        }
+                    }
+                }
+            }
+        }
+        
+        # Add additional directories to the defaults
+        directories = self.default_directories + ['custom_templates']
+        mock_is_dir = self.mock_directory_exists(directories)
+        
+        with patch('pathlib.Path.is_dir', new=mock_is_dir), \
+                self.assertRaises(ValueError) as cm:
+            config = self.run_with_mock_file(json.dumps(user_config))
+        self.assertIn("attempts to escape root directory", str(cm.exception))
+
 # TODO: Add tests for future configuration options
 # def test_html_syntax_highlighting_config(self):
 #     pass

@@ -18,13 +18,18 @@ class TestConfigurationStructure(unittest.TestCase):
                     "enabled": True,
                     "templates": {
                         "root_dir": "templates",
+                        "core": {
+                            "dir": "html",
+                            "inheritance_tree": "inheritance_tree_template.html",
+                            "file": "file_template.html",
+                            "module": "module_template.html"
+                        },
                         "static": {
                             "css": "static/css",
                             "images": "static/images"
                         }
                     },
                     "syntax_highlighting": False,
-                    "template_dir": None,
                     "single_page": False
                 },
                 "pdf": {

@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+from copy import deepcopy
 from typing import Dict, Any, Set, Optional
 from pathlib import Path
 from enum import Enum, auto
@@ -8,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 ConfigDict = Dict[str, Any]
 FormatDict = Dict[str, Dict[str, Any]]
-
 
 class ConfigKeys(Enum):
     OUTPUT_FORMATS = "output_formats"
@@ -20,27 +21,36 @@ class ConfigKeys(Enum):
     VERSION = "version"
     INCLUDE_PRIVATE = "include_private"
 
-
 class OutputFormatKeys(Enum):
     HTML = "html"
     MARKDOWN = "markdown"
     PDF = "pdf"
 
-
 class CommonOutputKeys(Enum):
     ENABLED = "enabled"
     TEMPLATES = "templates"
 
-
-class HTMLKeys(Enum):
+class TemplateKeys(Enum):
+    ROOT_DIR = "root_dir"
+    CORE = "core"
     STATIC = "static"
+
+class CoreTemplateKeys(Enum):
+    DIR = "dir"
+    INHERITANCE_TREE = "inheritance_tree"
+    FILE = "file"
+    MODULE = "module"
+
+class StaticAssetKeys(Enum):
     CSS = "css"
     IMAGES = "images"
-    ROOT_DIR = "root_dir"
+
+class HTMLKeys(Enum):
     SYNTAX_HIGHLIGHTING = "syntax_highlighting"
-    TEMPLATE_DIR = "template_dir"
     SINGLE_PAGE = "single_page"
 
+class MarkdownKeys(Enum):
+    SYNTAX_HIGHLIGHTING = "syntax_highlighting"
 
 class DirectoryTypes(Enum):
     ROOT = auto()
@@ -50,10 +60,26 @@ class DirectoryTypes(Enum):
     def __str__(self):
         return self.name.capitalize()
 
-
 def normalize_path(path: str) -> str:
-    """Normalize a path to absolute path with consistent separators."""
-    return str(Path(path).resolve())
+    """
+    Normalize a path with consistent separators, handling Windows paths and symlinks.
+
+    Args:
+        path: The path to normalize
+
+    Returns:
+        Normalized absolute path as string
+    """
+    try:
+        # resolve() will handle symlinks and Windows paths
+        # and convert to absolute path
+        normalized = Path(path).resolve()
+
+        # Ensure forward slashes even on Windows
+        return str(normalized).replace(os.sep, '/')
+    except (OSError, RuntimeError) as e:
+        # Handle potential symlink loops or permission issues
+        raise ValueError(f"Failed to normalize path '{path}': {str(e)}")
 
 
 def normalize_extensions(extensions: list) -> list:
@@ -65,28 +91,32 @@ def normalize_dirs(dirs: list) -> list:
     """Convert all directory names to lowercase."""
     return [d.lower() for d in dirs]
 
-
 DEFAULT_CONFIG: ConfigDict = {
-    ConfigKeys.OUTPUT_DIR.value: normalize_path("docs"),
+    ConfigKeys.OUTPUT_DIR.value: "docs",
     ConfigKeys.EXTENSIONS.value: normalize_extensions(["f90", "f95", "f03", "f08"]),
     ConfigKeys.OUTPUT_FORMATS.value: {
         OutputFormatKeys.HTML.value: {
             CommonOutputKeys.ENABLED.value: True,
             CommonOutputKeys.TEMPLATES.value: {
-                HTMLKeys.ROOT_DIR.value: normalize_path("templates"),
-                HTMLKeys.STATIC.value: {
-                    HTMLKeys.CSS.value: normalize_path("static/css"),
-                    HTMLKeys.IMAGES.value: normalize_path("static/images")
+                TemplateKeys.ROOT_DIR.value: "templates",
+                TemplateKeys.CORE.value: {
+                    CoreTemplateKeys.DIR.value: "html",
+                    CoreTemplateKeys.INHERITANCE_TREE.value: "inheritance_tree_template.html",
+                    CoreTemplateKeys.FILE.value: "file_template.html",
+                    CoreTemplateKeys.MODULE.value: "module_template.html",
+                },
+                TemplateKeys.STATIC.value: {
+                    StaticAssetKeys.CSS.value: "static/css",
+                    StaticAssetKeys.IMAGES.value: "static/images"
                 }
             },
             HTMLKeys.SYNTAX_HIGHLIGHTING.value: True,
-            HTMLKeys.TEMPLATE_DIR.value: None,
             HTMLKeys.SINGLE_PAGE.value: False
         },
-        OutputFormatKeys.PDF.value: {
+        OutputFormatKeys.MARKDOWN.value: {
             CommonOutputKeys.ENABLED.value: False,
         },
-        OutputFormatKeys.MARKDOWN.value: {
+        OutputFormatKeys.PDF.value: {
             CommonOutputKeys.ENABLED.value: False,
         },
     },
@@ -96,7 +126,6 @@ DEFAULT_CONFIG: ConfigDict = {
     ConfigKeys.VERSION.value: None,
     ConfigKeys.INCLUDE_PRIVATE.value: False
 }
-
 
 def load_configuration(config_file_name: str = 'doc4for.json') -> ConfigDict:
     """
@@ -111,7 +140,7 @@ def load_configuration(config_file_name: str = 'doc4for.json') -> ConfigDict:
     Raises:
         ValueError: If the configuration is invalid.
     """
-    config = DEFAULT_CONFIG.copy()
+    config = deepcopy(DEFAULT_CONFIG)
     user_config = load_user_config(config_file_name)
     if user_config:
         merge_configs(config, user_config)
@@ -181,26 +210,38 @@ def merge_configs(base_config: ConfigDict, user_config: ConfigDict) -> None:
 def normalize_config_paths(config: ConfigDict) -> None:
     """
     Normalize all paths in the configuration.
-
-    Args:
-        config: The configuration to normalize paths in.
+    Always uses the current root_dir for static paths.
     """
     config[ConfigKeys.OUTPUT_DIR.value] = normalize_path(
         config[ConfigKeys.OUTPUT_DIR.value])
+
     html_config = config[ConfigKeys.OUTPUT_FORMATS.value][OutputFormatKeys.HTML.value]
-    if html_config[CommonOutputKeys.TEMPLATES.value][HTMLKeys.ROOT_DIR.value]:
-        html_config[CommonOutputKeys.TEMPLATES.value][HTMLKeys.ROOT_DIR.value] = normalize_path(
-            html_config[CommonOutputKeys.TEMPLATES.value][HTMLKeys.ROOT_DIR.value])
+    templates_config = html_config[CommonOutputKeys.TEMPLATES.value]
+    root_dir = templates_config[TemplateKeys.ROOT_DIR.value]
 
-    static_config = html_config[CommonOutputKeys.TEMPLATES.value][HTMLKeys.STATIC.value]
+    if root_dir:
+        # Normalize the root directory path
+        root_dir = normalize_path(root_dir)
+        templates_config[TemplateKeys.ROOT_DIR.value] = root_dir
 
-    css_path = static_config[HTMLKeys.CSS.value]
-    if css_path:
-        static_config[HTMLKeys.CSS.value] = normalize_path(css_path)
+        # Combine root_dir with static paths
+        static_config = templates_config[TemplateKeys.STATIC.value]
 
-    images_path = static_config[HTMLKeys.IMAGES.value]
-    if images_path:
-        static_config[HTMLKeys.IMAGES.value] = normalize_path(images_path)
+        # For CSS path: use existing if present, otherwise use default
+        css_path = static_config.get(StaticAssetKeys.CSS.value, "static/css")
+        if not validate_safe_path(css_path, root_dir):
+            raise ValueError(
+                f"CSS path '{css_path}' attempts to escape root directory")
+        static_config[StaticAssetKeys.CSS.value] = normalize_path(
+            str(Path(root_dir) / css_path))
+
+        # For images path: use existing if present, otherwise use default
+        images_path = static_config.get(StaticAssetKeys.IMAGES.value, "static/images")
+        if not validate_safe_path(images_path, root_dir):
+            raise ValueError(
+                f"Images path '{images_path}' attempts to escape root directory")
+        static_config[StaticAssetKeys.IMAGES.value] = normalize_path(
+            str(Path(root_dir) / images_path))
 
 
 def validate_config(config: ConfigDict) -> None:
@@ -217,6 +258,33 @@ def validate_config(config: ConfigDict) -> None:
     validate_output_formats(config[ConfigKeys.OUTPUT_FORMATS.value])
 
 
+def validate_safe_path(path: str, base_path: str) -> bool:
+    """
+    Validate that a path doesn't try to escape its base directory.
+
+    Args:
+        path: The path to validate
+        base_path: The base directory path
+
+    Returns:
+        bool: True if path is safe, False if it tries to escape
+
+    Example:
+        >>> validate_safe_path("static/css", "templates")  # True
+        >>> validate_safe_path("../static/css", "templates")  # False
+    """
+    try:
+        # Resolve to absolute paths, following symlinks
+        base_path = Path(base_path).resolve()
+        full_path = Path(base_path / path).resolve()
+
+        # Check if the resolved path starts with the base path
+        return str(full_path).startswith(str(base_path))
+    except Exception as e:
+        logger.warning(f"Path validation failed: {e}")
+        return False
+
+
 def validate_required_keys(config: ConfigDict) -> None:
     """
     Check for required top-level keys in the configuration.
@@ -227,9 +295,9 @@ def validate_required_keys(config: ConfigDict) -> None:
     Raises:
         ValueError: If any required keys are missing.
     """
-    required_keys: Set[str] = {ConfigKeys.OUTPUT_DIR.value, 
+    required_keys: Set[str] = {ConfigKeys.OUTPUT_DIR.value,
                                ConfigKeys.EXTENSIONS.value,
-                               ConfigKeys.OUTPUT_FORMATS.value, 
+                               ConfigKeys.OUTPUT_FORMATS.value,
                                ConfigKeys.EXCLUDE_DIRS.value}
     missing_keys: Set[str] = required_keys - set(config.keys())
     if missing_keys:
@@ -279,21 +347,88 @@ def validate_html_config(html_config: Dict[str, Any]) -> None:
     Raises:
         ValueError: If the HTML configuration is invalid.
     """
-    required_html_keys: Set[str] = {CommonOutputKeys.ENABLED.value,
-                                    CommonOutputKeys.TEMPLATES.value,
-                                    HTMLKeys.SYNTAX_HIGHLIGHTING.value,
-                                    HTMLKeys.TEMPLATE_DIR.value,
-                                    HTMLKeys.SINGLE_PAGE.value}
+    required_html_keys: Set[str] = {
+        CommonOutputKeys.ENABLED.value,
+        CommonOutputKeys.TEMPLATES.value,
+        HTMLKeys.SYNTAX_HIGHLIGHTING.value,
+        HTMLKeys.SINGLE_PAGE.value
+    }
     missing_html_keys: Set[str] = required_html_keys - set(html_config.keys())
     if missing_html_keys:
-        raise ValueError(f"Missing required HTML configuration keys: {
-                         missing_html_keys}")
+        raise ValueError(f"Missing required HTML configuration keys: {missing_html_keys}")
 
     if CommonOutputKeys.TEMPLATES.value in html_config:
-        _validate_templates_structure(
-            html_config[CommonOutputKeys.TEMPLATES.value])
+        templates_config = html_config[CommonOutputKeys.TEMPLATES.value]
+        validate_templates_structure(templates_config)
 
+def validate_templates_structure(templates_config: Dict[str, Any]) -> None:
+    """
+    Validate the structure of templates configuration.
 
+    Args:
+        templates_config: The templates configuration to validate.
+
+    Raises:
+        ValueError: If the templates structure is invalid.
+    """
+    required_template_keys: Set[str] = {
+        TemplateKeys.ROOT_DIR.value,
+        TemplateKeys.CORE.value,
+        TemplateKeys.STATIC.value
+    }
+    missing_template_keys: Set[str] = required_template_keys - set(templates_config.keys())
+    if missing_template_keys:
+        raise ValueError(f"Missing required templates keys: {missing_template_keys}")
+
+    if TemplateKeys.CORE.value in templates_config:
+        validate_core_templates(templates_config[TemplateKeys.CORE.value])
+    if TemplateKeys.STATIC.value in templates_config:
+        validate_static_assets(templates_config[TemplateKeys.STATIC.value])
+
+def validate_core_templates(core_config: Dict[str, Any]) -> None:
+    """
+    Validate the core templates configuration.
+
+    Args:
+        core_config: The core templates configuration to validate.
+
+    Raises:
+        ValueError: If the core templates configuration is invalid.
+    """
+    required_core_keys: Set[str] = {
+        CoreTemplateKeys.DIR.value,
+        CoreTemplateKeys.INHERITANCE_TREE.value,
+        CoreTemplateKeys.FILE.value,
+        CoreTemplateKeys.MODULE.value
+    }
+    missing_core_keys: Set[str] = required_core_keys - set(core_config.keys())
+    if missing_core_keys:
+        raise ValueError(f"Missing required core template configuration keys: {missing_core_keys}")
+
+def validate_static_assets(static_config: Dict[str, Any]) -> None:
+    """
+    Validate the static assets configuration.
+
+    Args:
+        static_config: The static assets configuration to validate.
+
+    Raises:
+        ValueError: If the static assets configuration is invalid.
+    """
+    required_static_keys: Set[str] = {
+        StaticAssetKeys.CSS.value,
+        StaticAssetKeys.IMAGES.value
+    }
+    missing_static_keys: Set[str] = required_static_keys - set(static_config.keys())
+    if missing_static_keys:
+        raise ValueError(f"Missing required static configuration keys: {missing_static_keys}")
+
+    # Check CSS directory
+    check_directory_exists(static_config[StaticAssetKeys.CSS.value], DirectoryTypes.CSS)
+
+    # Check Images directory
+    check_directory_exists(static_config[StaticAssetKeys.IMAGES.value], DirectoryTypes.IMAGES)
+    
 def validate_pdf_config(config: Dict[str, Any]) -> None:
     """
     Validate the PDF configuration.
@@ -323,22 +458,6 @@ def validate_markdown_config(config: Dict[str, Any]) -> None:
         raise ValueError(f"Markdown format configuration missing '{
                          CommonOutputKeys.ENABLED.value}' field")
 
-
-def _validate_templates_structure(templates_config: Dict[str, Any]) -> None:
-    """
-    Validate the structure of templates configuration.
-
-    Args:
-        templates_config: The templates configuration to validate.
-
-    Raises:
-        ValueError: If the templates structure is invalid or required paths don't exist.
-    """
-    validate_template_keys(templates_config)
-    validate_static_config(templates_config[HTMLKeys.STATIC.value])
-    validate_template_directories(templates_config)
-
-
 def validate_template_keys(templates_config: Dict[str, Any]) -> None:
     """
     Check for required keys in templates configuration.
@@ -349,7 +468,7 @@ def validate_template_keys(templates_config: Dict[str, Any]) -> None:
     Raises:
         ValueError: If any required keys are missing.
     """
-    required_keys: Set[str] = {HTMLKeys.ROOT_DIR.value, HTMLKeys.STATIC.value}
+    required_keys: Set[str] = {TemplateKeys.ROOT_DIR.value, TemplateKeys.STATIC.value}
     missing_keys: Set[str] = required_keys - set(templates_config.keys())
     if missing_keys:
         raise ValueError(f"Missing required templates keys: {missing_keys}")
@@ -366,7 +485,7 @@ def validate_static_config(static_config: Dict[str, Any]) -> None:
         ValueError: If any required keys are missing.
     """
     required_static_keys: Set[str] = {
-        HTMLKeys.CSS.value, HTMLKeys.IMAGES.value}
+        StaticAssetKeys.CSS.value, StaticAssetKeys.IMAGES.value}
     missing_static_keys: Set[str] = required_static_keys - \
         set(static_config.keys())
     if missing_static_keys:
@@ -385,15 +504,15 @@ def validate_template_directories(templates_config: Dict[str, Any]) -> None:
         ValueError: If any required directories don't exist.
     """
     check_directory_exists(
-        templates_config[HTMLKeys.ROOT_DIR.value], DirectoryTypes.ROOT)
+        templates_config[TemplateKeys.ROOT_DIR.value], DirectoryTypes.ROOT)
 
-    static_config = templates_config[HTMLKeys.STATIC.value]
+    static_config = templates_config[TemplateKeys.STATIC.value]
     check_directory_exists(
-        static_config[HTMLKeys.CSS.value], DirectoryTypes.CSS)
+        static_config[StaticAssetKeys.CSS.value], DirectoryTypes.CSS)
 
-    if static_config[HTMLKeys.IMAGES.value] is not None:
+    if static_config[StaticAssetKeys.IMAGES.value] is not None:
         check_directory_exists(
-            static_config[HTMLKeys.IMAGES.value], DirectoryTypes.IMAGES)
+            static_config[StaticAssetKeys.IMAGES.value], DirectoryTypes.IMAGES)
 
 
 def check_directory_exists(path: str, dir_type: DirectoryTypes) -> None:
