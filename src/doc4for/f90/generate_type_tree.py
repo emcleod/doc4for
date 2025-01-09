@@ -3,7 +3,7 @@ from typing import List, Union, TypedDict, Dict, Any, cast, Literal, Optional
 from pathlib import Path
 from fparser.one.block_statements import Type
 from fparser.api import parse as fortran_parser  # type: ignore
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 
 UNKNOWN_TYPE = 'UNKNOWN'
 UnknownType = Literal['UNKNOWN']
@@ -95,14 +95,20 @@ def transform_inheritance_tree(inheritance_tree: Dict[str, Any]) -> List[Dict[st
 
     return root_nodes
 
-def generate_inheritance_tree_page(inheritance_tree: Dict[str, Any], output_dir: str = 'docs', template_dir: str = 'templates'):
+def generate_inheritance_tree_page(
+    inheritance_tree: Dict[str, Any],
+    template_dir: str,
+    inheritance_tree_template: str,
+    output_dir: str
+) -> None:
     """
     Generates an HTML page displaying the inheritance tree.
 
     Args:
         inheritance_tree (Dict[str, Any]): The inheritance tree data structure.
-        output_dir (str, optional): The directory to output the HTML file. Defaults to 'docs'.
-        template_dir (str, optional): The directory containing HTML templates. Defaults to 'templates'.
+        template_dir (str): The directory containing HTML templates.
+        inheritance_tree_template (str): The name of the inheritance tree template file.
+        output_dir (str): The directory to output the HTML file.
 
     Returns:
         None
@@ -111,14 +117,14 @@ def generate_inheritance_tree_page(inheritance_tree: Dict[str, Any], output_dir:
         jinja2.exceptions.TemplateNotFound: If the template file is not found in the template directory.
         OSError: If there are issues writing the output file.
     """
-    env = Environment(loader=FileSystemLoader(template_dir))
-    template = env.get_template('inheritance_tree_template.html')
+    env: Environment = Environment(loader=FileSystemLoader(template_dir))
+    template: Template = env.get_template(inheritance_tree_template)
 
     # Transform the inheritance tree
-    transformed_tree = transform_inheritance_tree(inheritance_tree)
+    transformed_tree: Dict[str, Any] = transform_inheritance_tree(inheritance_tree)
 
     # Render the template
-    output = template.render(
+    output: str = template.render(
         inheritance_tree=transformed_tree,
         title="Inheritance Tree"
     )
@@ -127,7 +133,7 @@ def generate_inheritance_tree_page(inheritance_tree: Dict[str, Any], output_dir:
     os.makedirs(output_dir, exist_ok=True)
 
     # Write the output
-    output_path = os.path.join(output_dir, 'inheritance_tree.html')
+    output_path: str = os.path.join(output_dir, 'inheritance_tree.html')
     with open(output_path, 'w', encoding='utf-8') as file:
         file.write(output)
 
