@@ -1,6 +1,17 @@
 from typing import TypedDict, Optional, List
 from doc4for.models.dimension_models import Dimension, Dimension_TEMP
 
+from enum import Enum, auto
+
+#TODO add this information
+class ArrayType(Enum):
+    EXPLICIT = auto()           # Regular arrays with explicit dimensions
+    IMPLIED_SHAPE = auto()      # Implied shape arrays (F2008+)
+    DEFERRED_SHAPE = auto()     # Allocatable or pointer arrays
+    ASSUMED_SHAPE = auto()      # Arrays as dummy arguments (:)
+    ASSUMED_SIZE = auto()       # Arrays as dummy arguments (*)
+    ASSUMED_RANK = auto()       # F2008+ (..)
+
 VariableDescription = TypedDict(
     "VariableDescription",
     {

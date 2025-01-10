@@ -197,51 +197,17 @@ def parse_variable(
         List of variable descriptions for both array and scalar variables
     """
     description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
-    # base_type = str(declaration.name).lower()
     shared_attributes = get_attributes(declaration)
-    
-    # length: Optional[str] = None
+
     try:
         return parse_variables(declaration, description, shared_attributes)     
     except Exception as e:
-        # You might want to log this or handle it differently
+        # TODO log this and continue
         raise ValueError(f"Error parsing variable declaration: {str(e)}") from e
     
 # TODO public declaration should be handled here?
 
 
-# def split_args(s: str) -> List[str]:
-#     """Split function arguments, respecting nested parentheses.
-
-#     Args:
-#         s: The argument string
-
-#     Returns:
-#         A list of individual arguments
-
-#     Examples:
-#         split_args("1, 2")            -> ["1", "2"]
-#         split_args("f(1,2), 3")       -> ["f(1,2)", "3"]
-#         split_args("1, g(2,h(3,4))") -> ["1", "g(2,h(3,4))"]
-#     """
-#     result = []
-#     current = ""
-#     paren_count = 0
-
-#     for char in s:
-#         if char == ',' and paren_count == 0:
-#             result.append(current.strip())
-#             current = ""
-#         else:
-#             current += char
-#             if char == '(':
-#                 paren_count += 1
-#             elif char == ')':
-#                 paren_count -= 1
-
-#     if current:
-#         result.append(current.strip())
-#     return result
 
 # TODO: this is to link any function calls in dimensions to their definition -
 # will need to have a function list for this to work

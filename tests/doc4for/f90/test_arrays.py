@@ -410,6 +410,302 @@ class TestArrays(TestCase):
                 length="20" if i == 2 else "10"  # or "20" for the third case
             )]            
             self.assertEqual(result, expected)
+
+    def test_assumed_length_character_array(self):
+        declaration = self.create_mock_declaration(
+            "character(len=*) :: x(5)",
+            ['x(5)'],
+            type_name="character",
+            attrspec=["len=*"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="character",
+            dims=[self.create_dimension(lower="1", upper="5")],
+            length="*"
+        )]
+        self.assertEqual(result, expected)         
+
+    def test_deferred_length_allocatable_character_array(self):
+        declaration = self.create_mock_declaration(
+            "character(len=:), allocatable :: x(:)",
+            ['x(:)'],
+            type_name="character",
+            attrspec=["len=:", "allocatable"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="character",
+            dims=[self.create_dimension()],
+            attributes=["allocatable"],
+            length=":"
+        )]
+        self.assertEqual(result, expected)       
+
+    def test_character_array_initialization(self):
+        declaration = self.create_mock_declaration(
+            "character(10) :: x(2) = (/'Hello', 'World'/)",
+            ['x(2) = (/"Hello", "World"/)'],  # Updated to use double quotes as fparser might
+            type_name="character",
+            attrspec=["10"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="character",
+            dims=[self.create_dimension(lower="1", upper="2")],
+            initial_value='(/"Hello", "World"/)',  # Initial value as string
+            length="10"
+        )]
+        self.assertEqual(result, expected)
+
+    def test_pointer_array(self):
+        declaration = self.create_mock_declaration(
+            "real, pointer :: x(:,:)",
+            ['x(:,:)'],
+            attrspec=["pointer"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            dims=[self.create_dimension(), self.create_dimension()],
+            attributes=["pointer"]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_target_array(self):
+        declaration = self.create_mock_declaration(
+            "real, target :: x(10,20)",
+            ['x(10,20)'],
+            attrspec=["target"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            dims=[
+                self.create_dimension(lower="1", upper="10"),
+                self.create_dimension(lower="1", upper="20")
+            ],
+            attributes=["target"]
+        )]
+        self.assertEqual(result, expected)        
+
+    def test_array_with_pointer_and_dimension_attributes(self):
+        declaration = self.create_mock_declaration(
+            "real, pointer, dimension(10,10) :: x",
+            ['x'],
+            attrspec=["pointer", "dimension(10,10)"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            dims=[
+                self.create_dimension(lower="1", upper="10"),
+                self.create_dimension(lower="1", upper="10")
+            ],
+            attributes=["pointer"]
+        )]
+        self.assertEqual(result, expected)        
+
+    def test_f77_dimension_statement_style(self):
+        declaration = self.create_mock_declaration(
+            "DIMENSION X(10), Y(20)",
+            ['X(10)', 'Y(20)'],
+            type_name=None  
+        )
+        result = parse_variable(declaration, [])
+        expected = [
+            self.create_declaration(
+                "X",
+                type_name='none',  
+                dims=[self.create_dimension(lower="1", upper="10")]
+            ),
+            self.create_declaration(
+                "Y",
+                type_name='none',  
+                dims=[self.create_dimension(lower="1", upper="20")]
+            )
+        ]
+        self.assertEqual(result, expected)
+
+    def test_f77_character_length_array(self):
+        declaration = self.create_mock_declaration(
+            "character*10 names(100)",
+            ['names(100)'],
+            type_name="character",
+            attrspec=[]  
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "names",
+            type_name="character",
+            dims=[self.create_dimension(lower="1", upper="100")],
+            length="10"
+        )]
+        self.assertEqual(result, expected)    
+
+    def test_array_initialization_implied_do_loop(self):
+        declaration = self.create_mock_declaration(
+            "real :: x(10) = (i, i=1,10)",
+            ['x(10) = (i, i=1,10)'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="real",
+            dims=[self.create_dimension(lower="1", upper="10")],
+            initial_value="(i, i=1,10)"
+        )]
+        self.assertEqual(result, expected)
             
+    def test_array_of_derived_type(self):
+        declaration = self.create_mock_declaration(
+            "type(point) :: points(100)",
+            ['points(100)'],
+            type_name="type(point)"  # Note the type is now a derived type
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "points",
+            type_name="type(point)",
+            dims=[self.create_dimension(lower="1", upper="100")]
+        )]
+        self.assertEqual(result, expected)   
+
+    def test_implied_shape_array(self):
+        declaration = self.create_mock_declaration(
+            "integer, parameter :: x(*) = [1, 2, 3, 4, 5]",
+            ['x(*) = [1, 2, 3, 4, 5]'],
+            type_name="integer",
+            attrspec=["parameter"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="integer",
+            dims=[self.create_dimension(lower=None, upper=None)],  # Implied shape using [None, None]
+            attributes=["parameter"],
+            initial_value="[1, 2, 3, 4, 5]"
+        )]
+        self.assertEqual(result, expected)
+
+    def test_allocatable_polymorphic_array(self):
+        declaration = self.create_mock_declaration(
+            "class(shape), allocatable :: shapes(:)",
+            ['shapes(:)'],
+            type_name="class(shape)",
+            attrspec=["allocatable"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "shapes",
+            type_name="class(shape)",
+            dims=[self.create_dimension()],
+            attributes=["allocatable"]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_polymorphic_arrays(self):
+        test_cases = [
+            ("class(shape), allocatable :: x(:)", ['x(:)'], ["allocatable"]),
+            ("class(shape), pointer :: y(:)", ['y(:)'], ["pointer"])
+        ]
+        
+        for line, decls, attrs in test_cases:
+            declaration = self.create_mock_declaration(
+                line,
+                decls,
+                type_name="class(shape)",
+                attrspec=attrs
+            )
+            result = parse_variable(declaration, [])
+            expected = [self.create_declaration(
+                decls[0].split('(')[0],
+                type_name="class(shape)",
+                dims=[self.create_dimension()],
+                attributes=attrs
+            )]
+            self.assertEqual(result, expected)  
+
+    def test_contiguous_array(self):
+        declaration = self.create_mock_declaration(
+            "real, contiguous :: x(:)",
+            ['x(:)'],
+            attrspec=["contiguous"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            dims=[self.create_dimension()],
+            attributes=["contiguous"]
+        )]
+        self.assertEqual(result, expected)     
+
+
+    def test_arrays_in_derived_types(self):
+        # Simulate a variable declaration inside a derived type
+        declaration = self.create_mock_declaration(
+            "real :: coordinates(3)",
+            ['coordinates(3)'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "coordinates",
+            dims=[self.create_dimension(lower="1", upper="3")]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_coarray_declarations_1(self):
+        test_cases = [
+            ("integer :: x[*]", ['x[*]'], ["codimension[*]"]),
+            ("real :: a(10)[3,*]", ['a(10)[3,*]'], ["codimension[3,*]"]),
+            ("integer, allocatable :: d[:,:,:]", ['d[:,:,:]'], ["allocatable", "codimension[:,:,:]"])
+        ]
+        
+        for line, decls, attrs in test_cases:
+            declaration = self.create_mock_declaration(
+                line,
+                decls,
+                attrspec=attrs
+            )
+            result = parse_variable(declaration, [])
+            expected = [self.create_declaration(
+                decls[0].split('[')[0].split('(')[0].strip(),
+                dims=[self.create_dimension(lower="1", upper="10")] if '(' in decls[0] else None,
+                attributes=attrs
+            )]
+            self.assertEqual(result, expected)
+
+    def test_coarray_declarations_2(self):
+        test_cases = [
+            ("integer :: a[*]", ['a[*]'], "integer", [], [self.create_dimension()]),
+            ("real :: b(10)[*]", ['b(10)[*]'], "real", [], 
+            [self.create_dimension(lower="1", upper="10"), self.create_dimension()]),
+            ("real :: c(10)[10,*]", ['c(10)[10,*]'], "real", [], 
+            [self.create_dimension(lower="1", upper="10"), 
+            self.create_dimension(lower="1", upper="10"), self.create_dimension()])
+        ]
+        
+        for line, decls, type_name, attrs, dims in test_cases:
+            declaration = self.create_mock_declaration(
+                line,
+                decls,
+                type_name=type_name,
+                attrspec=attrs
+            )
+            result = parse_variable(declaration, [])
+            expected = [self.create_declaration(
+                decls[0].split('[')[0].split('(')[0],
+                type_name=type_name,
+                dims=dims
+            )]
+            self.assertEqual(result, expected)   
+
 if __name__ == "__main__":
     unittest.main()
+
+

@@ -7,6 +7,10 @@ from doc4for.parse.dimension_parser import (
     extract_variable_dimension
 )
 
+# TODO with implied shape arrays, find the number of elements 
+# in the array so the dimensions can be filled in
+# TODO with defined type arrays, link to their type when generating
+# the documents
 def parse_variables(
     declaration: TypeDeclarationStatement,
     description: str,
