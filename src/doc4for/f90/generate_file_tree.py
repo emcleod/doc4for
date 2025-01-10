@@ -12,11 +12,10 @@ from fparser.one.block_statements import (
     Program,
     BlockData
 )
-from doc4for.data_models import FileDescription
-from doc4for.comment_utils import is_doc4for_comment, format_comments
+from doc4for.models.file_models import FileDescription
+from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.parse.procedure_parser import parse_function, parse_subroutine
 from doc4for.f90.populate_data_models import (
-    parse_function,
-    parse_subroutine,
     parse_program,
     parse_module,
     parse_block_data

@@ -9,14 +9,11 @@ from fparser.one.block_statements import (
     ModuleProcedure
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from doc4for.data_models import (
-    TypeDescription,
-    ProcedureDescription,
-    GenericInterface,
-    DataComponent,
-    Dimension_TEMP
-)
-from doc4for.comment_utils import is_doc4for_comment, format_comments
+from doc4for.models.dimension_models import Dimension_TEMP
+from doc4for.models.variable_models import DataComponent
+from doc4for.models.type_models import TypeDescription, GenericInterface
+from doc4for.models.procedure_models import ProcedureDescription
+from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
 class TypeHandler:
     """

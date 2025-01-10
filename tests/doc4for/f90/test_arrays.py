@@ -1,12 +1,15 @@
 import unittest
 from unittest import TestCase
 from unittest.mock import Mock
-from typing import List, Dict, Any, Optional, Union, Tuple
+from typing import List, Dict, Any, Optional, Union
 
 from doc4for.f90.populate_data_models import parse_variable
-from doc4for.data_models import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.variable_models import VariableDescription
 
 class TestArrays(TestCase):
+    maxDiff=None
+
     def setUp(self):
         self.base_expected = {
             "description": "",
@@ -54,11 +57,12 @@ class TestArrays(TestCase):
         }
 
     def create_declaration(self, 
-                          name: str, 
-                          type_name: str = "real",
-                          dims: Optional[List[Dict[str, Optional[Expression]]]] = None,
-                          attributes: List[str] = None,
-                          initial_value: Optional[str] = None) -> Dict[str, Any]:
+                        name: str, 
+                        type_name: str = "real",
+                        dims: Optional[List[Dict[str, Optional[Expression]]]] = None,
+                        attributes: List[str] = None,
+                        initial_value: Optional[str] = None,
+                        length: Optional[str] = None) -> VariableDescription:
         result = {**self.base_expected, "type": type_name, "name": name}
         if dims:
             result["dimension"] = {"dimensions": dims}
@@ -66,6 +70,7 @@ class TestArrays(TestCase):
             result["attributes"] = attributes
         if initial_value is not None:
             result["initial_value"] = initial_value
+        result["length"] = length
         return result
 
     def create_mock_declaration(self,
@@ -119,6 +124,7 @@ class TestArrays(TestCase):
             self.assertEqual(result, expected)
 
     def test_variable_dimensions(self):
+        self.maxDiff=None
         test_cases = [
             ("real :: x(n)", ['x(n)']),
             ("real :: x(f(1,2), 10)", ['x(f(1,2), 10)']),
@@ -359,5 +365,51 @@ class TestArrays(TestCase):
         ])]
         self.assertEqual(result, expected)
 
+    def test_character_arrays(self):
+        self.maxDiff=None
+        test_cases = [
+            (
+                "character(len=10) :: names(100)",
+                ['names(100)'],
+                ["len=10"]
+            ),
+            (
+                "character(10) names(5,10)",  # Alternative syntax
+                ['names(5,10)'],
+                ["10"]  # length specification comes differently in fparser
+            ),
+            (
+                "character(len=20), dimension(50) :: strings",
+                ['strings'],
+                ["len=20", "dimension(50)"]
+            ),
+        ]
+        
+        expected_dims = [
+            [self.create_dimension(lower="1", upper="100")],
+            [
+                self.create_dimension(lower="1", upper="5"),
+                self.create_dimension(lower="1", upper="10")
+            ],
+            [self.create_dimension(lower="1", upper="50")]
+        ]
+        
+        for i, (line, decls, attrs) in enumerate(test_cases):
+            declaration = self.create_mock_declaration(
+                line, 
+                decls,
+                type_name="character",
+                attrspec=attrs
+            )
+            result = parse_variable(declaration, [])
+            expected = [self.create_declaration(
+                decls[0].split('(')[0],
+                type_name="character",
+                dims=expected_dims[i],
+                attributes=[],
+                length="20" if i == 2 else "10"  # or "20" for the third case
+            )]            
+            self.assertEqual(result, expected)
+            
 if __name__ == "__main__":
     unittest.main()

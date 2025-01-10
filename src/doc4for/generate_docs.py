@@ -4,10 +4,11 @@ import argparse
 import shutil
 from typing import Dict, List, Optional, Any
 from pathlib import Path
-from doc4for.data_models import ModuleDescription, FileDescription
+from doc4for.models.module_models import ModuleDescription
+from doc4for.models.file_models import FileDescription
 from doc4for.f90.generate_file_tree import build_directory_tree, generate_file_pages, extract_file_data, DirectoryTree
 from doc4for.f90.generate_module_tree import extract_module_data, generate_module_pages
-from doc4for.file_utils import find_files_by_extensions, create_docs_directory
+from doc4for.utils.file_utils import find_files_by_extensions, create_docs_directory
 from doc4for.f90.generate_type_tree import generate_inheritance_tree, generate_inheritance_tree_page
 from doc4for.config import (load_configuration, ConfigKeys, OutputFormatKeys, CommonOutputKeys, TemplateKeys, CoreTemplateKeys, StaticAssetKeys)
 from doc4for import __version__

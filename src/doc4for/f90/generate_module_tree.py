@@ -19,14 +19,13 @@ from fparser.one.block_statements import (
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
-from doc4for.file_utils import check_write_permissions
-from doc4for.data_models import ModuleDescription
+from doc4for.utils.file_utils import check_write_permissions
+from doc4for.models.module_models import ModuleDescription
+from doc4for.parse.parameter_parser import parse_parameter
+from doc4for.parse.procedure_parser import parse_subroutine, parse_function
 from doc4for.f90.populate_data_models import (
     parse_module,
-    parse_function, 
-    parse_subroutine, 
     parse_type, 
-    parse_parameter
 )
 
 class Visibility(Enum):

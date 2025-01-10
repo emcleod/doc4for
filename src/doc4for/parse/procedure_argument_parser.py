@@ -3,16 +3,9 @@ from fparser.one.block_statements import (
     Comment
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from doc4for.data_models import (
-    ANNOTATION_PREFIX,
-    IGNORE_PREFIX,
-    IGNORE_SUFFIX,
-    Argument,
-    FunctionDescription,
-    SubroutineDescription,
-    is_function_description
-)
-from doc4for.comment_utils import format_comment_for_html
+from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
+from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument 
+from doc4for.utils.comment_utils import format_comment_for_html
 
 def extract_argument_type(item: Any) -> str:
     """Get the type of a dummy argument to a function from its `TypeDeclarationStatement`.

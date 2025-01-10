@@ -1,9 +1,7 @@
 import unittest
-from fparser.one.typedecl_statements import TypeDeclarationStatement
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
-
 
 class TestAttributes(TestCase):
 

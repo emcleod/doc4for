@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.file_utils import find_files_by_extensions
+from doc4for.utils.file_utils import find_files_by_extensions
 
 class TestFindF90Files(TestCase):
 

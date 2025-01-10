@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, call
 import os
 from pathlib import Path
 import shutil
 import tempfile
-from doc4for.file_utils import find_files_by_extensions, check_write_permissions, create_docs_directory, PROJECT_ROOT
+from doc4for.utils.file_utils import find_files_by_extensions, check_write_permissions, create_docs_directory, PROJECT_ROOT
 
 class TestBuildDirectory(unittest.TestCase):
 
