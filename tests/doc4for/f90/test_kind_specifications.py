@@ -24,6 +24,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -46,6 +47,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -68,6 +70,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -90,6 +93,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_real_kind',
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -112,6 +116,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_real_kind(15)',
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -134,6 +139,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             }
             for name in ['x', 'y', 'z']
         ]
@@ -157,6 +163,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": "1.0d0",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -179,6 +186,7 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_char_kind(\'ASCII\')',
                 "initial_value": None,
+                "length": "1"
             },
         ]
         self.assertEqual(result, expected)

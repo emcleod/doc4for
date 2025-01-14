@@ -8,7 +8,6 @@ from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.variable_models import VariableDescription
 
 class TestArrays(TestCase):
-    maxDiff=None
 
     def setUp(self):
         self.base_expected = {
@@ -124,7 +123,6 @@ class TestArrays(TestCase):
             self.assertEqual(result, expected)
 
     def test_variable_dimensions(self):
-        self.maxDiff=None
         test_cases = [
             ("real :: x(n)", ['x(n)']),
             ("real :: x(f(1,2), 10)", ['x(f(1,2), 10)']),
@@ -366,7 +364,6 @@ class TestArrays(TestCase):
         self.assertEqual(result, expected)
 
     def test_character_arrays(self):
-        self.maxDiff=None
         test_cases = [
             (
                 "character(len=10) :: names(100)",

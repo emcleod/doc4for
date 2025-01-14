@@ -4,6 +4,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 
 class TestModuleExtraction(TestCase):
+
     def setUp(self):
         self.setUpPyfakefs()
 

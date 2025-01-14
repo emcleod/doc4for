@@ -20,16 +20,6 @@ def parse_variables(
     base_type = str(declaration.name).lower()
     kind = extract_kind(declaration)
 
-    # Handle character length if it's a character type
-    length: Optional[str] = None
-    if base_type == "character":
-        length = extract_length_from_attributes(shared_attributes, declaration.selector)
-        shared_attributes = [
-            attr for attr in shared_attributes 
-            if not attr.startswith("len=") 
-            and not (attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()))
-        ]
-    
     # Extract dimension from attributes
     dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
     
@@ -62,12 +52,29 @@ def parse_variables(
         if "allocatable" in shared_attributes and "(:)" in name:
             name = name.replace("(:)", "")
 
+        # Handle character length if it's a character type
+        length = get_character_length(
+            base_type,
+            shared_attributes, 
+            declaration.selector,
+            initial_value
+        )
+        if base_type == "character":
+            # Filter out length-related attributes
+            working_attributes = [
+                attr for attr in shared_attributes 
+                if not attr.startswith("len=") 
+                and not (attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()))
+            ]
+        else:
+            working_attributes = shared_attributes
+
         variable_description: VariableDescription = {
             "description": description,
             "type": base_type,
             "name": name,
             "dimension": dimension,
-            "attributes": shared_attributes.copy(),
+            "attributes": working_attributes.copy(),
             "kind": kind,
             "initial_value": initial_value,
             "length": length
@@ -77,14 +84,30 @@ def parse_variables(
 
     return variable_descriptions
 
-def extract_length_from_attributes(attributes: List[str], selector: Optional[Tuple] = None) -> Optional[str]:
-    """Extract length specification from character type attributes."""
-    # First check if length is in selector (for character(10) form)
-    if selector and isinstance(selector, tuple):
-        star_value, _ = selector
-        if star_value:
-            return star_value
+def get_character_length(base_type: str, attributes: List[str], selector: Optional[Tuple] = None,
+                         initial_value: Optional[str] = None) -> Optional[str]:
+    """
+    Determine character length from various possible sources:
+    1. Explicit length specification in selector
+    2. Length specification in attributes
+    3. Initial value string length
+    """
+    # If it's not a character, return immediately
+    if base_type != "character":
+        return None
     
+    # First check if length is in selector
+    if selector and isinstance(selector, tuple):
+        len_spec, old_style_len = selector
+        if len_spec and 'selected_char_kind' in len_spec:
+            pass # this is a kind spec, not a length spec
+        elif len_spec == '*':  # assumed-length character: character(len=*)
+            return '*'
+        elif len_spec:  # new style: character(len=10)
+            return len_spec
+        if old_style_len:  # old style: character*20
+            return old_style_len
+                
     # Then check attributes (for character(len=10) form)
     for attr in attributes:
         if attr.startswith("len="):
@@ -92,10 +115,13 @@ def extract_length_from_attributes(attributes: List[str], selector: Optional[Tup
         elif attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()):
             # This handles the case where length is just a number
             return attr
-    return None
-
-
-
+            
+    # Finally, if we have an initial value, calculate length from that
+    if initial_value and initial_value.startswith("'") and initial_value.endswith("'"):
+        string_content = initial_value[1:-1]
+        return str(len(string_content))
+    
+    return "1"
 
 def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
     """Extract kind specification from a type declaration.

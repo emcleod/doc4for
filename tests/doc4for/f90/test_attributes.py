@@ -22,6 +22,7 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "3.14159",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -43,6 +44,7 @@ class TestAttributes(TestCase):
                 "attributes": ["save"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -64,6 +66,7 @@ class TestAttributes(TestCase):
                 "attributes": ["target"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -85,6 +88,7 @@ class TestAttributes(TestCase):
                 "attributes": ["pointer"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -102,10 +106,11 @@ class TestAttributes(TestCase):
                 "description": "",
                 "type": "real",
                 "name": "x",
-                "dimension": {"dimensions": [{"lower": None, "upper": None}]},
+                "dimension": {"dimensions": [{"lower": None, "upper": None, "stride": None}]},
                 "attributes": ["allocatable"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -129,6 +134,7 @@ class TestAttributes(TestCase):
                     "attributes": [f"intent({intent})"],
                     "kind": None,
                     "initial_value": None,
+                    "length": None
                 },
             ]
             self.assertEqual(result, expected)
@@ -150,7 +156,8 @@ class TestAttributes(TestCase):
                 "attributes": ["optional"],
                 "kind": None,
                 "initial_value": None,
-            },
+                "length": None
+        },
         ]
         self.assertEqual(result, expected)
 
@@ -172,7 +179,8 @@ class TestAttributes(TestCase):
                     "attributes": [visibility],
                     "kind": None,
                     "initial_value": None,
-                },
+                    "length": None
+               },
             ]
             self.assertEqual(result, expected)
 
@@ -193,6 +201,7 @@ class TestAttributes(TestCase):
                 "attributes": ["external"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -214,6 +223,7 @@ class TestAttributes(TestCase):
                 "attributes": ["intrinsic"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -235,6 +245,7 @@ class TestAttributes(TestCase):
                 "attributes": ["save", "intent(in)", "optional"],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -256,6 +267,7 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "1.0",
+                "length": None
             },
             {
                 "description": "",
@@ -265,6 +277,7 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "2.0",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)

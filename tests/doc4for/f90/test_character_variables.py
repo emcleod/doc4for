@@ -3,7 +3,6 @@ from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
 
-
 class TestCharacterVariables(TestCase):
 
     def test_basic_character_declaration(self):
@@ -24,6 +23,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": "1"
             },
         ]
         self.assertEqual(result, expected)
@@ -46,6 +46,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '10',
                 "initial_value": None,
+                "length": "10"
             },
         ]
         self.assertEqual(result, expected)
@@ -68,6 +69,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '20',
                 "initial_value": None,
+                "length": "20"
             },
         ]
         self.assertEqual(result, expected)
@@ -90,6 +92,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "'Hello, World!'",
+                "length": "13"
             },
         ]
         self.assertEqual(result, expected)
@@ -112,6 +115,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '10',
                 "initial_value": "'Hello'",
+                "length": "10"
             },
         ]
         self.assertEqual(result, expected)
@@ -134,6 +138,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": 'n',
                 "initial_value": None,
+                "length": "n"
             },
         ]
         self.assertEqual(result, expected)
@@ -156,6 +161,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '*',
                 "initial_value": None,
+                "length": "*"
             },
         ]
         self.assertEqual(result, expected)
@@ -178,6 +184,7 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '10',
                 "initial_value": None,
+                "length": "10"
             },
             {
                 "description": "",
@@ -187,10 +194,102 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": '10',
                 "initial_value": None,
+                "length": "10"
             },
         ]
         self.assertEqual(result, expected)
 
+    # def test_character_explicit_length_and_kind(self):
+    #     declaration = Mock()
+    #     declaration.name = "character"
+    #     declaration.item.line = "character(len=20, kind=selected_char_kind('ASCII')) :: x"
+    #     declaration.attrspec = []
+    #     declaration.selector = ('20', '')  # Assuming parser sets len_spec to '20'
+    #     declaration.entity_decls = ['x']
+
+    #     result = parse_variable(declaration, [])
+    #     expected = [
+    #         {
+    #             "description": "",
+    #             "type": "character",
+    #             "name": "x",
+    #             "dimension": None,
+    #             "attributes": [],
+    #             "kind": "selected_char_kind('ASCII')",
+    #             "initial_value": None,
+    #             "length": '20'
+    #         },
+    #     ]
+    #     self.assertEqual(result, expected)
+
+    # def test_character_kind_then_length(self):
+    #     declaration = Mock()
+    #     declaration.name = "character"
+    #     declaration.item.line = "character(kind=selected_char_kind('ASCII'), len=20) :: x"
+    #     declaration.attrspec = []
+    #     declaration.selector = ('20', '')  # Assuming parser sets len_spec to '20'
+    #     declaration.entity_decls = ['x']
+
+    #     result = parse_variable(declaration, [])
+    #     expected = [
+    #         {
+    #             "description": "",
+    #             "type": "character",
+    #             "name": "x",
+    #             "dimension": None,
+    #             "attributes": [],
+    #             "kind": "selected_char_kind('ASCII')",
+    #             "initial_value": None,
+    #             "length": '20'
+    #         },
+    #     ]
+    #     self.assertEqual(result, expected)
+
+    # def test_character_positional_len_and_kind(self):
+    #     declaration = Mock()
+    #     declaration.name = "character"
+    #     declaration.item.line = "character(30, kind=selected_char_kind('ASCII')) :: x"
+    #     declaration.attrspec = []
+    #     declaration.selector = ('30', '')  # Assuming parser sets len_spec to '30'
+    #     declaration.entity_decls = ['x']
+
+    #     result = parse_variable(declaration, [])
+    #     expected = [
+    #         {
+    #             "description": "",
+    #             "type": "character",
+    #             "name": "x",
+    #             "dimension": None,
+    #             "attributes": [],
+    #             "kind": "selected_char_kind('ASCII')",
+    #             "initial_value": None,
+    #             "length": '30'
+    #         },
+    #     ]
+    #     self.assertEqual(result, expected)
+
+    def test_character_ambiguous_spec(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(selected_char_kind('ASCII')) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('selected_char_kind(\'ASCII\')', '')
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "selected_char_kind('ASCII')",
+                "initial_value": None,
+                "length": '1'  # Default length since no explicit length
+            },
+        ]
+        self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -44,6 +45,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -65,6 +67,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -74,6 +77,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -95,6 +99,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -104,6 +109,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -113,7 +119,8 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-            },
+                 "length": None
+           },
         ]
         self.assertEqual(result, expected)
 
@@ -134,7 +141,8 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "10",
-            },
+                "length": None
+           },
         ]
         self.assertEqual(result, expected)
 
@@ -155,6 +163,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "1.4",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -176,6 +185,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "10",
+                "length": None
             },
             {
                 "description": "",
@@ -185,6 +195,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "20",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -206,6 +217,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "2",
+                "length": None
             },
             {
                 "description": "",
@@ -215,6 +227,7 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "4",
+                "length": None
             },
             {
                 "description": "",
@@ -224,7 +237,8 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "49",
-            },
+                 "length": None
+           },
         ]
         self.assertEqual(result, expected)
 
@@ -245,7 +259,8 @@ class TestBasicDeclarations(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-            }]
+                 "length": None
+           }]
             self.assertEqual(result, expected)
 
     def test_complex_initialization_values(self):
@@ -264,7 +279,8 @@ class TestBasicDeclarations(TestCase):
             "attributes": [],
             "kind": None,
             "initial_value": "(1.0, 2.0)",
-        }]
+            "length": None
+       }]
         self.assertEqual(result, expected)
 
     def test_initialization_values(self):

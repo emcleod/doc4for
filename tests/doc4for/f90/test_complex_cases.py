@@ -3,7 +3,15 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
+from doc4for.models.common import Expression, ExpressionType
 
+# Helper function for creating dimension expressions
+def create_dimension_expr(lower, upper):
+    return {
+        "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
+        "stride": None,
+        "upper": Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
+    }
 
 class TestComplexCases(TestCase):
 
@@ -21,12 +29,13 @@ class TestComplexCases(TestCase):
                 "type": "real",
                 "name": "x",
                 "dimension": {'dimensions': [
-                    {"lower": "1", "upper": "10"},
-                    {"lower": "1", "upper": "20"}
+                    create_dimension_expr(1, 10),
+                    create_dimension_expr(1, 20)
                 ]},
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -36,15 +45,17 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
                 "type": "real",
                 "name": "z",
-                "dimension": {'dimensions': [{"lower": "1", "upper": "5"}]},
+                "dimension": {'dimensions': [create_dimension_expr(1, 5)]},
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -63,10 +74,11 @@ class TestComplexCases(TestCase):
                 "description": "",
                 "type": "real",
                 "name": "array",
-                "dimension": {'dimensions': [{"lower": "-5", "upper": "5"}]},
+                "dimension": {'dimensions': [create_dimension_expr(-5, 5)]},
                 "attributes": ["save"],
                 "kind": '8',
                 "initial_value": "0.0",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)           
@@ -89,6 +101,7 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter", "public"],
                 "kind": '8',
                 "initial_value": "3.14159265359",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -110,6 +123,7 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "1",
+                "length": None
             },
             {
                 "description": "",
@@ -119,6 +133,7 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "2*x",
+                "length": None
             },
             {
                 "description": "",
@@ -128,7 +143,8 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "y**2",
-            },
+                "length": None
+           },
         ]
         self.assertEqual(result, expected)
 
@@ -149,6 +165,7 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "2.0 * sin(3.14159/2.0) ** 2",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -171,15 +188,17 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
                 "type": "real",
                 "name": "y",
-                "dimension": {'dimensions': [{"lower": "1", "upper": "10"}]},
+                "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -189,6 +208,7 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": "1.0",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -206,10 +226,11 @@ class TestComplexCases(TestCase):
                 "description": "",
                 "type": "real",
                 "name": "vec",
-                "dimension": {'dimensions': [{"lower": "1", "upper": "3"}]},
+                "dimension": {'dimensions': [create_dimension_expr(1, 3)]},
                 "attributes": [],
                 "kind": None,
                 "initial_value": "[f(1), g(x, y), 3.0]",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -228,10 +249,11 @@ class TestComplexCases(TestCase):
                 "description": "",
                 "type": "real",
                 "name": "x",
-                "dimension": {'dimensions': [{"lower": "1", "upper": "10"}]},
+                "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
                 "attributes": ["intent(inout)", "public"],
                 "kind": 'selected_real_kind(15)',
                 "initial_value": "reshape([1,2,3,4,5,6,7,8,9,10], [10])",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -251,23 +273,25 @@ class TestComplexCases(TestCase):
                 "type": "real",
                 "name": "x",
                 "dimension": {'dimensions': [
-                    {"lower": "1", "upper": "10"},
-                    {"lower": "1", "upper": "10"}
+                    create_dimension_expr(1, 10),
+                    create_dimension_expr(1, 10)
                 ]},
                 "attributes": [],
                 "kind": "8",
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
                 "type": "real",
                 "name": "y",
                 "dimension": {'dimensions': [
-                    {"lower": "1", "upper": "5"},
+                    create_dimension_expr(1, 5),
                 ]},
                 "attributes": [],
                 "kind": "8",
                 "initial_value": None,
+                "length": None
             },
             {
                 "description": "",
@@ -277,6 +301,7 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": "8",
                 "initial_value": "1.0",
+                "length": None
             },
         ]
         self.assertEqual(result, expected)
@@ -296,11 +321,12 @@ class TestComplexCases(TestCase):
                 "type": "real",
                 "name": "array",
                 "dimension": {'dimensions': [
-                    {"lower": "1", "upper": "10"}
+                    create_dimension_expr(1, 10)
                 ]},
                 "attributes": ["public"],
                 "kind": "8",
                 "initial_value": None,
+                "length": None
             },
         ]
         self.assertEqual(result, expected)

@@ -35,6 +35,7 @@ ParameterDescription = TypedDict(
         "value": "str",
         "dimension": Optional[str],
         "attributes": List[str],  # For public/private, etc.
+        "length": Optional[str]   # for character lengths
     },
 )
 
