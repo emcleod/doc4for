@@ -33,6 +33,7 @@ def parse_variables(
     
     for entity in declaration.entity_decls:
         if "=" in entity:
+            #TODO this won't work for arrays - see block data parsing to fix
             full_name, initial_value = [x.strip() for x in entity.split("=", 1)]
         else:
             full_name = entity.strip()

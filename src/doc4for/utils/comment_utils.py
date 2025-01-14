@@ -42,3 +42,7 @@ def format_comments(comment_stack: List[Comment]) -> str:
             content = content[:-2].rstrip()
         formatted_comments.append(format_comment_for_html(content))
     return '\n'.join(formatted_comments) + '\n'
+
+
+def is_end_of_doc4for_comment(comment: Comment) -> bool:
+    return "*!" in comment.content

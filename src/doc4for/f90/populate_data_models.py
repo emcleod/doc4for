@@ -16,10 +16,11 @@ from doc4for.models.module_models import ModuleDescription, ProgramDescription, 
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.variable_models import VariableDescription
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
 from doc4for.parse.type_parser import update_type_with_parsed_data
 from doc4for.parse.variable_parser import parse_variables
 from doc4for.parse.common_parser import get_attributes
+
 
 def parse_program(
     program: Program, comment_stack: List[Comment], file_name: str
@@ -63,78 +64,100 @@ def parse_block_data(
     if is_doc4for_comment(comment_stack):
         block_data_details["description"] = format_comments(comment_stack)
 
-    # Track variables we've seen and their types
+    internal_comment_stack = []
     variable_descriptions: Dict[str, VariableDescription] = {}
+    common_block_comments: Dict[str, str] = {}
+
+    # First pass: collect type declarations and common block comments
     for item in block_data.content:
+        if isinstance(item, Comment) and item.content:
+            internal_comment_stack.append(item)
+            continue
+
         if isinstance(item, TypeDeclarationStatement):
-            # TODO maintain a comment stack
             variables = parse_variable(item, [])
             for variable in variables:
                 variable_descriptions[variable["name"]] = variable
+                if is_doc4for_comment(internal_comment_stack):
+                    variable_descriptions[variable["name"]]["description"] = format_comments(
+                        internal_comment_stack)
+        elif isinstance(item, Common):
+            common_name = item.items[0][0] or ""
+            if is_doc4for_comment(internal_comment_stack):
+                common_block_comments[common_name] = format_comments(
+                    internal_comment_stack)
+
+        # Clear after each non-comment item
+        internal_comment_stack.clear()
+
+    # Second pass: build the block data structure
     for item in block_data.content:
         if isinstance(item, Common):
-            common_name = item.items[0][0]
+            common_name = item.items[0][0] or ""
             variable_names = item.items[0][1]
-            block_data_details["common_blocks"]["name"] = {}
+            block_data_details["common_blocks"][common_name] = {}
+            common_description = common_block_comments.get(common_name, "")
+
             for variable_name in variable_names:
-                block_data_details["common_blocks"]["name"][common_name] = {
-                    "description": "",
-                    "type": "",
-                    "name": variable_name,
-                    "dimension": None,
-                    "attributes": [],
-                    "kind": None,
-                    "initial_value": None,
-                }
-            # # Create entries for these variables, using type info if we already have it
-            # block_data_details["common_blocks"][common_name] = {
-            #     name: variable_types.get(
-            #         name,
-            #         {
-            #             "description": "",
-            #             "type": "",
-            #             "name": name,
-            #             "dimension": None,
-            #             "attributes": [],
-            #             "kind": None,
-            #             "initial_value": None,
-            #         },
-            #     )
-            #     for name in variables
-            # }
-
-        elif isinstance(item, TypeDeclarationStatement):
-            temp = parse_variable(item, [])
-            x = 1
-            # var_type = item.get_type()
-            # for item in item.items:
-            #     var_info = {
-            #         "description": "",
-            #         "type": var_type,
-            #         "name": item.name,
-            #         "dimension": (
-            #             parse_dimension(item.dimension) if item.dimension else None
-            #         ),
-            #         "attributes": [],
-            #         "kind": item.kind if hasattr(item, "kind") else None,
-            #         "initial_value": None,
-            #     }
-
-            #     # Update our tracking dict
-            #     variable_types[item.name] = var_info
-
-            #     # Update any existing common block entries
-            #     for common_block in block_data_details["common_blocks"].values():
-            #         if item.name in common_block:
-            #             common_block[item.name].update(var_info)
+                if variable_name in variable_descriptions:
+                    block_data_details["common_blocks"][common_name][variable_name] = variable_descriptions[variable_name].copy(
+                    )
+                    if not block_data_details["common_blocks"][common_name][variable_name]["description"] and common_description:
+                        block_data_details["common_blocks"][common_name][variable_name]["description"] = common_description
+                else:
+                    block_data_details["common_blocks"][common_name][variable_name] = {
+                        "description": common_description,
+                        "type": "",
+                        "name": variable_name,
+                        "dimension": None,
+                        "attributes": [],
+                        "kind": None,
+                        "initial_value": None,
+                        "length": None
+                    }
         elif isinstance(item, Data):
-            pass
-            # for var_name, value in zip(item.items, item.values):
-            #     for common_block in block_data_details["common_blocks"].values():
-            #         if var_name in common_block:
-            #             common_block[var_name]["initial_value"] = str(value)
+            for var_names, values in item.stmts:
+                parse_data_statement(var_names, values, block_data_details)
 
     return block_data_details
+
+def parse_data_statement(var_names, values, block_data_details):
+    value_index = 0
+    for var_name in var_names:
+        for common_block in block_data_details["common_blocks"].values():
+            if var_name in common_block:
+                var_info = common_block[var_name]
+                if var_info.get("dimension"):
+                    # It's an array, determine how many values to take
+                    array_size = 1
+                    for dim in var_info["dimension"]["dimensions"]:
+                        upper = int(dim["upper"].value)
+                        lower = int(dim["lower"].value)
+                        array_size *= (upper - lower + 1)
+                    
+                    # Expand any repeat expressions in the values
+                    expanded_values = []
+                    current_size = 0
+                    while current_size < array_size and value_index < len(values):
+                        expanded = expand_repeat_value(str(values[value_index]))
+                        expanded_values.extend(expanded)
+                        current_size += len(expanded)
+                        value_index += 1
+                    
+                    # Take only what we need (in case we expanded too many)
+                    expanded_values = expanded_values[:array_size]
+                    var_info["initial_value"] = ", ".join(expanded_values)
+                else:
+                    # It's a scalar
+                    var_info["initial_value"] = str(values[value_index])
+                    value_index += 1
+    
+def expand_repeat_value(value_str: str) -> list[str]:
+    """Expand Fortran repeat expressions like '3*0.0' into ['0.0', '0.0', '0.0']"""
+    if '*' in value_str:
+        count_str, value = value_str.split('*')
+        return [value] * int(count_str)
+    return [value_str]
 
 
 def parse_module(
@@ -153,6 +176,7 @@ def parse_module(
     if is_doc4for_comment(comment_stack):
         module_data["module_description"] = format_comments(comment_stack)
     return module_data
+
 
 def parse_type(
     type: Type, comment_stack: List[Comment], public_declarations: List[str]
@@ -183,30 +207,32 @@ def parse_type(
         type_description["description"] = format_comments(comment_stack)
     return type_description
 
+
 def parse_variable(
-    declaration: TypeDeclarationStatement, 
+    declaration: TypeDeclarationStatement,
     comment_stack: List[Comment]
 ) -> List[VariableDescription]:
     """Parse variable declarations into variable descriptions.
-    
+
     Args:
         declaration: The type declaration statement to parse
         comment_stack: Stack of comments preceding the declaration
-        
+
     Returns:
         List of variable descriptions for both array and scalar variables
     """
-    description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+    description = format_comments(
+        comment_stack) if is_doc4for_comment(comment_stack) else ""
     shared_attributes = get_attributes(declaration)
 
     try:
-        return parse_variables(declaration, description, shared_attributes)     
+        return parse_variables(declaration, description, shared_attributes)
     except Exception as e:
         # TODO log this and continue
-        raise ValueError(f"Error parsing variable declaration: {str(e)}") from e
-    
-# TODO public declaration should be handled here?
+        raise ValueError(
+            f"Error parsing variable declaration: {str(e)}") from e
 
+# TODO public declaration should be handled here?
 
 
 # TODO: this is to link any function calls in dimensions to their definition -
