@@ -1,16 +1,40 @@
 import re
 from typing import List, Optional, Tuple
 from fparser.one.typedecl_statements import TypeDeclarationStatement
+from fparser.one.block_statements import Comment
+from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.variable_models import VariableDescription
-from doc4for.parse.dimension_parser import (
-    extract_dimension_from_attributes,
-    extract_variable_dimension
-)
+from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_variable_dimension
+from doc4for.parse.array_utils import parse_initialization_value
+from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.parse.parsing_utils import get_attributes, extract_kind, get_character_length
 
-# TODO with implied shape arrays, find the number of elements 
-# in the array so the dimensions can be filled in
 # TODO with defined type arrays, link to their type when generating
 # the documents
+def parse_variable(
+    declaration: TypeDeclarationStatement,
+    comment_stack: List[Comment]
+) -> List[VariableDescription]:
+    """Parse variable declarations into variable descriptions.
+
+    Args:
+        declaration: The type declaration statement to parse
+        comment_stack: Stack of comments preceding the declaration
+
+    Returns:
+        List of variable descriptions for both array and scalar variables
+    """
+    description = format_comments(
+        comment_stack) if is_doc4for_comment(comment_stack) else ""
+    shared_attributes = get_attributes(declaration)
+
+    try:
+        return parse_variables(declaration, description, shared_attributes)
+    except Exception as e:
+        # TODO log this and continue
+        raise ValueError(
+            f"Error parsing variable declaration: {str(e)}") from e
+    
 def parse_variables(
     declaration: TypeDeclarationStatement,
     description: str,
@@ -32,34 +56,24 @@ def parse_variables(
     variable_descriptions: List[VariableDescription] = []
     
     for entity in declaration.entity_decls:
-        if "=" in entity:
-            #TODO this won't work for arrays - see block data parsing to fix
-            full_name, initial_value = [x.strip() for x in entity.split("=", 1)]
-        else:
-            full_name = entity.strip()
-            initial_value = None
+        full_name, initial_value = parse_initialization_value(entity)
 
         # Try to get dimensions from name first
         dimension = extract_variable_dimension(full_name)
         
-        # Use dimension from attributes if none found in name
-        if not dimension and dimension_from_attr:
-            dimension = dimension_from_attr
-
         # Remove any parenthetical expressions from the name
         name = re.sub(r"\(.*\)", "", full_name).strip()
 
+        # Use dimension from attributes if none found in name
+        if not dimension and dimension_from_attr:
+            dimension = dimension_from_attr
         # Handle allocatable arrays
         if "allocatable" in shared_attributes and "(:)" in name:
             name = name.replace("(:)", "")
 
-        # Handle character length if it's a character type
-        length = get_character_length(
-            base_type,
-            shared_attributes, 
-            declaration.selector,
-            initial_value
-        )
+        # Initialize character-specific attributes
+        length = None
+        working_attributes = shared_attributes
         if base_type == "character":
             # Filter out length-related attributes
             working_attributes = [
@@ -67,15 +81,19 @@ def parse_variables(
                 if not attr.startswith("len=") 
                 and not (attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()))
             ]
-        else:
-            working_attributes = shared_attributes
+            length = get_character_length(
+                base_type,
+                shared_attributes, 
+                declaration.selector,
+                initial_value
+            )
 
         variable_description: VariableDescription = {
             "description": description,
             "type": base_type,
             "name": name,
             "dimension": dimension,
-            "attributes": working_attributes.copy(),
+            "attributes": working_attributes,
             "kind": kind,
             "initial_value": initial_value,
             "length": length
@@ -84,56 +102,4 @@ def parse_variables(
         variable_descriptions.append(variable_description)
 
     return variable_descriptions
-
-def get_character_length(base_type: str, attributes: List[str], selector: Optional[Tuple] = None,
-                         initial_value: Optional[str] = None) -> Optional[str]:
-    """
-    Determine character length from various possible sources:
-    1. Explicit length specification in selector
-    2. Length specification in attributes
-    3. Initial value string length
-    """
-    # If it's not a character, return immediately
-    if base_type != "character":
-        return None
-    
-    # First check if length is in selector
-    if selector and isinstance(selector, tuple):
-        len_spec, old_style_len = selector
-        if len_spec and 'selected_char_kind' in len_spec:
-            pass # this is a kind spec, not a length spec
-        elif len_spec == '*':  # assumed-length character: character(len=*)
-            return '*'
-        elif len_spec:  # new style: character(len=10)
-            return len_spec
-        if old_style_len:  # old style: character*20
-            return old_style_len
-                
-    # Then check attributes (for character(len=10) form)
-    for attr in attributes:
-        if attr.startswith("len="):
-            return attr[4:]  # remove "len=" prefix
-        elif attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()):
-            # This handles the case where length is just a number
-            return attr
             
-    # Finally, if we have an initial value, calculate length from that
-    if initial_value and initial_value.startswith("'") and initial_value.endswith("'"):
-        string_content = initial_value[1:-1]
-        return str(len(string_content))
-    
-    return "1"
-
-def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
-    """Extract kind specification from a type declaration.
-
-    Args:
-        declaration: The type declaration statement
-
-    Returns:
-        Optional[str]: The kind specification if present, None otherwise
-    """
-    if hasattr(declaration, "selector") and isinstance(declaration.selector, Tuple):
-        star_value, kind_value = declaration.selector
-        return star_value or kind_value or None
-    return None

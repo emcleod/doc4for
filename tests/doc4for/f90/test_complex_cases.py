@@ -14,7 +14,7 @@ def create_dimension_expr(lower, upper):
     }
 
 class TestComplexCases(TestCase):
-
+    maxDiff=None
     def test_old_style_multiple_variable_types(self):
         declaration = Mock()
         declaration.name = "real"
@@ -229,7 +229,7 @@ class TestComplexCases(TestCase):
                 "dimension": {'dimensions': [create_dimension_expr(1, 3)]},
                 "attributes": [],
                 "kind": None,
-                "initial_value": "[f(1), g(x, y), 3.0]",
+                "initial_value": "f(1), g(x, y), 3.0",
                 "length": None
             },
         ]

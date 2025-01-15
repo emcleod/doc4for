@@ -5,8 +5,6 @@ from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.models.common import Expression, ExpressionType
 
 # Helper function for creating dimension expressions
-
-
 def create_dimension_expr(lower, upper):
     return {
         "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
@@ -16,8 +14,7 @@ def create_dimension_expr(lower, upper):
 
 
 class TestBlockData(TestCase):
-    maxDiff = None
-
+    maxDiff=None
     def setUp(self):
         self.setUpPyfakefs()
 

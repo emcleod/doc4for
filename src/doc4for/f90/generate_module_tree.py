@@ -21,11 +21,13 @@ from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
 from doc4for.utils.file_utils import check_write_permissions
 from doc4for.models.module_models import ModuleDescription
-from doc4for.parse.parameter_parser import parse_parameter
+from doc4for.models.type_models import TypeDescription
+from doc4for.parse.parameter_parser import parse_parameter, is_parameter
 from doc4for.parse.procedure_parser import parse_subroutine, parse_function
 from doc4for.f90.populate_data_models import (
     parse_module,
     parse_type, 
+    parse_variable
 )
 
 class Visibility(Enum):
@@ -64,19 +66,23 @@ def parse_module_content(comment_stack: List[Comment], module: Any, module_data:
         elif isinstance(item, Private):
             is_public = False
         else:
-            if isinstance(item, TypeDeclarationStatement) and 'parameter' not in item.attrspec:
-                continue
             match item:
                 case Function():
                     module_data['functions'][item.name] = parse_function(item, comment_stack)
                 case Subroutine():
                     module_data['subroutines'][item.name] = parse_subroutine(item, comment_stack)
                 case Type():
-                    type_description: Dict[str, Any] = parse_type(item, comment_stack, public_declarations)
+                    type_description: TypeDescription = parse_type(item, comment_stack, public_declarations)
                     module_data['types'][type_description['type_name']] = type_description
                 case TypeDeclarationStatement():
-                    parameter_description: Dict[str, Any] = parse_parameter(item, comment_stack)
-                    module_data['parameters'][parameter_description['name']] = parse_parameter(item, comment_stack)
+                    if is_parameter(item):
+                        parameter_descriptions = parse_parameter(item, comment_stack)
+                        for param in parameter_descriptions:
+                            module_data['parameters'][param['name']] = param
+                    else:
+                        variable_descriptions = parse_variable(item, comment_stack)
+                        for var in variable_descriptions:
+                            module_data['variables'][var['name']] = var                
                 case _:
                     pass
             comment_stack.clear()

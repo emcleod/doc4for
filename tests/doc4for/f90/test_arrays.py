@@ -1,14 +1,14 @@
 import unittest
 from unittest import TestCase
 from unittest.mock import Mock
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 
 from doc4for.f90.populate_data_models import parse_variable
 from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.variable_models import VariableDescription
 
 class TestArrays(TestCase):
-
+    maxDiff=None
     def setUp(self):
         self.base_expected = {
             "description": "",
@@ -76,12 +76,14 @@ class TestArrays(TestCase):
                                line: str,
                                decls: List[str],
                                type_name: str = "real",
-                               attrspec: List[str] = None) -> Mock:
+                               attrspec: List[str] = None,
+                               selector: Tuple[str, str] = None) -> Mock:
         declaration = Mock()
         declaration.name = type_name
         declaration.item.line = line
         declaration.attrspec = attrspec or []
         declaration.entity_decls = decls
+        declaration.selector = selector
         return declaration
 
     def test_simple_array_declarations(self):
@@ -453,7 +455,7 @@ class TestArrays(TestCase):
             "x",
             type_name="character",
             dims=[self.create_dimension(lower="1", upper="2")],
-            initial_value='(/"Hello", "World"/)',  # Initial value as string
+            initial_value='"Hello", "World"',  # Initial value as string
             length="10"
         )]
         self.assertEqual(result, expected)
@@ -532,7 +534,8 @@ class TestArrays(TestCase):
             "character*10 names(100)",
             ['names(100)'],
             type_name="character",
-            attrspec=[]  
+            attrspec=[],
+            selector=('10', '')
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration(
@@ -574,18 +577,16 @@ class TestArrays(TestCase):
 
     def test_implied_shape_array(self):
         declaration = self.create_mock_declaration(
-            "integer, parameter :: x(*) = [1, 2, 3, 4, 5]",
+            "integer :: x(*) = [1, 2, 3, 4, 5]",
             ['x(*) = [1, 2, 3, 4, 5]'],
             type_name="integer",
-            attrspec=["parameter"]
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration(
             "x",
             type_name="integer",
-            dims=[self.create_dimension(lower=None, upper=None)],  # Implied shape using [None, None]
-            attributes=["parameter"],
-            initial_value="[1, 2, 3, 4, 5]"
+            dims=[self.create_dimension(lower="1", upper=None)],  # Implied shape using [None, None]
+            initial_value="1, 2, 3, 4, 5"
         )]
         self.assertEqual(result, expected)
 

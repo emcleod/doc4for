@@ -15,12 +15,10 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.module_models import ModuleDescription, ProgramDescription, Uses, BlockDataDescription
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.type_models import TypeDescription
-from doc4for.models.variable_models import VariableDescription
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
+from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 from doc4for.parse.type_parser import update_type_with_parsed_data
-from doc4for.parse.variable_parser import parse_variables
-from doc4for.parse.common_parser import get_attributes
-
+from doc4for.parse.variable_parser import parse_variable
+from doc4for.parse.array_utils import calculate_array_size, expand_array_values
 
 def parse_program(
     program: Program, comment_stack: List[Comment], file_name: str
@@ -129,37 +127,16 @@ def parse_data_statement(var_names, values, block_data_details):
                 var_info = common_block[var_name]
                 if var_info.get("dimension"):
                     # It's an array, determine how many values to take
-                    array_size = 1
-                    for dim in var_info["dimension"]["dimensions"]:
-                        upper = int(dim["upper"].value)
-                        lower = int(dim["lower"].value)
-                        array_size *= (upper - lower + 1)
+                    array_size = calculate_array_size(var_info["dimension"]["dimensions"])
                     
                     # Expand any repeat expressions in the values
-                    expanded_values = []
-                    current_size = 0
-                    while current_size < array_size and value_index < len(values):
-                        expanded = expand_repeat_value(str(values[value_index]))
-                        expanded_values.extend(expanded)
-                        current_size += len(expanded)
-                        value_index += 1
-                    
-                    # Take only what we need (in case we expanded too many)
-                    expanded_values = expanded_values[:array_size]
-                    var_info["initial_value"] = ", ".join(expanded_values)
+                    var_info["initial_value"], offset = expand_array_values(values, array_size, value_index) 
+                    value_index += offset
                 else:
                     # It's a scalar
                     var_info["initial_value"] = str(values[value_index])
                     value_index += 1
-    
-def expand_repeat_value(value_str: str) -> list[str]:
-    """Expand Fortran repeat expressions like '3*0.0' into ['0.0', '0.0', '0.0']"""
-    if '*' in value_str:
-        count_str, value = value_str.split('*')
-        return [value] * int(count_str)
-    return [value_str]
-
-
+ 
 def parse_module(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:
@@ -207,30 +184,6 @@ def parse_type(
         type_description["description"] = format_comments(comment_stack)
     return type_description
 
-
-def parse_variable(
-    declaration: TypeDeclarationStatement,
-    comment_stack: List[Comment]
-) -> List[VariableDescription]:
-    """Parse variable declarations into variable descriptions.
-
-    Args:
-        declaration: The type declaration statement to parse
-        comment_stack: Stack of comments preceding the declaration
-
-    Returns:
-        List of variable descriptions for both array and scalar variables
-    """
-    description = format_comments(
-        comment_stack) if is_doc4for_comment(comment_stack) else ""
-    shared_attributes = get_attributes(declaration)
-
-    try:
-        return parse_variables(declaration, description, shared_attributes)
-    except Exception as e:
-        # TODO log this and continue
-        raise ValueError(
-            f"Error parsing variable declaration: {str(e)}") from e
 
 # TODO public declaration should be handled here?
 
