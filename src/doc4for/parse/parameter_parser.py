@@ -81,6 +81,7 @@ def parse_parameters(
             ]
             length = get_character_length(
                 base_type,
+                declaration,
                 shared_attributes, 
                 declaration.selector,
                 value

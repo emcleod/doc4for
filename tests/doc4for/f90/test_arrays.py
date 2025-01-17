@@ -368,19 +368,22 @@ class TestArrays(TestCase):
     def test_character_arrays(self):
         test_cases = [
             (
-                "character(len=10) :: names(100)",
-                ['names(100)'],
-                ["len=10"]
+                "character(len=10) :: names1(100)",
+                ['names1(100)'],
+                [],
+                ("10", "")
             ),
             (
-                "character(10) names(5,10)",  # Alternative syntax
-                ['names(5,10)'],
-                ["10"]  # length specification comes differently in fparser
+                "character(10) names2(5,10)",  # Alternative syntax
+                ['names2(5,10)'],
+                [],  
+                ("10", "")
             ),
             (
                 "character(len=20), dimension(50) :: strings",
                 ['strings'],
-                ["len=20", "dimension(50)"]
+                ["dimension(50)"],
+                ("20", "")
             ),
         ]
         
@@ -393,12 +396,13 @@ class TestArrays(TestCase):
             [self.create_dimension(lower="1", upper="50")]
         ]
         
-        for i, (line, decls, attrs) in enumerate(test_cases):
+        for i, (line, decls, attrs, sel) in enumerate(test_cases):
             declaration = self.create_mock_declaration(
                 line, 
                 decls,
                 type_name="character",
-                attrspec=attrs
+                attrspec=attrs,
+                selector=sel
             )
             result = parse_variable(declaration, [])
             expected = [self.create_declaration(
@@ -415,7 +419,8 @@ class TestArrays(TestCase):
             "character(len=*) :: x(5)",
             ['x(5)'],
             type_name="character",
-            attrspec=["len=*"]
+            attrspec=[],
+            selector=("*", "")
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration(
@@ -431,7 +436,8 @@ class TestArrays(TestCase):
             "character(len=:), allocatable :: x(:)",
             ['x(:)'],
             type_name="character",
-            attrspec=["len=:", "allocatable"]
+            attrspec=["allocatable"],
+            selector=(":", "")
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration(
@@ -446,9 +452,10 @@ class TestArrays(TestCase):
     def test_character_array_initialization(self):
         declaration = self.create_mock_declaration(
             "character(10) :: x(2) = (/'Hello', 'World'/)",
-            ['x(2) = (/"Hello", "World"/)'],  # Updated to use double quotes as fparser might
+            ['x(2) = (/"Hello", "World"/)'],  
             type_name="character",
-            attrspec=["10"]
+            attrspec=[],
+            selector=("10", "")
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration(
@@ -659,20 +666,24 @@ class TestArrays(TestCase):
 
     def test_coarray_declarations_1(self):
         test_cases = [
-            ("integer :: x[*]", ['x[*]'], ["codimension[*]"]),
-            ("real :: a(10)[3,*]", ['a(10)[3,*]'], ["codimension[3,*]"]),
-            ("integer, allocatable :: d[:,:,:]", ['d[:,:,:]'], ["allocatable", "codimension[:,:,:]"])
+            ("integer :: x[*]", ['x[*]'], "integer", [], ("", "")),
+            ("real :: a(10)[3,*]", ['a(10)[3,*]'], "real", [], ("", "")),
+            ("integer, allocatable :: d[:,:,:]", ['d[:,:,:]'], "integer", ["allocatable"], ("", ""))
         ]
         
-        for line, decls, attrs in test_cases:
+        for line, decls, name, attrs, sel in test_cases:
             declaration = self.create_mock_declaration(
                 line,
                 decls,
-                attrspec=attrs
+                type_name=name,
+                attrspec=attrs,
+                selector=sel
             )
             result = parse_variable(declaration, [])
+
             expected = [self.create_declaration(
                 decls[0].split('[')[0].split('(')[0].strip(),
+                name,
                 dims=[self.create_dimension(lower="1", upper="10")] if '(' in decls[0] else None,
                 attributes=attrs
             )]

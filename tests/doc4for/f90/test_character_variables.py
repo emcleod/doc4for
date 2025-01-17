@@ -44,7 +44,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str",
                 "dimension": None,
                 "attributes": [],
-                "kind": '10',
+                "kind": None,
                 "initial_value": None,
                 "length": "10"
             },
@@ -56,7 +56,7 @@ class TestCharacterVariables(TestCase):
         declaration.name = "character"
         declaration.item.line = "character*20 str"
         declaration.attrspec = []
-        declaration.selector = ('', '20')
+        declaration.selector = ('20', '')
         declaration.entity_decls = ['str']
 
         result = parse_variable(declaration, [])
@@ -67,7 +67,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str",
                 "dimension": None,
                 "attributes": [],
-                "kind": '20',
+                "kind": None,
                 "initial_value": None,
                 "length": "20"
             },
@@ -113,7 +113,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str",
                 "dimension": None,
                 "attributes": [],
-                "kind": '10',
+                "kind": None,
                 "initial_value": "'Hello'",
                 "length": "10"
             },
@@ -136,7 +136,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str",
                 "dimension": None,
                 "attributes": [],
-                "kind": 'n',
+                "kind": None,
                 "initial_value": None,
                 "length": "n"
             },
@@ -159,7 +159,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str",
                 "dimension": None,
                 "attributes": [],
-                "kind": '*',
+                "kind": None,
                 "initial_value": None,
                 "length": "*"
             },
@@ -182,7 +182,7 @@ class TestCharacterVariables(TestCase):
                 "name": "str1",
                 "dimension": None,
                 "attributes": [],
-                "kind": '10',
+                "kind": None,
                 "initial_value": None,
                 "length": "10"
             },
@@ -192,81 +192,81 @@ class TestCharacterVariables(TestCase):
                 "name": "str2",
                 "dimension": None,
                 "attributes": [],
-                "kind": '10',
+                "kind": None,
                 "initial_value": None,
                 "length": "10"
             },
         ]
         self.assertEqual(result, expected)
 
-    # def test_character_explicit_length_and_kind(self):
-    #     declaration = Mock()
-    #     declaration.name = "character"
-    #     declaration.item.line = "character(len=20, kind=selected_char_kind('ASCII')) :: x"
-    #     declaration.attrspec = []
-    #     declaration.selector = ('20', '')  # Assuming parser sets len_spec to '20'
-    #     declaration.entity_decls = ['x']
+    def test_character_explicit_length_and_kind(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(len=20, kind=selected_char_kind('ASCII')) :: x"
+        declaration.attrspec = []
+        declaration.selector = ("20", "selected_char_kind('ASCII')")  
+        declaration.entity_decls = ['x']
 
-    #     result = parse_variable(declaration, [])
-    #     expected = [
-    #         {
-    #             "description": "",
-    #             "type": "character",
-    #             "name": "x",
-    #             "dimension": None,
-    #             "attributes": [],
-    #             "kind": "selected_char_kind('ASCII')",
-    #             "initial_value": None,
-    #             "length": '20'
-    #         },
-    #     ]
-    #     self.assertEqual(result, expected)
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "selected_char_kind('ASCII')",
+                "initial_value": None,
+                "length": '20'
+            },
+        ]
+        self.assertEqual(result, expected)
 
-    # def test_character_kind_then_length(self):
-    #     declaration = Mock()
-    #     declaration.name = "character"
-    #     declaration.item.line = "character(kind=selected_char_kind('ASCII'), len=20) :: x"
-    #     declaration.attrspec = []
-    #     declaration.selector = ('20', '')  # Assuming parser sets len_spec to '20'
-    #     declaration.entity_decls = ['x']
+    def test_character_kind_then_length(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=selected_char_kind('ASCII'), len=20) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('20', "selected_char_kind('ASCII')")  
+        declaration.entity_decls = ['x']
 
-    #     result = parse_variable(declaration, [])
-    #     expected = [
-    #         {
-    #             "description": "",
-    #             "type": "character",
-    #             "name": "x",
-    #             "dimension": None,
-    #             "attributes": [],
-    #             "kind": "selected_char_kind('ASCII')",
-    #             "initial_value": None,
-    #             "length": '20'
-    #         },
-    #     ]
-    #     self.assertEqual(result, expected)
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "selected_char_kind('ASCII')",
+                "initial_value": None,
+                "length": '20'
+            },
+        ]
+        self.assertEqual(result, expected)
 
-    # def test_character_positional_len_and_kind(self):
-    #     declaration = Mock()
-    #     declaration.name = "character"
-    #     declaration.item.line = "character(30, kind=selected_char_kind('ASCII')) :: x"
-    #     declaration.attrspec = []
-    #     declaration.selector = ('30', '')  # Assuming parser sets len_spec to '30'
-    #     declaration.entity_decls = ['x']
+    def test_character_positional_len_and_kind(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(30, kind=selected_char_kind('ASCII')) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('30', "selected_char_kind('ASCII')")  
+        declaration.entity_decls = ['x']
 
-    #     result = parse_variable(declaration, [])
-    #     expected = [
-    #         {
-    #             "description": "",
-    #             "type": "character",
-    #             "name": "x",
-    #             "dimension": None,
-    #             "attributes": [],
-    #             "kind": "selected_char_kind('ASCII')",
-    #             "initial_value": None,
-    #             "length": '30'
-    #         },
-    #     ]
-    #     self.assertEqual(result, expected)
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "selected_char_kind('ASCII')",
+                "initial_value": None,
+                "length": '30'
+            },
+        ]
+        self.assertEqual(result, expected)
 
     def test_character_ambiguous_spec(self):
         declaration = Mock()
@@ -291,5 +291,212 @@ class TestCharacterVariables(TestCase):
         ]
         self.assertEqual(result, expected)
 
+    def test_character_non_ascii_kind(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=selected_char_kind('ISO_10646')) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('', "selected_char_kind('ISO_10646')")
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "selected_char_kind('ISO_10646')",
+                "initial_value": None,
+                "length": "1"
+            },
+        ]
+        self.assertEqual(result, expected)
+
+    def test_character_numeric_kind(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=4) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('', "4")
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "4",
+                "initial_value": None,
+                "length": "1"
+            },
+        ]
+        self.assertEqual(result, expected)       
+
+    def test_character_ambiguous_variable_spec(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(char_kind) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('char_kind', '')
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": None,  
+                "initial_value": None,
+                "length": "char_kind"
+            },
+        ]
+        self.assertEqual(result, expected)   
+
+    def test_character_kind_complex_expression(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=max(selected_char_kind('ASCII'),4)) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('', "max(selected_char_kind('ASCII'),4)")
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "max(selected_char_kind('ASCII'),4)",
+                "initial_value": None,
+                "length": "1"
+            },
+        ]
+        self.assertEqual(result, expected)              
+
+    def test_character_kind_named_constant(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=ascii_kind) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('', 'ascii_kind')
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "ascii_kind",
+                "initial_value": None,
+                "length": '1'
+            },
+        ]
+        self.assertEqual(result, expected)
+            
+    # def test_character_array_with_length(self):
+    #     declaration = Mock()
+    #     declaration.name = "character"
+    #     declaration.item.line = "character(len=30), dimension(10) :: str_array"
+    #     declaration.attrspec = ['dimension(10)']
+    #     declaration.selector = ('30', '')
+    #     declaration.entity_decls = ['str_array']
+
+    #     result = parse_variable(declaration, [])
+    #     expected = [
+    #         {
+    #             "description": "",
+    #             "type": "character",
+    #             "name": "str_array",
+    #             "dimension": "dimension(10)",
+    #             "attributes": ["dimension(10)"],
+    #             "kind": None,
+    #             "initial_value": None,
+    #             "length": '30'
+    #         },
+    #     ]
+    #     self.assertEqual(result, expected)
+
+    def test_character_kind_integer(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(kind=1) :: x"
+        declaration.attrspec = []
+        declaration.selector = ('1', '')
+        declaration.entity_decls = ['x']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "x",
+                "dimension": None,
+                "attributes": [],
+                "kind": "1",
+                "initial_value": None,
+                "length": '1'
+            },
+        ]
+        self.assertEqual(result, expected)
+
+    def test_character_complex_length_expression(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(len=2*n+1) :: str"
+        declaration.attrspec = []
+        declaration.selector = ('2*n+1', '')
+        declaration.entity_decls = ['str']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "str",
+                "dimension": None,
+                "attributes": [],
+                "kind": None,
+                "initial_value": None,
+                "length": "2*n+1"
+            },
+        ]
+        self.assertEqual(result, expected)
+
+    def test_character_complex_kind_and_length(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(len=2*n+1, kind=merge(ascii, utf8, use_ascii)) :: str"
+        declaration.attrspec = []
+        declaration.selector = ('2*n+1', 'merge(ascii, utf8, use_ascii)')
+        declaration.entity_decls = ['str']
+
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "str",
+                "dimension": None,
+                "attributes": [],
+                "kind": "merge(ascii, utf8, use_ascii)",
+                "initial_value": None,
+                "length": "2*n+1"
+            },
+        ]
+        self.assertEqual(result, expected)
+                            
 if __name__ == "__main__":
     unittest.main()

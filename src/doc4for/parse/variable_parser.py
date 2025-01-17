@@ -41,9 +41,6 @@ def parse_variables(
     shared_attributes: List[str],
 ) -> List[VariableDescription]:
     
-    base_type = str(declaration.name).lower()
-    kind = extract_kind(declaration)
-
     # Extract dimension from attributes
     dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
     
@@ -54,8 +51,11 @@ def parse_variables(
     ]
     
     variable_descriptions: List[VariableDescription] = []
-    
+
+    base_type = str(declaration.name).lower()    
     for entity in declaration.entity_decls:
+        kind = extract_kind(declaration)
+
         full_name, initial_value = parse_initialization_value(entity)
 
         # Try to get dimensions from name first
@@ -67,10 +67,11 @@ def parse_variables(
         # Use dimension from attributes if none found in name
         if not dimension and dimension_from_attr:
             dimension = dimension_from_attr
-        # Handle allocatable arrays
-        if "allocatable" in shared_attributes and "(:)" in name:
-            name = name.replace("(:)", "")
 
+        # Handle coarrays - fparser does not remove [*] from name
+        if "[" in name:
+            name = name.split(("["))[0]
+        
         # Initialize character-specific attributes
         length = None
         working_attributes = shared_attributes
@@ -83,6 +84,7 @@ def parse_variables(
             ]
             length = get_character_length(
                 base_type,
+                declaration,
                 shared_attributes, 
                 declaration.selector,
                 initial_value
