@@ -29,6 +29,3 @@ where = ["src"]
 [project.scripts]
 doc4for = "doc4for.generate_docs:main"
 
-[build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
