@@ -6,6 +6,8 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument 
 from doc4for.utils.comment_utils import format_comment_for_html
+from doc4for.parse.variable_parser import parse_variables
+from doc4for.models.dimension_models import Dimension, format_dimension
 
 def extract_argument_type(item: Any) -> str:
     """Get the type of a dummy argument to a function from its `TypeDeclarationStatement`.
@@ -113,10 +115,11 @@ def format_dimension_string(dims: List[int]) -> str:
     """
     if not dims:
         return ''
-    dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
-    return ' &times; '.join(dimension_parts)
+    return format_dimension(dims)
+    # dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
+    # return ' &times; '.join(dimension_parts)
 
-def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: bool,
+def update_single_argument_1(decl: str, arg_type: str, intentin: bool, intentout: bool,
                 dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
                 dims: Optional[List[int]] = None) -> None:
     """Populate the `Argument` type with information from the dummy argument
@@ -148,125 +151,208 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     if intentout or not intentin:
         dummy_arg_info['out'][decl] = arg_info
 
-def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
-    """Process the arguments and return type of a function.
-
-    This function extracts information about the arguments and return type of a
-    given function. It iterates through the content of the function and processes
-    each `TypeDeclarationStatement` to determine the types, intent, and dimensions
-    of the arguments. It also handles the return type of the function.
+def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: bool,
+                dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
+                dims: Optional[Dimension] = None) -> None:
+    """Populate the `Argument` type with information from the dummy argument
+    declaration.
 
     Args:
-        procedure: A procedure (function or subroutine) extracted by the parser.
-        arg_info (Union[FunctionDescription, SubroutineDescription)]: A dictionary 
-        containing information about the function or subroutine's arguments and
-        return type for functions.
-        It populates the following keys:
-            - 'in': A dictionary to store input argument information.
-            - 'out': A dictionary to store output argument information.
-            - 'return': A dictionary to store the return type information if the input is a 
-            FunctionDescription.
-
-    Returns:
-        None: The function modifies the `arg_info` dictionary in-place.
-
-    TODO:
-        - Handle assumed size arrays.
-        - Properly handle the dimensions of arguments and return types.
+        decl (str): The name of the argument as found by the parser.
+        arg_type (str): The type of the argument as found by the parser, e.g.,
+            'real', 'integer'.
+        intentin (bool): True if the argument is an input to the function
+            (`intent(in)` or `intent(inout)`).
+        intentout (bool): True if the argument is an output of the function
+            (`intent(out)` or `intent(inout)`), excluding the return type.
+        dummy_arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary 
+            containing information about a function or subroutines's arguments, 
+            The 'in' and 'out' keys will be populated in this function.
+        dims (Optional[List[int]]): An optional list of integers representing the
+            dimensions of the argument. An empty list or string are
+            interpreted as allocatable dimensions. Defaults to an empty list if
+            not provided.
     """
+    if dims is None:
+        dims = []
+    arg_info: Argument = {'type': arg_type, 
+                          'description': '', 
+                          'dimension': format_dimension_string(dims)}
+    if intentin or not intentout:
+        dummy_arg_info['in'][decl] = arg_info
+    if intentout or not intentin:
+        dummy_arg_info['out'][decl] = arg_info
+
+def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     args: List[str] = procedure.args
     result: str = procedure.result
     for item in procedure.content:
         if isinstance(item, TypeDeclarationStatement):
-            arg_type = extract_argument_type(item)
+            # Use parse_variables to get detailed variable information
+            variables = parse_variables(item, "", [])
+            
             intentin, intentout = determine_argument_intent(item)
-            for decl in item.entity_decls:
-                # TODO handle assumed size arrays
-                if not ':' in decl:  # it's a scalar or assumed size
-                    if decl in args:
-                        update_single_argument(decl, arg_type, intentin, intentout, arg_info)
-                    elif is_function_description(arg_info) and decl == result:
-                        # TODO sort out dimension
-                        arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
-                else:
-                    name, dimensions = decl.split('(')
-                    dim = dimensions[:-1].split(':')
-                    if name in args:
-                        update_single_argument(name, arg_type, intentin, intentout, arg_info, dim)
-                    elif is_function_description(arg_info) and name == result:
-                        # TODO sort out dimension
-                        arg_info['return'][decl] = {'type': arg_type, 'description': '', 'dimension': ''}
+            
+            for var in variables:
+                if var['name'] in args:
+                    update_single_argument(
+                        var['name'], 
+                        var['type'], 
+                        intentin, 
+                        intentout, 
+                        arg_info,
+                        var['dimension']
+                    )
+                elif is_function_description(arg_info) and var['name'] == result:
+                    # Update return information
+                    arg_info['return'][var['name']] = {
+                        'type': var['type'], 
+                        'description': '', 
+                        'dimension': format_dimension_string(var['dimension'])
+                    }
 
+    # If return info still not set, use the old method as fallback
     if is_function_description(arg_info) and not arg_info['return']:
         return_type = extract_return_type(procedure)
-        # TODO sort out dimension
         arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
 
-def update_with_annotation_description(parts: List[str], arg_info: Union[FunctionDescription, SubroutineDescription], 
-                       annotation_types: List[str]) -> None:
-    """Process an annotation comment and update the corresponding argument or return type description.
-
-    This function processes an annotation comment and updates the 'description' field of the
-    corresponding argument or return type in the `arg_info` dictionary.
-
-    Args:
-        parts (List[str]): A list of parts from the annotation comment.
-        arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary containing 
-        information about the function or subroutines's arguments and return type.
-        annotation_types (List[str]): A list of annotation types (e.g., 'in', 'out', 'return') to
-            process.
-
-    Returns:
-        None: The function modifies the `arg_info` dictionary in-place.
-    """
-    if isinstance(arg_info, dict) and 'return' in arg_info and parts[0] == '@return':
-        if len(arg_info['return']) > 1:
-            print(f'Warning: more than one @return annotation found: {parts[0]} {arg_info["return"]}')
-        next(iter(arg_info['return'].values()))['description'] = ' '.join(parts[3:])
+def update_with_argument_description(parts: List[str], content: str, 
+                                     arg_info: Union[FunctionDescription, SubroutineDescription], 
+                                     annotation_types: List[str]) -> None:
+    words = content.split()
+    
+    # Remove the annotation type
+    annotation_type = words[0][1:]  # Remove '@' prefix
+    words = words[1:]
+    
+    if not words:
+        print(f'Warning: No content after annotation type in: {content}')
         return
-    arg_name, annotation_type = parts[1].rstrip(':'), parts[2]
-    comment_annotation_type = parts[0][1:]  # Remove '@' prefix
-    if not any(arg_name in arg_info[annotation_type] for annotation_type in annotation_types):
-        #TODO this error message is wrong
-        print(f'Warning: "{comment_annotation_type}" annotation "{arg_name}" found that is not present in arguments {[arg_info[t].keys() for t in annotation_types]}')
+    
+    var_name, var_type, description = None, None, None
+    
+    if ":" in words[0]:
+        if words[0].endswith(":"): # @in x: real description
+            var_name = words[0][:-1]
+            var_type = words[1]
+            description = ' '.join(words[2:])
+        else: # @in x:real description
+            var_name, var_type = words[0].split(":")
+            description = ' '.join(words[1:])
+    elif words[1] == ":": # @in x : real description
+        var_name = words[0]
+        var_type = words[2]
+        description = ' '.join(words[3:])
+    elif words[1].startswith(":"): # @in x :real description
+        var_name = words[0]
+        var_type = words[1][1:]
+        description = ' '.join(words[2:])
+    else:
+        print(f'Warning: Unexpected annotation format: {content}')
+        return
+    
+    if not any(var_name in arg_info[annotation_type] for annotation_type in annotation_types):
+        print(f'Warning: "{annotation_type}" annotation "{var_name}" not found in arguments {[arg_info[t].keys() for t in annotation_types]}')
     else:
         for annotation_type in annotation_types:
-            if arg_name in arg_info[annotation_type]:
-                if comment_annotation_type != annotation_type:
-                    print(f'Warning: "{comment_annotation_type}" annotation "{arg_name}" type "{annotation_type}" does not match value in arguments "{arg_info[annotation_type][arg_name]}"')
-                arg_desc = ' '.join(parts[3:])
-                arg_info[annotation_type][arg_name]['description'] = arg_desc
+            if var_name in arg_info[annotation_type]:
+                arg_info[annotation_type][var_name]['description'] = description
+
+def update_with_return_description(parts: List[str], content: str, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
+    # Early exit for subroutines
+    if "return" not in arg_info:
+        print(f"Warning: @return annotation found in a subroutine comment: {content}")
+        return
+    
+    if len(parts) < 2:  # We need at least @return and a description
+        print(f'Warning: Not enough parts in return annotation: {" ".join(parts)}')
+        return
+    
+    words = content.split()
+    return_name, return_type, description = None, None, None
+    if ":" in words[0]:
+        if words[0].endswith(":"): # @return: real description 
+            return_type = parts[1]
+            description = ' '.join(parts[2:])
+        else:
+            _, return_type = words[0].split(":")
+            description = ' '.join(parts[1:])
+    elif words[1] == ":": # @return : real description
+        return_type = parts[2]
+        description = ' '.join(parts[3:])
+    elif words[1].startswith(":"): # @return :real description
+        return_type = parts[1][1:]
+        description = ' '.join(parts[2:])
+    elif len(parts) >= 5 and parts[2] == ":": # @return res : real description
+        return_name = parts[1]
+        return_type = parts[3]
+        description = ' '.join(parts[4:])
+    elif len(parts) >= 4: 
+        if parts[1].endswith(":"): # @return res: real description
+            return_name = parts[1][:-1]
+            return_type = parts[2]
+            description = ' '.join(parts[3:])
+        elif parts[2].startswith(":"): # @return res :real description
+            return_name = parts[1]
+            return_type = parts[2][1:]
+            description = ' '.join(parts[3:])
+        elif ":" in parts[1]: # return res:real description
+            return_name, return_type = parts[1].split(":")
+            description = ' '.join(parts[2:])
+        else: # @return description 
+            description = ' '.join(parts[1:])
+    else: # catch @return description if the description is short
+        description = ' '.join(parts[1:])
+        
+    if return_name:
+        if return_name not in arg_info["return"]:
+            print(f"Return name in documentation does not match that in code")
+    else: # didn't put in a return name, can only return one thing so add the description to the existing data
+        return_name = next(iter(arg_info["return"]))
+    arg_info["return"][return_name]['description'] = description
 
 def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
-    """Populate the description field of arguments and return type using annotations in comments.
-
-    This function processes a list of comments and looks for annotations starting with
-    '@' followed by 'in', 'out', 'inout', or 'return'. The annotations are used to populate
-    the 'description' field of the corresponding arguments or return type in the `arg_info`
-    dictionary.
-
-    Args:
-        comments (List[Comment]): A list of Comment objects containing the comments to be processed.
-        arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary containing information 
-        about the function or subroutines's arguments and return type if it is a function.
-
-    Returns:
-        None: The function modifies the `arg_info` dictionary in-place.
-
-    """
     annotation_processors: Dict[str, Callable] = {
-        '@in': lambda parts, info: update_with_annotation_description(parts, info, ['in']),
-        '@out': lambda parts, info: update_with_annotation_description(parts, info, ['out']),
-        '@inout': lambda parts, info: update_with_annotation_description(parts, info, ['in', 'out']),
-        '@return': lambda parts, info: update_with_annotation_description(parts, info, ['return'])
+        '@in': lambda parts, content, info: update_with_argument_description(parts, content, info, ['in']),
+        '@out': lambda parts, content, info: update_with_argument_description(parts, content, info, ['out']),
+        '@inout': lambda parts, content, info: update_with_argument_description(parts, content, info, ['in', 'out']),
+        '@return': lambda parts, content, info: update_with_return_description(parts, content, info)
     }
 
-    for comment in comments:
-        content = comment.content.strip()
+    i = 0
+    while i < len(comments):
+        content = comments[i].content.strip()
+        
         if content.startswith(ANNOTATION_PREFIX):
-            parts = content.split()
-            annotation_type = parts[0]
+            # Collect all continuation lines
+            full_content = [content]
+            j = i + 1
+            while j < len(comments):
+                next_content = comments[j].content.strip()
+                if (not next_content.startswith(ANNOTATION_PREFIX) and
+                    not next_content.startswith(IGNORE_PREFIX) and 
+                    not next_content.endswith(IGNORE_SUFFIX)):
+                    full_content.append(next_content.strip()) 
+                    j += 1
+                else:
+                    break
+            i = j  # Skip processed comments
+            
+            # Join all parts into a single line
+            content = ' '.join(full_content)
+            
+            # Process the annotation
+            annotation_type, *rest = content.split(maxsplit=1)
+            if ":" in annotation_type:
+                annotation_type, _ = annotation_type.split(":")
+            
+            parts = [annotation_type] + (rest[0].split() if rest else [])
+            
             if annotation_type in annotation_processors:
-                annotation_processors[annotation_type](parts, arg_info)
+                annotation_processors[annotation_type](parts, content, arg_info)
         elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
             arg_info['description'] += format_comment_for_html(content)
+            i += 1
+        else:
+            i += 1
+
