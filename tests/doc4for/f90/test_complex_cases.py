@@ -4,14 +4,16 @@ from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
 from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.dimension_models import ArrayBound, BoundType
 
 # Helper function for creating dimension expressions
 def create_dimension_expr(lower, upper):
-    return {
-        "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
-        "stride": None,
-        "upper": Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
-    }
+    return ArrayBound(
+        bound_type=BoundType.FIXED,
+        lower=Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
+        stride=None,
+        upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
+    )
 
 class TestComplexCases(TestCase):
     maxDiff=None
@@ -65,7 +67,7 @@ class TestComplexCases(TestCase):
         declaration.name = "real"
         declaration.item.line = "real(8), dimension(-5:5), save :: array = 0.0"
         declaration.attrspec = ["dimension(-5:5)", "save"]
-        declaration.selector = ('8', '')
+        declaration.selector = ('', '8')
         declaration.entity_decls = ['array = 0.0']
 
         result = parse_variable(declaration, [])
@@ -175,7 +177,7 @@ class TestComplexCases(TestCase):
         declaration.name = "real"
         declaration.item.line = "real(8), intent(in) :: x, y(10), z = 1.0"
         declaration.attrspec = ["intent(in)"]
-        declaration.selector = ('8', '')
+        declaration.selector = ('', '8')
         declaration.entity_decls = ['x', 'y(10)', 'z = 1.0']
 
         result = parse_variable(declaration, [])
@@ -240,7 +242,7 @@ class TestComplexCases(TestCase):
         declaration.name = "real"
         declaration.item.line = "real(selected_real_kind(15)), dimension(10), intent(inout), public :: x = reshape([1,2,3,4,5,6,7,8,9,10], [10])"
         declaration.attrspec = ["dimension(10)", "intent(inout)", "public"]
-        declaration.selector = ('selected_real_kind(15)', '')
+        declaration.selector = ('', 'selected_real_kind(15)')
         declaration.entity_decls = ['x = reshape([1,2,3,4,5,6,7,8,9,10], [10])']
 
         result = parse_variable(declaration, [])
@@ -263,7 +265,7 @@ class TestComplexCases(TestCase):
         declaration.name = "real"
         declaration.item.line = "real*8 x(10,10), y(5), z = 1.0"
         declaration.attrspec = []
-        declaration.selector = ('', '8')
+        declaration.selector = ('8', '')
         declaration.entity_decls = ['x(10,10)', 'y(5)', 'z = 1.0']
 
         result = parse_variable(declaration, [])

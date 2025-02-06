@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 from functools import wraps
-from fparser.one.typedecl_statements import TypeDeclarationStatement
+from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
 from doc4for.models.common import Expression, ExpressionType
 
 CHARACTER_KIND_FUNC = 'selected_char_kind'
@@ -96,25 +96,33 @@ def get_character_length(base_type: str, declaration, attributes: List[str], sel
 def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
     if not hasattr(declaration, "selector"):
         return None
+    
+    if isinstance(declaration, Character) or declaration.name=='character':
+        # Handle declarations like character(len=10, kind=selected_char_kind('ASCII'))
+        if isinstance(declaration.selector, tuple):
+            len_spec, kind_spec = declaration.selector
+            
+            
+            # Check if there's an explicit kind specification in the declaration
+            if hasattr(declaration, 'item') and hasattr(declaration.item, 'line'):
+                line = declaration.item.line.lower()
+                if "kind=" in line:
+                    return kind_spec or len_spec
+                    
+            # Handle explicit kind specification in selector
+            if kind_spec:
+                return kind_spec
+                
+            # Handle cases where the specification is ambiguous (character(selected_char_kind('ASCII'))) for
+            # now but there might be others
+            if len_spec and CHARACTER_KIND_FUNC in len_spec.lower():
+                return len_spec
+                
+        return None
 
     if isinstance(declaration.selector, tuple):
-        len_spec, kind_spec = declaration.selector
-        
-        
-        # Check if there's an explicit kind specification in the declaration
-        if hasattr(declaration, 'item') and hasattr(declaration.item, 'line'):
-            line = declaration.item.line.lower()
-            if "kind=" in line:
-                return kind_spec or len_spec
-                
-        # Handle explicit kind specification in selector
-        if kind_spec:
-            return kind_spec
-            
-        # Handle cases where the specification is ambiguous (character(selected_char_kind('ASCII'))) for
-        # now but there might be others
-        if len_spec and CHARACTER_KIND_FUNC in len_spec.lower():
-            return len_spec
-            
+        # Handle declarations like real*8 and real(8) - note that the selector is ('8', '') for real*8, but ('', '8') for real(8)
+        kind_spec_1, kind_spec_2 = declaration.selector
+        return kind_spec_1 if not kind_spec_2 else kind_spec_2
+    
     return None
-

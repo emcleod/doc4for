@@ -1,7 +1,7 @@
 # dimension_parser.py - dimension-specific parsing
 from typing import List, Optional
 from doc4for.models.common import Expression, ExpressionType
-from doc4for.models.dimension_models import Dimension, ArrayBound
+from doc4for.models.dimension_models import Dimension, ArrayBound, BoundType
 from doc4for.parse.parsing_utils import (
     parse_expression,
     handle_dimension_errors,
@@ -55,33 +55,41 @@ def extract_variable_dimension(name: str) -> Optional[Dimension]:
     return {"dimensions": dims} if dims else None
 
 def parse_dimension_spec(spec: str) -> ArrayBound:
+    """
+    Parse a dimension specification string and return an ArrayBound object.
+
+    :param spec: The dimension specification string (e.g., "1:10", "*", ":").
+    :return: An ArrayBound object.
+    """
     spec = spec.strip()
 
-    if spec == '*':
-        return {"lower": Expression(ExpressionType.LITERAL, "1"), "upper": None, "stride": None}
-
     if spec == ':':
-        return {"lower": None, "upper": None, "stride": None}
+        # Allocatable dimension
+        return ArrayBound(bound_type=BoundType.ALLOCATABLE)
+
+    if spec == '*':
+        # Assumed dimension
+        return ArrayBound(bound_type=BoundType.ASSUMED)
 
     if ':' in spec:
+        # Parse fixed bounds (e.g., "1:10", "1:10:2")
         parts = [p.strip() for p in spec.split(':')]
-        if len(parts) == 2:
-            lower, upper = parts
-            return {
-                "lower": parse_expression(lower) if lower else None,
-                "upper": parse_expression(upper) if upper else None,
-                "stride": None
-            }
-        elif len(parts) == 3:
-            lower, upper, stride = parts
-            return {
-                "lower": parse_expression(lower) if lower else None,
-                "upper": parse_expression(upper) if upper else None,
-                "stride": parse_expression(stride) if stride else None
-            }
+        lower = parse_expression(parts[0]) if len(parts) > 0 and parts[0] else None
+        upper = parse_expression(parts[1]) if len(parts) > 1 and parts[1] else None
+        stride = parse_expression(parts[2]) if len(parts) > 2 and parts[2] else None
 
-    return {
-        "lower": Expression(ExpressionType.LITERAL, "1"),
-        "upper": parse_expression(spec),
-        "stride": None
-    }
+        return ArrayBound(
+            bound_type=BoundType.FIXED,
+            lower=lower,
+            upper=upper,
+            stride=stride
+        )
+
+    # Default case: fixed upper bound with lower bound of 1
+    return ArrayBound(
+        bound_type=BoundType.FIXED,
+        lower=Expression(ExpressionType.LITERAL, "1"),
+        upper=parse_expression(spec),
+        stride=None
+    )
+

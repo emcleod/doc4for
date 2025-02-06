@@ -18,8 +18,13 @@ module test_mod
 
     !integer :: x[*]
     !real, allocatable :: cube(:,:,:)
-    real :: x(10, 20, 40)
-
+    !real :: x(10, 20, 40)
+    !real x(10)
+    !real :: x(*)
+    real*8 gravity
+    !character(len=10) :: str = 'Hello'
+    !character(kind=4) :: x
+    real(8), parameter, public :: pi = 3.14159265359
 end module test_mod
         ''',
         )

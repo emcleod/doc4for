@@ -3,15 +3,16 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.dimension_models import ArrayBound, BoundType
 
 # Helper function for creating dimension expressions
 def create_dimension_expr(lower, upper):
-    return {
-        "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
-        "stride": None,
-        "upper": Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
-    }
-
+    return ArrayBound(
+        bound_type=BoundType.FIXED,
+        lower=Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
+        stride=None,
+        upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
+    )
 
 class TestBlockData(TestCase):
     maxDiff=None

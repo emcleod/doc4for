@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional, Union, Tuple
 from doc4for.f90.populate_data_models import parse_variable
 from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.variable_models import VariableDescription
+from doc4for.models.dimension_models import ArrayBound, BoundType
 
 class TestArrays(TestCase):
     maxDiff=None
@@ -35,10 +36,11 @@ class TestArrays(TestCase):
             processed_args
         )
 
-    def create_dimension(self, 
-                        lower: Optional[Union[str, Expression]] = None,
-                        upper: Optional[Union[str, Expression]] = None,
-                        stride: Optional[Union[str, Expression]] = None) -> Dict[str, Optional[Expression]]:
+    def create_dimension(self,
+        lower: Optional[Union[str, Expression]] = None,
+        upper: Optional[Union[str, Expression]] = None,
+        stride: Optional[Union[str, Expression]] = None
+    ) -> ArrayBound:
         def process_value(v: Optional[Union[str, Expression]]) -> Optional[Expression]:
             if v is None:
                 return None
@@ -48,12 +50,21 @@ class TestArrays(TestCase):
                 return self.create_literal(v)
             return self.create_variable(v)
 
-        # Always include all keys, even when None
-        return {
-            "lower": process_value(lower),
-            "upper": process_value(upper),
-            "stride": process_value(stride)
-        }
+        # Determine the BoundType based on the provided values
+        if lower is None and upper is None and stride is None:
+            bound_type = BoundType.ALLOCATABLE
+        elif lower == "*" or upper == "*":
+            bound_type = BoundType.ASSUMED
+        else:
+            bound_type = BoundType.FIXED
+
+        # Create and return an ArrayBound object
+        return ArrayBound(
+            bound_type=bound_type,
+            lower=process_value(lower),
+            upper=process_value(upper),
+            stride=process_value(stride)
+        )
 
     def create_declaration(self, 
                         name: str, 
@@ -289,7 +300,7 @@ class TestArrays(TestCase):
         declaration = self.create_mock_declaration("real :: x(*)", ['x(*)'])
         result = parse_variable(declaration, [])
         expected = [self.create_declaration("x", dims=[
-            self.create_dimension(lower="1", upper=None)
+            ArrayBound(bound_type=BoundType.ASSUMED)
         ])]
         self.assertEqual(result, expected)
 
@@ -592,7 +603,7 @@ class TestArrays(TestCase):
         expected = [self.create_declaration(
             "x",
             type_name="integer",
-            dims=[self.create_dimension(lower="1", upper=None)],  # Implied shape using [None, None]
+            dims=[ArrayBound(bound_type=BoundType.ASSUMED)],  
             initial_value="1, 2, 3, 4, 5"
         )]
         self.assertEqual(result, expected)

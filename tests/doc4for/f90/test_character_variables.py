@@ -2,6 +2,7 @@ import unittest
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
+from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
 
 class TestCharacterVariables(TestCase):
 
@@ -406,28 +407,28 @@ class TestCharacterVariables(TestCase):
         ]
         self.assertEqual(result, expected)
             
-    # def test_character_array_with_length(self):
-    #     declaration = Mock()
-    #     declaration.name = "character"
-    #     declaration.item.line = "character(len=30), dimension(10) :: str_array"
-    #     declaration.attrspec = ['dimension(10)']
-    #     declaration.selector = ('30', '')
-    #     declaration.entity_decls = ['str_array']
+    def test_character_array_with_length(self):
+        declaration = Mock()
+        declaration.name = "character"
+        declaration.item.line = "character(len=30), dimension(10) :: str_array"
+        declaration.attrspec = ['dimension(10)']
+        declaration.selector = ('30', '')
+        declaration.entity_decls = ['str_array']
 
-    #     result = parse_variable(declaration, [])
-    #     expected = [
-    #         {
-    #             "description": "",
-    #             "type": "character",
-    #             "name": "str_array",
-    #             "dimension": "dimension(10)",
-    #             "attributes": ["dimension(10)"],
-    #             "kind": None,
-    #             "initial_value": None,
-    #             "length": '30'
-    #         },
-    #     ]
-    #     self.assertEqual(result, expected)
+        result = parse_variable(declaration, [])
+        expected = [
+            {
+                "description": "",
+                "type": "character",
+                "name": "str_array",
+                "dimension": "dimension(10)",
+                "attributes": ["dimension(10)"],
+                "kind": None,
+                "initial_value": None,
+                "length": '30'
+            },
+        ]
+        self.assertEqual(result, expected)
 
     def test_character_kind_integer(self):
         declaration = Mock()

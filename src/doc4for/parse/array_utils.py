@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional
-from doc4for.models.dimension_models import ArrayBound
+from doc4for.models.dimension_models import ArrayBound, BoundType
 from doc4for.parse.dimension_parser import extract_variable_dimension
 
 def expand_repeat_value(value_str: str) -> list[str]:
@@ -11,12 +11,14 @@ def expand_repeat_value(value_str: str) -> list[str]:
 def calculate_array_size(dimensions: List[ArrayBound]) -> int:
     array_size = 1
     for dim in dimensions:
-        if dim["upper"] is None or dim["lower"] is None:
+        if dim.bound_type == BoundType.ASSUMED:
             # For implied shape arrays, we can't calculate the size
             # It's determined by the initialization
             return None
-        upper = int(dim["upper"].value)
-        lower = int(dim["lower"].value)
+        if dim.upper is None or dim.lower is None:
+            return None
+        upper = int(dim.upper.value)
+        lower = int(dim.lower.value)
         array_size *= (upper - lower + 1)
     return array_size
 
