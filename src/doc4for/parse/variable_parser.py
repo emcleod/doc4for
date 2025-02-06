@@ -4,7 +4,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from fparser.one.block_statements import Comment
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.variable_models import VariableDescription
-from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_variable_dimension
+from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_coarray_dimensions, extract_variable_dimension
 from doc4for.parse.array_utils import parse_initialization_value
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 from doc4for.parse.parsing_utils import get_attributes, extract_kind, get_character_length
@@ -58,19 +58,33 @@ def parse_variables(
 
         full_name, initial_value = parse_initialization_value(entity)
 
-        # Try to get dimensions from name first
+        # # Try to get dimensions from name first
         dimension = extract_variable_dimension(full_name)
-        
-        # Remove any parenthetical expressions from the name
-        name = re.sub(r"\(.*\)", "", full_name).strip()
+                
+        # Extract array and coarray specs before cleaning name
+        is_array = re.search(r"\((.*?)\)", full_name)
+        is_coarray = re.search(r"\[(.*?)\]", full_name)
 
-        # Use dimension from attributes if none found in name
+        # Clean the name (remove both () and [] parts)
+        name = re.split(r'[\(\[]', full_name)[0].strip()
+        # name = re.sub(r"[\(\[].*?[\)\]]", "", full_name).strip()
+
+        # Handle regular array dimensions
+        if is_array:
+            dimension = extract_variable_dimension(full_name)
+
+        # Handle coarray dimensions
+        if is_coarray:
+            coarray_dims = extract_coarray_dimensions(is_coarray.group(0))
+            if coarray_dims:
+                if dimension:
+                    dimension["dimensions"].extend(coarray_dims["dimensions"])
+                else:
+                    dimension = coarray_dims
+
+        # Use dimension from attributes if still none found
         if not dimension and dimension_from_attr:
             dimension = dimension_from_attr
-
-        # Handle coarrays - fparser does not remove [*] from name
-        if "[" in name:
-            name = name.split(("["))[0]
         
         # Initialize character-specific attributes
         length = None

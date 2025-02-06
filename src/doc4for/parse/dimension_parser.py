@@ -1,5 +1,5 @@
 # dimension_parser.py - dimension-specific parsing
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.dimension_models import Dimension, ArrayBound, BoundType
 from doc4for.parse.parsing_utils import (
@@ -63,6 +63,10 @@ def parse_dimension_spec(spec: str) -> ArrayBound:
     """
     spec = spec.strip()
 
+    if spec == '..':
+        # Assumed rank dimension
+        return ArrayBound(bound_type=BoundType.ASSUMED_RANK)
+    
     if spec == ':':
         # Allocatable dimension
         return ArrayBound(bound_type=BoundType.ALLOCATABLE)
@@ -93,3 +97,22 @@ def parse_dimension_spec(spec: str) -> ArrayBound:
         stride=None
     )
 
+def extract_coarray_dimensions(spec: str) -> Optional[Dimension]:
+    """Extract coarray dimensions from a variable name.
+    
+    Args:
+        spec: The specification containing coarray dimensions (e.g., 'x[*]', 'y[3,*]')
+        
+    Returns:
+        A Dimension object representing the coarray dimensions, or None if none processed
+    """
+    if '[' not in spec:
+        return None
+            
+    # Remove the closing bracket and split dimensions
+    coarray_dims = spec.strip('[]').split(',')    
+
+    # Use existing parse_dimension_spec for each dimension
+    dims = [parse_dimension_spec(d.strip()) for d in coarray_dims]
+    
+    return {"dimensions": dims} if dims else None

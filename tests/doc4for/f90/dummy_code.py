@@ -16,15 +16,16 @@ class DummyCode(TestCase):
 module test_mod
     implicit none
 
-    !integer :: x[*]
+    integer :: x[*]
     !real, allocatable :: cube(:,:,:)
     !real :: x(10, 20, 40)
     !real x(10)
     !real :: x(*)
-    real*8 gravity
+    !real*8 gravity
     !character(len=10) :: str = 'Hello'
     !character(kind=4) :: x
-    real(8), parameter, public :: pi = 3.14159265359
+    !real(8), parameter, public :: pi = 3.14159265359
+    integer :: x[*]
 end module test_mod
         ''',
         )

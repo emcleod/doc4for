@@ -7,7 +7,8 @@ class BoundType(Enum):
     FIXED = "fixed",
     VARIABLE = "variable",
     ALLOCATABLE = "allocatable",
-    ASSUMED = "assumed"
+    ASSUMED = "assumed",
+    ASSUMED_RANK = "assumed rank"
 
 @dataclass
 class ArrayBound:
@@ -15,12 +16,6 @@ class ArrayBound:
     lower: Optional[Expression] = None  # Expression for the lower bound
     upper: Optional[Expression] = None  # Expression for the upper bound
     stride: Optional[Expression] = None  # Expression for the stride
-
-# ArrayBound = TypedDict("ArrayBound", {
-#     "lower": Optional[str],  # None for allocatable, should be 1 by default
-#     "upper": Optional[str],  # None for allocatable
-#     "stride": Optional[str]  # None if no stride is specified
-# }, total=False)
 
 Dimension = TypedDict("Dimension", {
     "dimensions": List[ArrayBound]

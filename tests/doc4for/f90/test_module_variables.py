@@ -2,15 +2,17 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.dimension_models import ArrayBound, BoundType
 from doc4for.f90.generate_module_tree import extract_module_data
 
 # Helper function for creating dimension expressions
-def create_dimension_expr(lower, upper, stride=None):
-    return {
-        "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
-        "stride": stride,
-        "upper": Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
-    }
+def create_dimension_expr(lower, upper):
+    return ArrayBound(
+        bound_type=BoundType.FIXED,
+        lower=Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
+        upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None),
+        stride=None
+    )
 
 
 class TestVariableDeclarations(TestCase):
@@ -355,17 +357,17 @@ class TestVariableDeclarations(TestCase):
         # Check allocatable arrays
         self.assertEqual(variables["alloc_arr"]["type"], "real")
         self.assertIn("allocatable", variables["alloc_arr"]["attributes"])
-        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0]["lower"])
-        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0]["upper"])
+        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0].lower)
+        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0].upper)
         self.assertIsNone(variables["alloc_arr"]["initial_value"])
 
         self.assertEqual(variables["alloc_matrix"]["type"], "real")
         self.assertIn("allocatable", variables["alloc_matrix"]["attributes"])
         self.assertEqual(len(variables["alloc_matrix"]["dimension"]["dimensions"]), 2)
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0]["lower"])
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0]["upper"])
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1]["lower"])
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1]["upper"])
+        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0].lower)
+        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0].upper)
+        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1].lower)
+        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1].upper)
         self.assertIsNone(variables["alloc_matrix"]["initial_value"])
 
         # Check pointers
@@ -375,8 +377,8 @@ class TestVariableDeclarations(TestCase):
 
         self.assertEqual(variables["p_arr"]["type"], "real")
         self.assertIn("pointer", variables["p_arr"]["attributes"])
-        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0]["lower"])
-        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0]["upper"])
+        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0].lower)
+        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0].upper)
         self.assertEqual(variables["p_arr"]["initial_value"], "null()")
 
         # Check targets
@@ -396,14 +398,14 @@ class TestVariableDeclarations(TestCase):
 
         self.assertEqual(variables["p_to_array"]["type"], "real")
         self.assertIn("pointer", variables["p_to_array"]["attributes"])
-        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0]["lower"])
-        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0]["upper"])
+        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0].lower)
+        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0].upper)
         self.assertEqual(variables["p_to_array"]["initial_value"], "array_target")
 
         self.assertEqual(variables["p_to_slice"]["type"], "real")
         self.assertIn("pointer", variables["p_to_slice"]["attributes"])
-        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0]["lower"])
-        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0]["upper"])
+        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0].lower)
+        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0].upper)
         self.assertEqual(variables["p_to_slice"]["initial_value"], "array_target(1:2)")
 
     def test_special_initializations(self):

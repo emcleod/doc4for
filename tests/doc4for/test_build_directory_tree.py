@@ -16,7 +16,7 @@ class TestBuildDirectory(unittest.TestCase):
 
         self.original_project_root = PROJECT_ROOT
         # Patch PROJECT_ROOT to use the temporary directory
-        patcher = patch('doc4for.file_utils.PROJECT_ROOT', self.temp_dir)
+        patcher = patch('doc4for.utils.file_utils.PROJECT_ROOT', self.temp_dir)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -236,7 +236,7 @@ class TestBuildDirectory(unittest.TestCase):
         self.assertIn(Path('abs/file1.f90'), files)
         self.assertIn(Path('rel/file2.f90'), files)
 
-    @patch('doc4for.file_utils.os.access')
+    @patch('doc4for.utils.file_utils.os.access')
     def test_check_write_permissions_mock(self, mock_access):
         mock_access.return_value = True
         self.assertTrue(check_write_permissions('/some/path'))

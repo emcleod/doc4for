@@ -123,6 +123,8 @@ def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
     if isinstance(declaration.selector, tuple):
         # Handle declarations like real*8 and real(8) - note that the selector is ('8', '') for real*8, but ('', '8') for real(8)
         kind_spec_1, kind_spec_2 = declaration.selector
+        if not kind_spec_1 and not kind_spec_2:
+            return None
         return kind_spec_1 if not kind_spec_2 else kind_spec_2
     
     return None

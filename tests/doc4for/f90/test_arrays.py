@@ -8,8 +8,9 @@ from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.dimension_models import ArrayBound, BoundType
 
+
 class TestArrays(TestCase):
-    maxDiff=None
+
     def setUp(self):
         self.base_expected = {
             "description": "",
@@ -37,10 +38,10 @@ class TestArrays(TestCase):
         )
 
     def create_dimension(self,
-        lower: Optional[Union[str, Expression]] = None,
-        upper: Optional[Union[str, Expression]] = None,
-        stride: Optional[Union[str, Expression]] = None
-    ) -> ArrayBound:
+                         lower: Optional[Union[str, Expression]] = None,
+                         upper: Optional[Union[str, Expression]] = None,
+                         stride: Optional[Union[str, Expression]] = None
+                         ) -> ArrayBound:
         def process_value(v: Optional[Union[str, Expression]]) -> Optional[Expression]:
             if v is None:
                 return None
@@ -66,13 +67,14 @@ class TestArrays(TestCase):
             stride=process_value(stride)
         )
 
-    def create_declaration(self, 
-                        name: str, 
-                        type_name: str = "real",
-                        dims: Optional[List[Dict[str, Optional[Expression]]]] = None,
-                        attributes: List[str] = None,
-                        initial_value: Optional[str] = None,
-                        length: Optional[str] = None) -> VariableDescription:
+    def create_declaration(self,
+                           name: str,
+                           type_name: str = "real",
+                           dims: Optional[List[Dict[str,
+                                                    Optional[Expression]]]] = None,
+                           attributes: List[str] = None,
+                           initial_value: Optional[str] = None,
+                           length: Optional[str] = None) -> VariableDescription:
         result = {**self.base_expected, "type": type_name, "name": name}
         if dims:
             result["dimension"] = {"dimensions": dims}
@@ -84,11 +86,11 @@ class TestArrays(TestCase):
         return result
 
     def create_mock_declaration(self,
-                               line: str,
-                               decls: List[str],
-                               type_name: str = "real",
-                               attrspec: List[str] = None,
-                               selector: Tuple[str, str] = None) -> Mock:
+                                line: str,
+                                decls: List[str],
+                                type_name: str = "real",
+                                attrspec: List[str] = None,
+                                selector: Tuple[str, str] = None) -> Mock:
         declaration = Mock()
         declaration.name = type_name
         declaration.item.line = line
@@ -104,17 +106,19 @@ class TestArrays(TestCase):
             ("real x(10, 20)", ['x(10, 20)']),
             ("real :: x(10,20)", ['x(10,20)']),
         ]
-        
+
         for line, decls in test_cases:
             declaration = self.create_mock_declaration(line, decls)
             result = parse_variable(declaration, [])
-            
+
             dims = 2 if ',' in decls[0] else 1
-            expected_dims = [self.create_dimension(lower="1", upper="10")]            
+            expected_dims = [self.create_dimension(lower="1", upper="10")]
             if dims == 2:
-                expected_dims.append(self.create_dimension(lower="1", upper="20"))
-            expected = [self.create_declaration(decls[0].split('(')[0], dims=expected_dims)]            
-            self.assertEqual(result, expected)  
+                expected_dims.append(
+                    self.create_dimension(lower="1", upper="20"))
+            expected = [self.create_declaration(
+                decls[0].split('(')[0], dims=expected_dims)]
+            self.assertEqual(result, expected)
 
     def test_explicit_bounds(self):
         test_cases = [
@@ -122,17 +126,18 @@ class TestArrays(TestCase):
             ("real :: x(-5 : 5)", ['x(-5:5)']),
             ("real :: x(2:n)", ['x(2:n)']),
         ]
-        
+
         expected_bounds = [
             [self.create_dimension(lower="0", upper="9")],
             [self.create_dimension(lower="-5", upper="5")],
             [self.create_dimension(lower="2", upper="n")],
         ]
-        
+
         for i, (line, decls) in enumerate(test_cases):
             declaration = self.create_mock_declaration(line, decls)
             result = parse_variable(declaration, [])
-            expected = [self.create_declaration(decls[0].split('(')[0], dims=expected_bounds[i])]
+            expected = [self.create_declaration(
+                decls[0].split('(')[0], dims=expected_bounds[i])]
             self.assertEqual(result, expected)
 
     def test_variable_dimensions(self):
@@ -142,11 +147,12 @@ class TestArrays(TestCase):
             ("real :: x(2*5, n+1)", ['x(2*5, n+1)']),
             ("real :: x(n:m, 1:10)", ['x(n:m, 1:10)']),
         ]
-        
+
         expected_bounds = [
             [self.create_dimension(lower="1", upper="n")],
             [
-                self.create_dimension(lower="1", upper=self.create_function_call("f", ["1", "2"])),
+                self.create_dimension(
+                    lower="1", upper=self.create_function_call("f", ["1", "2"])),
                 self.create_dimension(lower="1", upper="10")
             ],
             [
@@ -158,11 +164,12 @@ class TestArrays(TestCase):
                 self.create_dimension(lower="1", upper="10")
             ],
         ]
-        
+
         for i, (line, decls) in enumerate(test_cases):
             declaration = self.create_mock_declaration(line, decls)
             result = parse_variable(declaration, [])
-            expected = [self.create_declaration(decls[0].split('(')[0], dims=expected_bounds[i])]
+            expected = [self.create_declaration(
+                decls[0].split('(')[0], dims=expected_bounds[i])]
             self.assertEqual(result, expected)
 
     def test_dimension_attribute_style(self):
@@ -170,9 +177,10 @@ class TestArrays(TestCase):
             ("real dimension(10):: x", ["dimension(10)"], ['x']),
             ("real dimension(10, 20):: x", ["dimension(10, 20)"], ['x']),
             ("real dimension(-5:5):: x", ["dimension(-5:5)"], ['x']),
-            ("real dimension(-5:5,10,n:20+n):: x", ["dimension(-5:5,10,n:20+n)"], ['x']),
+            ("real dimension(-5:5,10,n:20+n):: x",
+             ["dimension(-5:5,10,n:20+n)"], ['x']),
         ]
-        
+
         expected_bounds = [
             [self.create_dimension(lower="1", upper="10")],
             [
@@ -186,30 +194,34 @@ class TestArrays(TestCase):
                 self.create_dimension(lower="n", upper="20+n")
             ],
         ]
-        
+
         for i, (line, attr, decls) in enumerate(test_cases):
-            declaration = self.create_mock_declaration(line, decls, attrspec=attr)
+            declaration = self.create_mock_declaration(
+                line, decls, attrspec=attr)
             result = parse_variable(declaration, [])
-            expected = [self.create_declaration(decls[0], dims=expected_bounds[i])]
+            expected = [self.create_declaration(
+                decls[0], dims=expected_bounds[i])]
             self.assertEqual(result, expected)
 
     def test_array_initialization(self):
         test_cases = [
-            ("real x(2,2) = reshape((/1,2,3,4/), (/2,2/))", 
-             ['x(2,2) = reshape((/1,2,3,4/), (/2,2/))'], 
+            ("real x(2,2) = reshape((/1,2,3,4/), (/2,2/))",
+             ['x(2,2) = reshape((/1,2,3,4/), (/2,2/))'],
              "reshape((/1,2,3,4/), (/2,2/))"),
-            ("real y(2,2) = ((1,2),(3,4))", 
-             ['y(2,2) = ((1,2),(3,4))'], 
+            ("real y(2,2) = ((1,2),(3,4))",
+             ['y(2,2) = ((1,2),(3,4))'],
              "((1,2),(3,4))"),
             ("integer, parameter, dimension(3) :: arr = [1, 2, 3]",
              ['arr = [1, 2, 3]'],
              "[1, 2, 3]"),
         ]
-        
+
         for line, decls, init_value in test_cases:
             type_name = "real" if "real" in line else "integer"
-            attrspec = ["parameter", "dimension(3)"] if "parameter" in line else []
-            declaration = self.create_mock_declaration(line, decls, type_name=type_name, attrspec=attrspec)
+            attrspec = ["parameter",
+                        "dimension(3)"] if "parameter" in line else []
+            declaration = self.create_mock_declaration(
+                line, decls, type_name=type_name, attrspec=attrspec)
             result = parse_variable(declaration, [])
             self.assertEqual(result[0]["initial_value"], init_value)
 
@@ -232,12 +244,12 @@ class TestArrays(TestCase):
         ]
 
         self.assertEqual(len(result), len(expected))
-        
+
         for r, e in zip(result, expected):
             # Check name and type
             self.assertEqual(r["name"], e["name"])
             self.assertEqual(r["type"], e["type"])
-            
+
             # Check dimensions if they exist
             if "dimension" in e:
                 self.assertIn("dimension", r)
@@ -268,15 +280,15 @@ class TestArrays(TestCase):
             ("real, allocatable :: cube(:,:,:)", ["cube"], 3),
             ("real, allocatable :: x(:), y(:), z(:)", ["x", "y", "z"], 1),
         ]
-        
+
         for line, names, dim_count in test_cases:
             declaration = self.create_mock_declaration(
-                line, 
+                line,
                 [f"{name}(:{',' * (dim_count-1)})" for name in names],
                 attrspec=["allocatable"]
             )
             result = parse_variable(declaration, [])
-            
+
             expected = [
                 self.create_declaration(
                     name,
@@ -285,7 +297,7 @@ class TestArrays(TestCase):
                 )
                 for name in names
             ]
-            
+
             self.assertEqual(len(result), len(expected))
             for r, e in zip(result, expected):
                 self.assertEqual(r["name"], e["name"])
@@ -339,7 +351,7 @@ class TestArrays(TestCase):
                 self.create_dimension(lower="1", upper="20", stride="5")
             ]),
         ]
-        
+
         for line, name, type_name, expected_dims in test_cases:
             declaration = self.create_mock_declaration(
                 line,
@@ -347,7 +359,8 @@ class TestArrays(TestCase):
                 type_name=type_name
             )
             result = parse_variable(declaration, [])
-            expected = [self.create_declaration(name, type_name=type_name, dims=expected_dims)]
+            expected = [self.create_declaration(
+                name, type_name=type_name, dims=expected_dims)]
             self.assertEqual(result, expected)
 
     def test_function_calls_in_dimensions(self):
@@ -357,8 +370,10 @@ class TestArrays(TestCase):
         )
         result = parse_variable(declaration, [])
         expected = [self.create_declaration("x", dims=[
-            self.create_dimension(lower="1", upper=self.create_function_call("f", ["1", "2"])),
-            self.create_dimension(lower="1", upper=self.create_function_call("g", ["3", "4"]))
+            self.create_dimension(
+                lower="1", upper=self.create_function_call("f", ["1", "2"])),
+            self.create_dimension(
+                lower="1", upper=self.create_function_call("g", ["3", "4"]))
         ])]
         self.assertEqual(result, expected)
 
@@ -370,8 +385,8 @@ class TestArrays(TestCase):
         result = parse_variable(declaration, [])
         expected = [self.create_declaration("x", dims=[
             self.create_dimension(
-                lower = self.create_function_call("2*f", ["1", "2"]),
-                upper = self.create_function_call("g", ["3", "4"])
+                lower=self.create_function_call("2*f", ["1", "2"]),
+                upper=self.create_function_call("g", ["3", "4"])
             )
         ])]
         self.assertEqual(result, expected)
@@ -387,7 +402,7 @@ class TestArrays(TestCase):
             (
                 "character(10) names2(5,10)",  # Alternative syntax
                 ['names2(5,10)'],
-                [],  
+                [],
                 ("10", "")
             ),
             (
@@ -397,7 +412,7 @@ class TestArrays(TestCase):
                 ("20", "")
             ),
         ]
-        
+
         expected_dims = [
             [self.create_dimension(lower="1", upper="100")],
             [
@@ -406,10 +421,10 @@ class TestArrays(TestCase):
             ],
             [self.create_dimension(lower="1", upper="50")]
         ]
-        
+
         for i, (line, decls, attrs, sel) in enumerate(test_cases):
             declaration = self.create_mock_declaration(
-                line, 
+                line,
                 decls,
                 type_name="character",
                 attrspec=attrs,
@@ -422,7 +437,7 @@ class TestArrays(TestCase):
                 dims=expected_dims[i],
                 attributes=[],
                 length="20" if i == 2 else "10"  # or "20" for the third case
-            )]            
+            )]
             self.assertEqual(result, expected)
 
     def test_assumed_length_character_array(self):
@@ -440,7 +455,7 @@ class TestArrays(TestCase):
             dims=[self.create_dimension(lower="1", upper="5")],
             length="*"
         )]
-        self.assertEqual(result, expected)         
+        self.assertEqual(result, expected)
 
     def test_deferred_length_allocatable_character_array(self):
         declaration = self.create_mock_declaration(
@@ -458,12 +473,12 @@ class TestArrays(TestCase):
             attributes=["allocatable"],
             length=":"
         )]
-        self.assertEqual(result, expected)       
+        self.assertEqual(result, expected)
 
     def test_character_array_initialization(self):
         declaration = self.create_mock_declaration(
             "character(10) :: x(2) = (/'Hello', 'World'/)",
-            ['x(2) = (/"Hello", "World"/)'],  
+            ['x(2) = (/"Hello", "World"/)'],
             type_name="character",
             attrspec=[],
             selector=("10", "")
@@ -507,7 +522,7 @@ class TestArrays(TestCase):
             ],
             attributes=["target"]
         )]
-        self.assertEqual(result, expected)        
+        self.assertEqual(result, expected)
 
     def test_array_with_pointer_and_dimension_attributes(self):
         declaration = self.create_mock_declaration(
@@ -524,24 +539,24 @@ class TestArrays(TestCase):
             ],
             attributes=["pointer"]
         )]
-        self.assertEqual(result, expected)        
+        self.assertEqual(result, expected)
 
     def test_f77_dimension_statement_style(self):
         declaration = self.create_mock_declaration(
             "DIMENSION X(10), Y(20)",
             ['X(10)', 'Y(20)'],
-            type_name=None  
+            type_name=None
         )
         result = parse_variable(declaration, [])
         expected = [
             self.create_declaration(
                 "X",
-                type_name='none',  
+                type_name='none',
                 dims=[self.create_dimension(lower="1", upper="10")]
             ),
             self.create_declaration(
                 "Y",
-                type_name='none',  
+                type_name='none',
                 dims=[self.create_dimension(lower="1", upper="20")]
             )
         ]
@@ -562,7 +577,7 @@ class TestArrays(TestCase):
             dims=[self.create_dimension(lower="1", upper="100")],
             length="10"
         )]
-        self.assertEqual(result, expected)    
+        self.assertEqual(result, expected)
 
     def test_array_initialization_implied_do_loop(self):
         declaration = self.create_mock_declaration(
@@ -578,7 +593,7 @@ class TestArrays(TestCase):
             initial_value="(i, i=1,10)"
         )]
         self.assertEqual(result, expected)
-            
+
     def test_array_of_derived_type(self):
         declaration = self.create_mock_declaration(
             "type(point) :: points(100)",
@@ -591,7 +606,7 @@ class TestArrays(TestCase):
             type_name="type(point)",
             dims=[self.create_dimension(lower="1", upper="100")]
         )]
-        self.assertEqual(result, expected)   
+        self.assertEqual(result, expected)
 
     def test_implied_shape_array(self):
         declaration = self.create_mock_declaration(
@@ -603,7 +618,7 @@ class TestArrays(TestCase):
         expected = [self.create_declaration(
             "x",
             type_name="integer",
-            dims=[ArrayBound(bound_type=BoundType.ASSUMED)],  
+            dims=[ArrayBound(bound_type=BoundType.ASSUMED)],
             initial_value="1, 2, 3, 4, 5"
         )]
         self.assertEqual(result, expected)
@@ -629,7 +644,7 @@ class TestArrays(TestCase):
             ("class(shape), allocatable :: x(:)", ['x(:)'], ["allocatable"]),
             ("class(shape), pointer :: y(:)", ['y(:)'], ["pointer"])
         ]
-        
+
         for line, decls, attrs in test_cases:
             declaration = self.create_mock_declaration(
                 line,
@@ -644,7 +659,7 @@ class TestArrays(TestCase):
                 dims=[self.create_dimension()],
                 attributes=attrs
             )]
-            self.assertEqual(result, expected)  
+            self.assertEqual(result, expected)
 
     def test_contiguous_array(self):
         declaration = self.create_mock_declaration(
@@ -658,8 +673,7 @@ class TestArrays(TestCase):
             dims=[self.create_dimension()],
             attributes=["contiguous"]
         )]
-        self.assertEqual(result, expected)     
-
+        self.assertEqual(result, expected)
 
     def test_arrays_in_derived_types(self):
         # Simulate a variable declaration inside a derived type
@@ -675,42 +689,241 @@ class TestArrays(TestCase):
         )]
         self.assertEqual(result, expected)
 
-    def test_coarray_declarations_1(self):
-        test_cases = [
-            ("integer :: x[*]", ['x[*]'], "integer", [], ("", "")),
-            ("real :: a(10)[3,*]", ['a(10)[3,*]'], "real", [], ("", "")),
-            ("integer, allocatable :: d[:,:,:]", ['d[:,:,:]'], "integer", ["allocatable"], ("", ""))
-        ]
-        
-        for line, decls, name, attrs, sel in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                decls,
-                type_name=name,
-                attrspec=attrs,
-                selector=sel
-            )
-            result = parse_variable(declaration, [])
+    def test_simple_coarray(self):
+        """Test basic coarray with assumed size: integer :: x[*]"""
+        declaration = self.create_mock_declaration(
+            "integer :: x[*]",
+            ['x[*]'],
+            type_name="integer"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            "integer",
+            dims=[ArrayBound(bound_type=BoundType.ASSUMED)]
+        )]
+        self.assertEqual(result, expected)
 
+    def test_array_with_coarray(self):
+        """Test regular array with coarray: real :: a(10)[3,*]"""
+        declaration = self.create_mock_declaration(
+            "real :: a(10)[3,*]",
+            ['a(10)[3,*]'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "a",
+            "real",
+            dims=[
+                # regular array dimension
+                self.create_dimension(lower="1", upper="10"),
+                # first coarray dimension
+                self.create_dimension(lower="1", upper="3"),
+                # assumed-size coarray dimension
+                ArrayBound(bound_type=BoundType.ASSUMED)
+            ]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_allocatable_coarray(self):
+        """Test allocatable coarray: integer, allocatable :: d[:,:,:]"""
+        declaration = self.create_mock_declaration(
+            "integer, allocatable :: d[:,:,:]",
+            ['d[:,:,:]'],
+            type_name="integer",
+            attrspec=["allocatable"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "d",
+            "integer",
+            dims=[self.create_dimension()] * 3,  # three allocatable dimensions
+            attributes=["allocatable"]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_simple_coarray_2(self):
+        """Test basic coarray: integer :: a[*]"""
+        declaration = self.create_mock_declaration(
+            "integer :: a[*]",
+            ['a[*]'],
+            type_name="integer"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "a",
+            type_name="integer",
+            dims=[ArrayBound(bound_type=BoundType.ASSUMED)]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_array_with_simple_coarray(self):
+        """Test array with simple coarray: real :: b(10)[*]"""
+        declaration = self.create_mock_declaration(
+            "real :: b(10)[*]",
+            ['b(10)[*]'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "b",
+            type_name="real",
+            dims=[
+                # regular array dimension
+                self.create_dimension(lower="1", upper="10"),
+                # coarray dimension
+                ArrayBound(bound_type=BoundType.ASSUMED)
+            ]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_array_with_multi_coarray(self):
+        """Test array with multiple coarray dimensions: real :: c(10)[10,*]"""
+        declaration = self.create_mock_declaration(
+            "real :: c(10)[10,*]",
+            ['c(10)[10,*]'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "c",
+            type_name="real",
+            dims=[
+                # regular array dimension
+                self.create_dimension(lower="1", upper="10"),
+                # fixed coarray dimension
+                self.create_dimension(lower="1", upper="10"),
+                # assumed-size coarray dimension
+                ArrayBound(bound_type=BoundType.ASSUMED)
+            ]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_assumed_shape_arrays(self):
+        """Test assumed-shape arrays (bounds specified with ':')"""
+        test_cases = [
+            ("subroutine sub(x)\nreal :: x(:)", ['x(:)']),  # 1D assumed-shape
+            ("subroutine sub(matrix)\nreal :: matrix(:,:)",
+             ['matrix(:,:)']),  # 2D assumed-shape
+        ]
+
+        for line, decls in test_cases:
+            declaration = self.create_mock_declaration(line, decls)
+            result = parse_variable(declaration, [])
+            dims = [self.create_dimension()] * len(decls[0].split(','))
             expected = [self.create_declaration(
-                decls[0].split('[')[0].split('(')[0].strip(),
-                name,
-                dims=[self.create_dimension(lower="1", upper="10")] if '(' in decls[0] else None,
-                attributes=attrs
+                decls[0].split('(')[0],
+                dims=dims
             )]
             self.assertEqual(result, expected)
 
-    def test_coarray_declarations_2(self):
+    def test_assumed_rank_arrays(self):
+        """Test assumed-rank arrays (using '..' notation)"""
+        declaration = self.create_mock_declaration(
+            "real :: x(..)",
+            ['x(..)'],
+            type_name="real"
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "x",
+            type_name="real",
+            # You'll need to add this to BoundType
+            dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_deferred_shape_arrays(self):
+        """Test deferred-shape arrays in procedure interfaces"""
+        declaration = self.create_mock_declaration(
+            "interface\nsubroutine sub(arr)\nreal, dimension(:) :: arr\nend subroutine\nend interface",
+            ['arr'],
+            attrspec=["dimension(:)"]
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "arr",
+            dims=[self.create_dimension()]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_zero_sized_arrays(self):
+        """Test arrays with zero or negative size ranges"""
         test_cases = [
-            ("integer :: a[*]", ['a[*]'], "integer", [], [self.create_dimension()]),
-            ("real :: b(10)[*]", ['b(10)[*]'], "real", [], 
-            [self.create_dimension(lower="1", upper="10"), self.create_dimension()]),
-            ("real :: c(10)[10,*]", ['c(10)[10,*]'], "real", [], 
-            [self.create_dimension(lower="1", upper="10"), 
-            self.create_dimension(lower="1", upper="10"), self.create_dimension()])
+            ("real :: empty(1:0)", ['empty(1:0)']),  # Zero-sized array
+            # Negative size without stride
+            ("real :: backward(10:1)", ['backward(10:1)']),
         ]
-        
-        for line, decls, type_name, attrs, dims in test_cases:
+
+        for line, decls in test_cases:
+            declaration = self.create_mock_declaration(line, decls)
+            result = parse_variable(declaration, [])
+            name = decls[0].split('(')[0]
+            bounds = decls[0].split('(')[1].rstrip(')').split(':')
+            expected = [self.create_declaration(
+                name,
+                dims=[self.create_dimension(lower=bounds[0], upper=bounds[1])]
+            )]
+            self.assertEqual(result, expected)
+
+    def test_negative_strides_multi_dim(self):
+        """Test arrays with negative strides in multiple dimensions"""
+        declaration = self.create_mock_declaration(
+            "real :: rev_matrix(10:1:-2, 20:2:-3)",
+            ['rev_matrix(10:1:-2, 20:2:-3)']
+        )
+        result = parse_variable(declaration, [])
+        expected = [self.create_declaration(
+            "rev_matrix",
+            dims=[
+                self.create_dimension(lower="10", upper="1", stride="-2"),
+                self.create_dimension(lower="20", upper="2", stride="-3")
+            ]
+        )]
+        self.assertEqual(result, expected)
+
+    def test_assumed_rank_arrays_1(self):
+        """Test assumed-rank arrays which can accept arrays of any rank"""
+        test_cases = [
+            # Basic assumed-rank array
+            (
+                "real :: x(..)",
+                ['x(..)'],
+                "real",
+                []
+            ),
+            # Assumed-rank with intent
+            (
+                "real, intent(in) :: matrix(..)",
+                ['matrix(..)'],
+                "real",
+                ["intent(in)"]
+            ),
+            # Assumed-rank with type and attributes
+            (
+                "class(numeric), allocatable :: tensor(..)",
+                ['tensor(..)'],
+                "class(numeric)",
+                ["allocatable"]
+            ),
+            # Assumed-rank pointer
+            (
+                "real, pointer :: p(..)",
+                ['p(..)'],
+                "real",
+                ["pointer"]
+            ),
+            # Contiguous assumed-rank array
+            (
+                "real, contiguous :: arr(..)",
+                ['arr(..)'],
+                "real",
+                ["contiguous"]
+            )
+        ]
+            
+        for line, decls, type_name, attrs in test_cases:
             declaration = self.create_mock_declaration(
                 line,
                 decls,
@@ -718,14 +931,83 @@ class TestArrays(TestCase):
                 attrspec=attrs
             )
             result = parse_variable(declaration, [])
+            
+            # Get the name from the original declaration line
+            var_name = line.split('::')[1].strip().split('(')[0].strip()
+            
             expected = [self.create_declaration(
-                decls[0].split('[')[0].split('(')[0],
+                var_name,  # use the name from the declaration line
                 type_name=type_name,
-                dims=dims
+                dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)],
+                attributes=attrs
             )]
-            self.assertEqual(result, expected)   
+            
+            # Add specific assertion for the name
+            self.assertEqual(result[0]["name"], var_name, 
+                            f"Variable name mismatch. Expected {var_name}, got {result[0]['name']}")
+            # Then check the rest of the structure
+            self.assertEqual(result, expected)
+    def test_assumed_rank_arrays_2(self):
+        """Test assumed-rank arrays which can accept arrays of any rank"""
+        test_cases = [
+            # Basic assumed-rank array
+            ("real :: x(..)", ['x(..)'], "real", [], None),
+            
+            # Assumed-rank with attributes
+            ("real, intent(in) :: matrix(..)", ['matrix(..)'], "real", ["intent(in)"], None),
+            
+            # Character assumed-rank array with len
+            ("character(len=10) :: str_arr(..)", ['str_arr(..)'], "character", [], ("10", "")),
+            
+            # Assumed-rank with pointer attribute
+            ("real, pointer :: ptr_arr(..)", ['ptr_arr(..)'], "real", ["pointer"], None),
+            
+            # Type-bound assumed-rank array
+            ("type(mytype) :: derived_arr(..)", ['derived_arr(..)'], "type(mytype)", [], None)
+        ]
+        
+        for line, decls, type_name, attrs, sel in test_cases:
+            declaration = self.create_mock_declaration(
+                line,
+                decls,
+                type_name=type_name,
+                attrspec=attrs,
+                selector=sel
+            )
+            result = parse_variable(declaration, [])
+            expected = [self.create_declaration(
+                decls[0].split('(')[0],
+                type_name=type_name,
+                dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)],
+                attributes=attrs,
+                length="10" if type_name == "character" else None
+            )]
+            self.assertEqual(result, expected)
 
+        def test_assumed_rank_vs_size(self):
+            """Test to demonstrate difference between assumed-rank and assumed-size"""
+            test_cases = [
+                # Assumed-rank can be any dimension
+                ("subroutine process(x)\nreal :: x(..)", ['x(..)'], 
+                [ArrayBound(bound_type=BoundType.ASSUMED_RANK)]),
+                
+                # Assumed-size must be 1D
+                ("subroutine process(y)\nreal :: y(*)", ['y(*)'],
+                [ArrayBound(bound_type=BoundType.ASSUMED)]),
+                
+                # Can't have assumed-size in middle dimensions
+                ("subroutine process(z)\nreal :: z(10,*)", ['z(10,*)'],
+                [self.create_dimension(lower="1", upper="10"),
+                ArrayBound(bound_type=BoundType.ASSUMED)]),
+            ]
+            
+            for line, decls, expected_dims in test_cases:
+                declaration = self.create_mock_declaration(line, decls)
+                result = parse_variable(declaration, [])
+                expected = [self.create_declaration(
+                    decls[0].split('(')[0],
+                    dims=expected_dims
+                )]
+                self.assertEqual(result, expected)
 if __name__ == "__main__":
     unittest.main()
-
-

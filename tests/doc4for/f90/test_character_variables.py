@@ -2,9 +2,11 @@ import unittest
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
-from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
+from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.common import Expression, ExpressionType
 
 class TestCharacterVariables(TestCase):
+    maxDiff=None
 
     def test_basic_character_declaration(self):
         declaration = Mock()
@@ -421,8 +423,17 @@ class TestCharacterVariables(TestCase):
                 "description": "",
                 "type": "character",
                 "name": "str_array",
-                "dimension": "dimension(10)",
-                "attributes": ["dimension(10)"],
+                "dimension": {
+                    "dimensions": [
+                        ArrayBound(
+                            bound_type=BoundType.FIXED,
+                            lower=Expression(ExpressionType.LITERAL, '1'),
+                            upper=Expression(ExpressionType.LITERAL, '10'),
+                            stride=None
+                        )
+                    ]
+                },
+                "attributes": [],
                 "kind": None,
                 "initial_value": None,
                 "length": '30'

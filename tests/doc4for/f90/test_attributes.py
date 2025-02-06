@@ -2,7 +2,7 @@ import unittest
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
-
+from doc4for.models.dimension_models import ArrayBound, BoundType
 class TestAttributes(TestCase):
 
     def test_parameter_attribute(self):
@@ -106,13 +106,22 @@ class TestAttributes(TestCase):
                 "description": "",
                 "type": "real",
                 "name": "x",
-                "dimension": {"dimensions": [{"lower": None, "upper": None, "stride": None}]},
+                "dimension": {
+                    "dimensions": [
+                        ArrayBound(
+                            bound_type=BoundType.ALLOCATABLE,
+                            lower=None,
+                            upper=None,
+                            stride=None
+                        )
+                    ]
+                },
                 "attributes": ["allocatable"],
                 "kind": None,
                 "initial_value": None,
                 "length": None
             },
-        ]
+        ]        
         self.assertEqual(result, expected)
 
     def test_intent_attributes(self):
