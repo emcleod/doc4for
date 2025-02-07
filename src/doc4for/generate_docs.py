@@ -2,7 +2,7 @@ import os
 import logging
 import argparse
 import shutil
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from pathlib import Path
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.file_models import FileDescription
