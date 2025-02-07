@@ -7,7 +7,7 @@ class TestSubroutineArguments(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_find_subroutine_with_scalar_args_1(self):
+    def test_subroutine_with_scalar_args_1(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -40,7 +40,7 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_subroutine_with_scalar_args_2(self):
+    def test_subroutine_with_scalar_args_2(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -74,7 +74,7 @@ class TestSubroutineArguments(TestCase):
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_subroutine_with_array_args(self):
+    def test_subroutine_with_array_args(self):
         self.fs.create_file(
             '/fake/path/array_args.f90',
             contents='''\
@@ -102,11 +102,14 @@ class TestSubroutineArguments(TestCase):
         inputs = subroutine['in']
         outputs = subroutine['out']
         self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
+        self.assertEqual(inputs['arr'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ': (allocatable)'})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_subroutine_with_mixed_args(self):
+    def test_subroutine_with_mixed_args(self):
         self.fs.create_file(
             '/fake/path/mixed_args.f90',
             contents='''\
@@ -136,11 +139,17 @@ class TestSubroutineArguments(TestCase):
         outputs = subroutine['out']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['scalar'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
+        self.assertEqual(inputs['arr'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ': (allocatable)'})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
+        self.assertEqual(outputs['res'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ': (allocatable)'})
 
-    def test_find_subroutine_with_inout_args(self):
+    def test_subroutine_with_inout_args(self):
         self.fs.create_file(
             '/fake/path/inout_args.f90',
             contents='''\

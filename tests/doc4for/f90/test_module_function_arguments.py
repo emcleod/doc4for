@@ -4,10 +4,12 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestFunctionArguments(TestCase):
+    maxDiff=None
+
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_find_function_with_no_args(self):
+    def test_function_with_no_args(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -43,7 +45,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(results['add_numbers'], {'type': 'real', 'description': '', 'dimension': ''})
         self.assertEqual(function['arguments'], [])
 
-    def test_find_function_with_scalar_args_1(self):
+    def test_function_with_scalar_args_1(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -78,7 +80,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results['res'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_function_with_scalar_args_2(self):
+    def test_function_with_scalar_args_2(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -114,7 +116,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results['res'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_function_with_scalar_args_3(self):
+    def test_function_with_scalar_args_3(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -150,7 +152,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results['add_numbers'], {'type': 'real', 'description': '', 'dimension': ''})
 
-    def test_find_function_with_scalar_args_4(self):
+    def test_function_with_scalar_args_4(self):
         self.fs.create_file(
             '/fake/path/scalar_args.f90',
             contents='''\
@@ -185,7 +187,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results['add_numbers'], {'type': 'Unknown', 'description': '', 'dimension': ''})
 
-    def test_find_function_with_array_args(self):
+    def test_function_with_array_args(self):
         self.fs.create_file(
             '/fake/path/array_args.f90',
             contents='''\
@@ -214,12 +216,18 @@ class TestFunctionArguments(TestCase):
         outputs = function['out']
         results = function['return']
         self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
+        self.assertEqual(inputs['arr'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ': (allocatable)'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results['res'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(results['res'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ''})
 
-    def test_find_function_with_mixed_args(self):
+    def test_function_with_mixed_args(self):
         self.fs.create_file(
             '/fake/path/mixed_args.f90',
             contents='''\
@@ -250,11 +258,16 @@ class TestFunctionArguments(TestCase):
         results = function['return']
         self.assertEqual(len(inputs), 2)
         self.assertEqual(inputs['scalar'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['arr'], {'type': 'real', 'description': '', 'dimension': 'allocatable &times; allocatable'})
+        self.assertEqual(inputs['arr'], {
+            'type': 'real', 
+            'description': '', 
+            'dimension': ': (allocatable)'})
         self.assertEqual(len(outputs), 0)
         self.assertEqual(len(results), 1)
-        #TODO fix
-        #self.assertEqual(results['res'], {'type': 'real'})
+        self.assertEqual(results['res'], {
+            'type': 'real',
+            'description': '',
+            'dimension': ': (allocatable)'})
 
 if __name__ == '__main__':
     unittest.main()
