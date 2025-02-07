@@ -20,6 +20,9 @@ from doc4for.parse.type_parser import update_type_with_parsed_data
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.parse.array_utils import calculate_array_size, expand_array_values
 
+# TODO move these to separate parsers like type_parser
+
+
 def parse_program(
     program: Program, comment_stack: List[Comment], file_name: str
 ) -> ProgramDescription:
@@ -119,6 +122,7 @@ def parse_block_data(
 
     return block_data_details
 
+
 def parse_data_statement(var_names, values, block_data_details):
     value_index = 0
     for var_name in var_names:
@@ -127,16 +131,19 @@ def parse_data_statement(var_names, values, block_data_details):
                 var_info = common_block[var_name]
                 if var_info.get("dimension"):
                     # It's an array, determine how many values to take
-                    array_size = calculate_array_size(var_info["dimension"]["dimensions"])
-                    
+                    array_size = calculate_array_size(
+                        var_info["dimension"]["dimensions"])
+
                     # Expand any repeat expressions in the values
-                    var_info["initial_value"], offset = expand_array_values(values, array_size, value_index) 
+                    var_info["initial_value"], offset = expand_array_values(
+                        values, array_size, value_index)
                     value_index += offset
                 else:
                     # It's a scalar
                     var_info["initial_value"] = str(values[value_index])
                     value_index += 1
- 
+
+
 def parse_module(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:
@@ -146,6 +153,7 @@ def parse_module(
         "variables": {},
         "functions": {},
         "subroutines": {},
+        "interfaces": [],
         "types": {},
         "file_name": file_name,
         "module_description": "",

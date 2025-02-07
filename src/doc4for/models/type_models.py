@@ -1,5 +1,5 @@
-from typing import TypedDict, List, Dict, Optional
-from doc4for.models.procedure_models import ProcedureDescription
+from typing import TypedDict, List, Dict, Optional, Union
+from doc4for.models.procedure_models import ProcedureDescription, FunctionDescription, SubroutineDescription
 from doc4for.models.variable_models import DataComponent
 
 GenericInterface = TypedDict(
@@ -15,12 +15,12 @@ GenericInterface = TypedDict(
 InterfaceDescription = TypedDict(
     "InterfaceDescription",
     {
-        "name": str,
+        "name": Optional[str], # abstract interfaces don't have a name
         "description": str,
         "attributes": List[str],
-        "is_abstract": bool,
-        "is_operator": bool,
         "operator_symbol": Optional[str],
+        "procedures": Dict[str, Union[FunctionDescription, SubroutineDescription]],
+        "module_procedure_names": List[str],
     },
 )
 

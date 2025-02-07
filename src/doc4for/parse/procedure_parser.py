@@ -24,8 +24,8 @@ def parse_function(
         "in": {},
         "out": {},
         "return": {},
-        "binding_type": "",
-        "interface": "",
+#        "binding_type": "",
+#        "interface": "",
     }
     update_arguments_with_parsed_data(function, function_description)
     if is_doc4for_comment(comment_stack):
@@ -44,8 +44,8 @@ def parse_subroutine(
         "arguments": subroutine.args,
         "in": {},
         "out": {},
-        "binding_type": "",
-        "interface": "",
+ #       "binding_type": "",
+ #       "interface": "",
     }
     update_arguments_with_parsed_data(subroutine, subroutine_description)
     if is_doc4for_comment(comment_stack):

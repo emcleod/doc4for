@@ -9,7 +9,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN, RETURN_PATTERN
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
 from doc4for.utils.comment_utils import format_comment_for_html
-from doc4for.parse.variable_parser import parse_variables
+from doc4for.parse.variable_parser import parse_type_declaration_statement
 from doc4for.models.dimension_models import Dimension, format_dimension
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
     for item in procedure.content:
         if isinstance(item, TypeDeclarationStatement):
             # Use parse_variables to get detailed variable information
-            variables = parse_variables(item, "", [])
+            variables = parse_type_declaration_statement(item, "", [])
 
             intentin, intentout = determine_argument_intent(item)
 
@@ -322,7 +322,9 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     def default_processor(content: str) -> None:
         logging.warning("Unknown annotation type: %s", content.split()[0])
 
-    annotation_processors = defaultdict(lambda: default_processor, {
+    annotation_processors = defaultdict(
+        lambda: lambda content, _: logging.warning("Unknown annotation type: %s", content.split()[0]), 
+        {
         '@in': lambda content, info: update_with_argument_description(content, info, ['in']),
         '@out': lambda content, info: update_with_argument_description(content, info, ['out']),
         '@inout': lambda content, info: update_with_argument_description(content, info, ['in', 'out']),

@@ -13,13 +13,6 @@ def create_dimension_expr(lower, upper):
         upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None),
         stride=None
     )
-# def create_dimension_expr(lower, upper):
-#     return {
-#         "lower": Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
-#         "stride": None,
-#         "upper": Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
-#     }
-
 
 class TestConstants(TestCase):
     maxDiff=None

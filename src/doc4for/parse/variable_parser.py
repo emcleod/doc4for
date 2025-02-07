@@ -1,8 +1,7 @@
 import re
-from typing import List, Optional, Tuple
+from typing import List
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from fparser.one.block_statements import Comment
-from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.variable_models import VariableDescription
 from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_coarray_dimensions, extract_variable_dimension
 from doc4for.parse.array_utils import parse_initialization_value
@@ -29,13 +28,13 @@ def parse_variable(
     shared_attributes = get_attributes(declaration)
 
     try:
-        return parse_variables(declaration, description, shared_attributes)
+        return parse_type_declaration_statement(declaration, description, shared_attributes)
     except Exception as e:
         # TODO log this and continue
         raise ValueError(
             f"Error parsing variable declaration: {str(e)}") from e
     
-def parse_variables(
+def parse_type_declaration_statement(
     declaration: TypeDeclarationStatement,
     description: str,
     shared_attributes: List[str],
@@ -67,7 +66,6 @@ def parse_variables(
 
         # Clean the name (remove both () and [] parts)
         name = re.split(r'[\(\[]', full_name)[0].strip()
-        # name = re.sub(r"[\(\[].*?[\)\]]", "", full_name).strip()
 
         # Handle regular array dimensions
         if is_array:

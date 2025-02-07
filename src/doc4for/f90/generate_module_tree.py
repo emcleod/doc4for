@@ -12,6 +12,7 @@ from fparser.one.block_statements import (
     Function,
     Subroutine,
     Type,
+    Interface,
     Public,
     Private,
     Protected
@@ -24,6 +25,7 @@ from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.parse.parameter_parser import parse_parameter, is_parameter
 from doc4for.parse.procedure_parser import parse_subroutine, parse_function
+from doc4for.parse.interface_parser import parse_interface
 from doc4for.f90.populate_data_models import (
     parse_module,
     parse_type, 
@@ -83,6 +85,8 @@ def parse_module_content(comment_stack: List[Comment], module: Any, module_data:
                         variable_descriptions = parse_variable(item, comment_stack)
                         for var in variable_descriptions:
                             module_data['variables'][var['name']] = var                
+                case Interface():
+                    module_data['interfaces'].append(parse_interface(item, comment_stack))
                 case _:
                     pass
             comment_stack.clear()
