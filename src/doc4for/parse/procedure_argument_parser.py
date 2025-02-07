@@ -1,13 +1,18 @@
+import logging
+import re
 from typing import List, Dict, Any, Tuple, Optional, Callable, Union
 from fparser.one.block_statements import (
     Comment
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
-from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument 
+from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
 from doc4for.utils.comment_utils import format_comment_for_html
 from doc4for.parse.variable_parser import parse_variables
 from doc4for.models.dimension_models import Dimension, format_dimension
+
+logger: logging.Logger = logging.getLogger(__name__)
+
 
 def extract_argument_type(item: Any) -> str:
     """Get the type of a dummy argument to a function from its `TypeDeclarationStatement`.
@@ -19,6 +24,7 @@ def extract_argument_type(item: Any) -> str:
         str: The name of the argument type if available, or an empty string if not.
     """
     return item.name if item.name else ''
+
 
 def determine_argument_intent(item: Any) -> Tuple[bool, bool]:
     """Get the intent of a dummy argument to a function.
@@ -61,6 +67,7 @@ def determine_argument_intent(item: Any) -> Tuple[bool, bool]:
         intentin, intentout = True, True
     return intentin, intentout
 
+
 def extract_return_type(function: Any) -> str:
     """Get the return type of a function.
 
@@ -83,6 +90,7 @@ def extract_return_type(function: Any) -> str:
         'Unknown'
     """
     return function.typedecl.name if function.typedecl else 'Unknown'
+
 
 def format_dimension_string(dims: List[int]) -> str:
     """Generate a string representing the dimensions of an array.
@@ -119,9 +127,10 @@ def format_dimension_string(dims: List[int]) -> str:
     # dimension_parts = ['allocatable' if not dim else str(dim) for dim in dims]
     # return ' &times; '.join(dimension_parts)
 
+
 def update_single_argument_1(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
-                dims: Optional[List[int]] = None) -> None:
+                             dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
+                             dims: Optional[List[int]] = None) -> None:
     """Populate the `Argument` type with information from the dummy argument
     declaration.
 
@@ -143,17 +152,18 @@ def update_single_argument_1(decl: str, arg_type: str, intentin: bool, intentout
     """
     if dims is None:
         dims = []
-    arg_info: Argument = {'type': arg_type, 
-                          'description': '', 
+    arg_info: Argument = {'type': arg_type,
+                          'description': '',
                           'dimension': format_dimension_string(dims)}
     if intentin or not intentout:
         dummy_arg_info['in'][decl] = arg_info
     if intentout or not intentin:
         dummy_arg_info['out'][decl] = arg_info
+
 
 def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
-                dims: Optional[Dimension] = None) -> None:
+                           dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
+                           dims: Optional[Dimension] = None) -> None:
     """Populate the `Argument` type with information from the dummy argument
     declaration.
 
@@ -175,13 +185,14 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     """
     if dims is None:
         dims = []
-    arg_info: Argument = {'type': arg_type, 
-                          'description': '', 
+    arg_info: Argument = {'type': arg_type,
+                          'description': '',
                           'dimension': format_dimension_string(dims)}
     if intentin or not intentout:
         dummy_arg_info['in'][decl] = arg_info
     if intentout or not intentin:
         dummy_arg_info['out'][decl] = arg_info
+
 
 def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     args: List[str] = procedure.args
@@ -190,126 +201,169 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
         if isinstance(item, TypeDeclarationStatement):
             # Use parse_variables to get detailed variable information
             variables = parse_variables(item, "", [])
-            
+
             intentin, intentout = determine_argument_intent(item)
-            
+
             for var in variables:
                 if var['name'] in args:
                     update_single_argument(
-                        var['name'], 
-                        var['type'], 
-                        intentin, 
-                        intentout, 
+                        var['name'],
+                        var['type'],
+                        intentin,
+                        intentout,
                         arg_info,
                         var['dimension']
                     )
                 elif is_function_description(arg_info) and var['name'] == result:
                     # Update return information
                     arg_info['return'][var['name']] = {
-                        'type': var['type'], 
-                        'description': '', 
+                        'type': var['type'],
+                        'description': '',
                         'dimension': format_dimension_string(var['dimension'])
                     }
 
     # If return info still not set, use the old method as fallback
     if is_function_description(arg_info) and not arg_info['return']:
         return_type = extract_return_type(procedure)
-        arg_info['return'][result] = {'type': return_type, 'description': '', 'dimension': ''}
+        arg_info['return'][result] = {
+            'type': return_type, 'description': '', 'dimension': ''}
 
-def update_with_argument_description(parts: List[str], content: str, 
-                                     arg_info: Union[FunctionDescription, SubroutineDescription], 
+
+# This pattern matches:
+# 1. @in x: real description
+# 2. @in x:real description
+# 3. @in x : real description
+# 4. @in x :real description
+# 5. @in x : real(10) description
+# 6. @in x: real(10) description
+# 7. @in x :real(10) description
+# including coarrays
+ARGUMENT_PATTERN = r'''
+    (?P<var_name>\w+)      # Variable name (one or more word characters)
+    \s*                    # Optional whitespace
+    :                      # Colon
+    \s*                    # Optional whitespace
+    (?P<var_type>\w+       # Variable type
+        (\s*\([^)]+\))?    # Optional array dimension in parentheses
+        (?:\s*\[[^\]]+\])? # Optional coarray dimension in square brackets
+    )
+    \s+                    # Required whitespace
+    (?P<description>.+)    # Description (rest of the line)
+'''
+
+# Using verbose mode (re.VERBOSE) to allow formatting and comments
+argument_regex = re.compile(ARGUMENT_PATTERN, re.VERBOSE)
+
+
+def update_with_argument_description(parts: List[str], content: str,
+                                     arg_info: Union[FunctionDescription, SubroutineDescription],
                                      annotation_types: List[str]) -> None:
-    words = content.split()
-    
-    # Remove the annotation type
-    annotation_type = words[0][1:]  # Remove '@' prefix
-    words = words[1:]
-    
-    if not words:
-        print(f'Warning: No content after annotation type in: {content}')
+    # Get the annotation type from the first word (removing the @ prefix)
+    annotation_type = content.split()[0][1:]
+
+    # Remove the annotation type from the content
+    content_without_annotation = ' '.join(content.split()[1:])
+
+    match = argument_regex.match(content_without_annotation)
+    if not match:
+        logger.warning('Warning: Unexpected annotation format: %s', content)
         return
-    
-    var_name, var_type, description = None, None, None
-    
-    if ":" in words[0]:
-        if words[0].endswith(":"): # @in x: real description
-            var_name = words[0][:-1]
-            var_type = words[1]
-            description = ' '.join(words[2:])
-        else: # @in x:real description
-            var_name, var_type = words[0].split(":")
-            description = ' '.join(words[1:])
-    elif words[1] == ":": # @in x : real description
-        var_name = words[0]
-        var_type = words[2]
-        description = ' '.join(words[3:])
-    elif words[1].startswith(":"): # @in x :real description
-        var_name = words[0]
-        var_type = words[1][1:]
-        description = ' '.join(words[2:])
-    else:
-        print(f'Warning: Unexpected annotation format: {content}')
-        return
-    
+
+    var_name = match.group('var_name')
+    var_type = match.group('var_type')
+    description = match.group('description')
+
     if not any(var_name in arg_info[annotation_type] for annotation_type in annotation_types):
-        print(f'Warning: "{annotation_type}" annotation "{var_name}" not found in arguments {[arg_info[t].keys() for t in annotation_types]}')
+        logger.warning('Warning: "%s" annotation "%s" not found in arguments %s',
+                       annotation_type, var_name, [arg_info[t].keys() for t in annotation_types])
     else:
         for annotation_type in annotation_types:
             if var_name in arg_info[annotation_type]:
                 arg_info[annotation_type][var_name]['description'] = description
 
+
+# This pattern matches:
+# 1. @return: real description
+# 2. @return : real description
+# 3. @return :real description
+# 4. @return res: real description
+# 5. @return res : real description
+# 6. @return res :real description
+# 7. @return res:real description
+# 8. @return description (no type specified)
+# plus coarrays
+RETURN_PATTERN = r'''
+    (?:                    # Non-capturing group for the optional name and type
+        (?:                # Non-capturing group for the two main patterns
+            (?:           
+                (?P<return_name>\w+)  # Optional return name
+                \s*                   # Optional whitespace
+                :                     # Colon
+                \s*                   # Optional whitespace
+                (?P<return_type>\w+)  # Return type
+                (?:\s*\([^)]+\))?     # Optional array dimension in parentheses
+                (?:\s*\[[^\]]+\])?    # Optional array dimension in square brackets
+            )
+            |              # OR
+            (?:           
+                :          # Just a colon
+                \s*       # Optional whitespace
+                (?P<unnamed_type>\w+) # Return type without name
+                (?:\s*\([^)]+\))?    # Optional array dimension in parentheses
+                (?:\s*\[[^\]]+\])?   # Optional coarray dimension in square brackets
+            )
+        )
+        \s+               # Required whitespace
+    )?                    # All of the above is optional (for case 8)
+    (?P<description>.+)   # Description (rest of the line)
+'''
+
+return_regex = re.compile(RETURN_PATTERN, re.VERBOSE)
+
 def update_with_return_description(parts: List[str], content: str, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     # Early exit for subroutines
     if "return" not in arg_info:
-        print(f"Warning: @return annotation found in a subroutine comment: {content}")
+        logger.warning('Warning: @return annotation found in a subroutine comment: %s', content)
         return
     
     if len(parts) < 2:  # We need at least @return and a description
-        print(f'Warning: Not enough parts in return annotation: {" ".join(parts)}')
+        logger.warning('Warning: Not enough parts in return annotation: %s', " ".join(parts))
         return
+
+    # Remove the @return from the content
+    content_without_annotation = ' '.join(content.split()[1:])
     
-    words = content.split()
-    return_name, return_type, description = None, None, None
-    if ":" in words[0]:
-        if words[0].endswith(":"): # @return: real description 
-            return_type = parts[1]
-            description = ' '.join(parts[2:])
-        else:
-            _, return_type = words[0].split(":")
-            description = ' '.join(parts[1:])
-    elif words[1] == ":": # @return : real description
-        return_type = parts[2]
-        description = ' '.join(parts[3:])
-    elif words[1].startswith(":"): # @return :real description
-        return_type = parts[1][1:]
-        description = ' '.join(parts[2:])
-    elif len(parts) >= 5 and parts[2] == ":": # @return res : real description
-        return_name = parts[1]
-        return_type = parts[3]
-        description = ' '.join(parts[4:])
-    elif len(parts) >= 4: 
-        if parts[1].endswith(":"): # @return res: real description
-            return_name = parts[1][:-1]
-            return_type = parts[2]
-            description = ' '.join(parts[3:])
-        elif parts[2].startswith(":"): # @return res :real description
-            return_name = parts[1]
-            return_type = parts[2][1:]
-            description = ' '.join(parts[3:])
-        elif ":" in parts[1]: # return res:real description
-            return_name, return_type = parts[1].split(":")
-            description = ' '.join(parts[2:])
-        else: # @return description 
-            description = ' '.join(parts[1:])
-    else: # catch @return description if the description is short
-        description = ' '.join(parts[1:])
-        
+    match = return_regex.match(content_without_annotation)
+    if not match:
+        logger.warning('Warning: Unexpected return annotation format: %s', content)
+        return
+
+    return_name = match.group('return_name')
+    return_type = match.group('return_type') or match.group('unnamed_type')
+    description = match.group('description')
+
     if return_name:
         if return_name not in arg_info["return"]:
-            print(f"Return name in documentation does not match that in code")
-    else: # didn't put in a return name, can only return one thing so add the description to the existing data
+            logger.warning('Return name "%s" in documentation does not match that in code', return_name)
+    else:
         return_name = next(iter(arg_info["return"]))
+    
+    # Post-processing for all cases
+    type_match = re.match(r'(\w+(?:\s*\([^)]+\))?(?:\s*\[[^\]]+\])?)\s*(.*)', description)
+    if type_match:
+        potential_type = type_match.group(1)
+        base_type = potential_type.split('(')[0].split('[')[0].lower()
+        actual_type = arg_info["return"][return_name]['type'].lower()
+        if base_type == actual_type:
+            return_type = potential_type
+            description = type_match.group(2).strip()
+            logger.warning('Return type information found in description. Assuming "%s" is the return type.', return_type)
+
     arg_info["return"][return_name]['description'] = description
+    if return_type:
+        # Strip both array and coarray specs to get base type
+        arg_info["return"][return_name]['type'] = return_type.split('(')[0].split('[')[0].strip()
+
 
 def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     annotation_processors: Dict[str, Callable] = {
@@ -322,7 +376,7 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     i = 0
     while i < len(comments):
         content = comments[i].content.strip()
-        
+
         if content.startswith(ANNOTATION_PREFIX):
             # Collect all continuation lines
             full_content = [content]
@@ -330,29 +384,29 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
             while j < len(comments):
                 next_content = comments[j].content.strip()
                 if (not next_content.startswith(ANNOTATION_PREFIX) and
-                    not next_content.startswith(IGNORE_PREFIX) and 
-                    not next_content.endswith(IGNORE_SUFFIX)):
-                    full_content.append(next_content.strip()) 
+                    not next_content.startswith(IGNORE_PREFIX) and
+                        not next_content.endswith(IGNORE_SUFFIX)):
+                    full_content.append(next_content.strip())
                     j += 1
                 else:
                     break
             i = j  # Skip processed comments
-            
+
             # Join all parts into a single line
             content = ' '.join(full_content)
-            
+
             # Process the annotation
             annotation_type, *rest = content.split(maxsplit=1)
             if ":" in annotation_type:
                 annotation_type, _ = annotation_type.split(":")
-            
+
             parts = [annotation_type] + (rest[0].split() if rest else [])
-            
+
             if annotation_type in annotation_processors:
-                annotation_processors[annotation_type](parts, content, arg_info)
+                annotation_processors[annotation_type](
+                    parts, content, arg_info)
         elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
             arg_info['description'] += format_comment_for_html(content)
             i += 1
         else:
             i += 1
-

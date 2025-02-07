@@ -184,7 +184,6 @@ end module test_mod
         file_data = result[0]
         self.assertEqual(len(file_data["functions"]), 2)
 
-        # Test various annotations
         func_annotations = file_data["functions"]["test_annotations"]
         expected_annotations = {
             "attributes": [],
@@ -205,7 +204,6 @@ end module test_mod
         }
         self.assertEqual(func_annotations, expected_annotations)
 
-        # Test unnamed return
         func_unnamed = file_data["functions"]["unnamed_return"]
         expected_unnamed = {
             "attributes": [],
@@ -242,7 +240,7 @@ end module test_mod
         )
         result = extract_file_data([Path("/fake/path/functions.f90")])
         file_data = result[0]
-        
+
         func_array = file_data["functions"]["process_matrix"]
         expected_array = {
             "attributes": [],
@@ -323,8 +321,8 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"attached_type": {"description": "Description for colon-attached return type", 
-                                        "dimension": "", "type": "real"}},
+            "return": {"attached_type": {"description": "Description for colon-attached return type",
+                                         "dimension": "", "type": "real"}},
             "binding_type": "",
             "interface": ""
         }
@@ -338,8 +336,8 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"spaced_type": {"description": "Description for spaced return type", 
-                                    "dimension": "", "type": "integer"}},
+            "return": {"spaced_type": {"description": "Description for spaced return type",
+                                       "dimension": "", "type": "integer"}},
             "binding_type": "",
             "interface": ""
         }
@@ -353,7 +351,7 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"attached_spaced_type": {"description": "Description for colon-attached spaced return type", 
+            "return": {"attached_spaced_type": {"description": "Description for colon-attached spaced return type",
                                                 "dimension": "", "type": "logical"}},
             "binding_type": "",
             "interface": ""
@@ -368,8 +366,8 @@ end module test_mod
             "arguments": ["x"],
             "in": {"x": {"type": "real", "description": "", "dimension": ""}},
             "out": {},
-            "return": {"result": {"description": "Named return with attached type description", 
-                                "dimension": "", "type": "character"}},
+            "return": {"result": {"description": "Named return with attached type description",
+                                  "dimension": "", "type": "character"}},
             "binding_type": "",
             "interface": ""
         }
@@ -383,13 +381,12 @@ end module test_mod
             "arguments": ["y"],
             "in": {"y": {"type": "real", "description": "", "dimension": ""}},
             "out": {},
-            "return": {"result": {"description": "Named return with spaced type description", 
-                                "dimension": "", "type": "complex"}},
+            "return": {"result": {"description": "Named return with spaced type description",
+                                  "dimension": "", "type": "complex"}},
             "binding_type": "",
             "interface": ""
         }
         self.assertEqual(func_named_spaced, expected_named_spaced)
-
 
     def test_various_argument_annotation_styles(self):
         self.fs.create_file(
@@ -416,21 +413,24 @@ end module test_mod
     ! @inout m :logical      Space before type
     ! @inout n:logical       No spaces around colon
     ! @inout o : logical(3)  Array inout
+    ! @inout p: integer(4)   Array input and output
+    ! @inout q :integer(2)   Array inout
     ! @return : character    Return type
     !*!
-    function test_arg_styles(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) result(res)
+    function test_arg_styles(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) result(res)
         integer, intent(in) :: a, b, c, d, e(10)
         real, intent(out) :: f, g, h, i, j(5)
         logical, intent(inout) :: k, l, m, n, o(3)
+        integer, intent(inout) :: p(4), q(2)
         character :: res
     end function test_arg_styles
     """
         )
         result = extract_file_data([Path("/fake/path/arguments.f90")])
         file_data = result[0]
-        
+
         func_styles = file_data["functions"]["test_arg_styles"]
-        
+
         # Check input arguments
         self.assertEqual(func_styles['in'], {
             'a': {'type': 'integer', 'description': 'Standard input annotation', 'dimension': ''},
@@ -442,9 +442,11 @@ end module test_mod
             'l': {'type': 'logical', 'description': 'No space after variable name', 'dimension': ''},
             'm': {'type': 'logical', 'description': 'Space before type', 'dimension': ''},
             'n': {'type': 'logical', 'description': 'No spaces around colon', 'dimension': ''},
-            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'}
+            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'},
+            'p': {'type': 'integer', 'description': 'Array input and output', 'dimension': '1:4'},
+            'q': {'type': 'integer', 'description': 'Array inout', 'dimension': '1:2'}
         })
-        
+
         # Check output arguments
         self.assertEqual(func_styles['out'], {
             'f': {'type': 'real', 'description': 'Standard output annotation', 'dimension': ''},
@@ -456,10 +458,11 @@ end module test_mod
             'l': {'type': 'logical', 'description': 'No space after variable name', 'dimension': ''},
             'm': {'type': 'logical', 'description': 'Space before type', 'dimension': ''},
             'n': {'type': 'logical', 'description': 'No spaces around colon', 'dimension': ''},
-            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'}
+            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'},
+            'p': {'type': 'integer', 'description': 'Array input and output', 'dimension': '1:4'},
+            'q': {'type': 'integer', 'description': 'Array inout', 'dimension': '1:2'}
         })
-        
-        
+
         # Check return
         self.assertEqual(func_styles['return'], {
             'res': {'type': 'character', 'description': 'Return type', 'dimension': ''}
@@ -500,32 +503,32 @@ end module test_mod
         )
         result = extract_file_data([Path("/fake/path/complex_args.f90")])
         file_data = result[0]
-        
+
         func_complex = file_data["functions"]["complex_args"]
-        
+
         # Check complex descriptions
         self.assertEqual(func_complex['in']['matrix'], {
             'type': 'real',
             'description': 'The input matrix, used for primary calculations',
             'dimension': '1:100 &times; 1:100'
         })
-        
+
         expected_stats_desc = ('Output statistics array: '
-                            '1: mean '
-                            '2: median '
-                            '3-5: quartiles '
-                            '6-10: reserved for future use')
+                               '1: mean '
+                               '2: median '
+                               '3-5: quartiles '
+                               '6-10: reserved for future use')
         self.assertEqual(func_complex['out']['stats'], {
             'type': 'real',
             'description': expected_stats_desc,
             'dimension': '1:10'
         })
-        
+
         expected_flag_desc = ('Processing flag: '
-                            '0 = not started '
-                            '1 = in progress '
-                            '2 = completed '
-                            'negative = error code')
+                              '0 = not started '
+                              '1 = in progress '
+                              '2 = completed '
+                              'negative = error code')
         self.assertEqual(func_complex['in']['flag'], {
             'type': 'integer',
             'description': expected_flag_desc,
@@ -536,7 +539,7 @@ end module test_mod
             'description': expected_flag_desc,
             'dimension': ''
         })
-        
+
         # Check return description
         expected_return_desc = ('True if processing was successful, '
                                 'False otherwise')
@@ -545,6 +548,273 @@ end module test_mod
             'description': expected_return_desc,
             'dimension': ''
         })
+
+    def test_return_with_arrays(self):
+        self.fs.create_file(
+            "/fake/path/array_returns.f90",
+            contents="""\
+        program test_prog
+            implicit none
+        end program test_prog
+
+        !!*
+        ! Function returning an array
+        ! @return: real(10)      Returns a vector of results
+        !*!
+        function vector_return()
+            real :: vector_return(10)
+        end function vector_return
+
+        !!*
+        ! Function with named array return
+        ! @return result: integer(5,5)  Returns a matrix of counts
+        !*!
+        function matrix_return() result(result)
+            integer :: result(5,5)
+        end function matrix_return
+
+        !!*
+        ! Function with different spacing in array spec
+        ! @return res : complex ( 3 )  Returns complex values
+        !*!
+        function spaced_array() result(res)
+            complex :: res(3)
+        end function spaced_array
+
+        !!*
+        ! Function with no spaces around array spec
+        ! @return output:real(100)  Returns many values
+        !*!
+        function dense_array() result(output)
+            real :: output(100)
+        end function dense_array
+        """
+        )
+        result = extract_file_data([Path("/fake/path/array_returns.f90")])
+        file_data = result[0]
+        self.assertEqual(len(file_data["functions"]), 4)
+
+        # Unnamed array return
+        func_vector = file_data["functions"]["vector_return"]
+        expected_vector = {
+            "attributes": [],
+            "description": "Function returning an array",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"vector_return": {
+                "description": "Returns a vector of results",
+                "dimension": "1:10",
+                "type": "real"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_vector, expected_vector)
+
+        # Named matrix return
+        func_matrix = file_data["functions"]["matrix_return"]
+        expected_matrix = {
+            "attributes": [],
+            "description": "Function with named array return",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"result": {
+                "description": "Returns a matrix of counts",
+                "dimension": "1:5 &times; 1:5",
+                "type": "integer"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_matrix, expected_matrix)
+
+        # Spaced array spec
+        func_spaced = file_data["functions"]["spaced_array"]
+        expected_spaced = {
+            "attributes": [],
+            "description": "Function with different spacing in array spec",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"res": {
+                "description": "Returns complex values",
+                "dimension": "1:3",
+                "type": "complex"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_spaced, expected_spaced)
+
+        # Dense array spec
+        func_dense = file_data["functions"]["dense_array"]
+        expected_dense = {
+            "attributes": [],
+            "description": "Function with no spaces around array spec",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"output": {
+                "description": "Returns many values",
+                "dimension": "1:100",
+                "type": "real"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_dense, expected_dense)
+
+    def test_coarray_annotations(self):
+        self.fs.create_file(
+            "/fake/path/coarrays.f90",
+            contents="""\
+        program test_prog
+            implicit none
+        end program test_prog
+
+        !!*
+        ! Function with coarray return
+        ! @return: real[*]      Returns a coarray distributed across images
+        !*!
+        function coarray_return()
+            real :: coarray_return[*]
+        end function coarray_return
+
+        !!*
+        ! Function with array and coarray specs
+        ! @return result: integer(10)[2,*]  Returns a distributed array of counts
+        !*!
+        function array_coarray() result(result)
+            integer :: result(10)[2,*]
+        end function array_coarray
+
+        !!*
+        ! Function with coarray arguments
+        ! @in  data : real[*]         Input coarray
+        ! @out res  : real(3)[3,*]    Output array coarray
+        ! @return   : logical         Success status
+        !*!
+        function process_coarrays(data, res)
+            real, intent(in) :: data[*]
+            real, intent(out) :: res(3)[3,*]
+            logical :: process_coarrays
+        end function process_coarrays
+
+        !!*
+        ! Function with different spacing in coarray specs
+        ! @in  vec : complex ( 3 ) [ 2, * ]  Input vector
+        ! @out mat : real(2,2)[*]            Output matrix
+        ! @return result : integer[*]         Distributed status codes
+        !*!
+        function spaced_specs(vec, mat) result(result)
+            complex, intent(in) :: vec(3)[2,*]
+            real, intent(out) :: mat(2,2)[*]
+            integer :: result[*]
+        end function spaced_specs
+        """
+        )
+        result = extract_file_data([Path("/fake/path/coarrays.f90")])
+        file_data = result[0]
+        self.assertEqual(len(file_data["functions"]), 4)
+
+        # Simple coarray return
+        func_coarray = file_data["functions"]["coarray_return"]
+        expected_coarray = {
+            "attributes": [],
+            "description": "Function with coarray return",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"coarray_return": {
+                "description": "Returns a coarray distributed across images",
+                "dimension": "* (assumed-size)",
+                "type": "real"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_coarray, expected_coarray)
+
+        # Array with coarray return
+        func_array_coarray = file_data["functions"]["array_coarray"]
+        expected_array_coarray = {
+            "attributes": [],
+            "description": "Function with array and coarray specs",
+            "arguments": [],
+            "in": {},
+            "out": {},
+            "return": {"result": {
+                "description": "Returns a distributed array of counts",
+                "dimension": "1:10 &times; 1:2 &times; * (assumed-size)",
+                "type": "integer"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_array_coarray, expected_array_coarray)
+
+        # Function with coarray arguments
+        func_process = file_data["functions"]["process_coarrays"]
+        expected_process = {
+            "attributes": [],
+            "description": "Function with coarray arguments",
+            "arguments": ["data", "res"],
+            "in": {
+                "data": {
+                    "type": "real",
+                    "description": "Input coarray",
+                    "dimension": "* (assumed-size)"
+                }
+            },
+            "out": {
+                "res": {
+                    "type": "real",
+                    "description": "Output array coarray",
+                    "dimension": "1:3 &times; 1:3 &times; * (assumed-size)"
+                }
+            },
+            "return": {"process_coarrays": {
+                "description": "Success status",
+                "dimension": "",
+                "type": "logical"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_process, expected_process)
+
+        # Function with varied spacing in specs
+        func_spaced = file_data["functions"]["spaced_specs"]
+        expected_spaced = {
+            "attributes": [],
+            "description": "Function with different spacing in coarray specs",
+            "arguments": ["vec", "mat"],
+            "in": {
+                "vec": {
+                    "type": "complex",
+                    "description": "Input vector",
+                    "dimension": "1:3 &times; 1:2 &times; * (assumed-size)"
+                }
+            },
+            "out": {
+                "mat": {
+                    "type": "real",
+                    "description": "Output matrix",
+                    "dimension": "1:2 &times; 1:2 &times; * (assumed-size)"
+                }
+            },
+            "return": {"result": {
+                "description": "Distributed status codes",
+                "dimension": "* (assumed-size)",
+                "type": "integer"
+            }},
+            "binding_type": "",
+            "interface": ""
+        }
+        self.assertEqual(func_spaced, expected_spaced)
+
 
 if __name__ == '__main__':
     unittest.main()
