@@ -8,7 +8,7 @@ from fparser.one.block_statements import (
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN, RETURN_PATTERN
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
-from doc4for.utils.comment_utils import format_comment_for_html
+from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_type_declaration_statement
 from doc4for.models.dimension_models import Dimension, format_dimension
 
@@ -319,9 +319,6 @@ def collect_continuation_lines(comments: List[Comment], start_index: int) -> tup
     return full_content, len(comments)
 
 def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
-    def default_processor(content: str) -> None:
-        logging.warning("Unknown annotation type: %s", content.split()[0])
-
     annotation_processors = defaultdict(
         lambda: lambda content, _: logging.warning("Unknown annotation type: %s", content.split()[0]), 
         {
@@ -331,14 +328,22 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
         '@return': update_with_return_description
     })
 
+    procedure_comment_stack = []
     for i, comment in enumerate(comments):
         content = comment.content.strip()
 
         if content.startswith(ANNOTATION_PREFIX):
+            if procedure_comment_stack:
+                arg_info['description'] += format_comments(procedure_comment_stack)
+                procedure_comment_stack.clear()
+
             full_content, i = collect_continuation_lines(comments, i)
             content = ' '.join(full_content)
-
             annotation_type = content.split(maxsplit=1)[0].split(':')[0]
             annotation_processors[annotation_type](content, arg_info)
-        elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
-            arg_info['description'] += format_comment_for_html(content)
+        else:
+            procedure_comment_stack.append(comment)
+        # elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
+        #     arg_info['description'] += format_comment_for_html(content)
+    if procedure_comment_stack:
+        arg_info['description'] += format_comments(procedure_comment_stack)

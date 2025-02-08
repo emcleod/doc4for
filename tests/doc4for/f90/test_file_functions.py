@@ -51,7 +51,7 @@ end module test_mod
         func_doc = file_data["functions"]["simple"]
         expected_doc = {
             "attributes": [],
-            "description": "Returns a constant value",
+            "description": "\nReturns a constant value\n\n",
             "arguments": [],
             "out": {},
             "in": {},
@@ -115,7 +115,7 @@ end module test_mod
         func_doc = file_data["functions"]["rectangle_area"]
         expected_doc = {
             "attributes": [],
-            "description": "Calculates the area of a rectangle",
+            "description": "\nCalculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale"],
             "in": {
                 "length": {"type": "real", "description": "The length of the rectangle", "dimension": ""},
@@ -187,7 +187,7 @@ end module test_mod
         func_annotations = file_data["functions"]["test_annotations"]
         expected_annotations = {
             "attributes": [],
-            "description": "Test function with various annotation styles",
+            "description": "\nTest function with various annotation styles\n\n",
             "arguments": ["arg1", "arg2", "arg3", "arg4"],
             "in": {
                 "arg1": {"type": "integer", "description": "Input argument 1", "dimension": ""},
@@ -244,7 +244,7 @@ end module test_mod
         func_array = file_data["functions"]["process_matrix"]
         expected_array = {
             "attributes": [],
-            "description": "Function with array arguments",
+            "description": "\nFunction with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
                 "matrix": {"type": "real", "description": "The input matrix", "dimension": "1:100 &times; 1:100"}
@@ -317,7 +317,7 @@ end module test_mod
         func_attached = file_data["functions"]["attached_type"]
         expected_attached = {
             "attributes": [],
-            "description": "Function with colon-attached return type",
+            "description": "\nFunction with colon-attached return type\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -332,7 +332,7 @@ end module test_mod
         func_spaced = file_data["functions"]["spaced_type"]
         expected_spaced = {
             "attributes": [],
-            "description": "Function with spaced return type",
+            "description": "\nFunction with spaced return type\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -347,7 +347,7 @@ end module test_mod
         func_attached_spaced = file_data["functions"]["attached_spaced_type"]
         expected_attached_spaced = {
             "attributes": [],
-            "description": "Function with colon-attached spaced return type",
+            "description": "\nFunction with colon-attached spaced return type\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -362,7 +362,7 @@ end module test_mod
         func_named_attached = file_data["functions"]["named_attached"]
         expected_named_attached = {
             "attributes": [],
-            "description": "Named return with colon-attached type",
+            "description": "\nNamed return with colon-attached type\n\n",
             "arguments": ["x"],
             "in": {"x": {"type": "real", "description": "", "dimension": ""}},
             "out": {},
@@ -377,7 +377,7 @@ end module test_mod
         func_named_spaced = file_data["functions"]["named_spaced"]
         expected_named_spaced = {
             "attributes": [],
-            "description": "Named return with spaced type",
+            "description": "\nNamed return with spaced type\n\n",
             "arguments": ["y"],
             "in": {"y": {"type": "real", "description": "", "dimension": ""}},
             "out": {},
@@ -430,7 +430,7 @@ end module test_mod
         file_data = result[0]
 
         func_styles = file_data["functions"]["test_arg_styles"]
-
+        self.assertEqual(func_styles["description"], "\nFunction to test all argument annotation styles\n\n")
         # Check input arguments
         self.assertEqual(func_styles['in'], {
             'a': {'type': 'integer', 'description': 'Standard input annotation', 'dimension': ''},
@@ -598,7 +598,7 @@ end module test_mod
         func_vector = file_data["functions"]["vector_return"]
         expected_vector = {
             "attributes": [],
-            "description": "Function returning an array",
+            "description": "\nFunction returning an array\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -616,7 +616,7 @@ end module test_mod
         func_matrix = file_data["functions"]["matrix_return"]
         expected_matrix = {
             "attributes": [],
-            "description": "Function with named array return",
+            "description": "\nFunction with named array return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -634,7 +634,7 @@ end module test_mod
         func_spaced = file_data["functions"]["spaced_array"]
         expected_spaced = {
             "attributes": [],
-            "description": "Function with different spacing in array spec",
+            "description": "\nFunction with different spacing in array spec\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -652,7 +652,7 @@ end module test_mod
         func_dense = file_data["functions"]["dense_array"]
         expected_dense = {
             "attributes": [],
-            "description": "Function with no spaces around array spec",
+            "description": "\nFunction with no spaces around array spec\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -723,7 +723,7 @@ end module test_mod
         func_coarray = file_data["functions"]["coarray_return"]
         expected_coarray = {
             "attributes": [],
-            "description": "Function with coarray return",
+            "description": "\nFunction with coarray return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -741,7 +741,7 @@ end module test_mod
         func_array_coarray = file_data["functions"]["array_coarray"]
         expected_array_coarray = {
             "attributes": [],
-            "description": "Function with array and coarray specs",
+            "description": "\nFunction with array and coarray specs\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -759,7 +759,7 @@ end module test_mod
         func_process = file_data["functions"]["process_coarrays"]
         expected_process = {
             "attributes": [],
-            "description": "Function with coarray arguments",
+            "description": "\nFunction with coarray arguments\n\n",
             "arguments": ["data", "res"],
             "in": {
                 "data": {
@@ -789,7 +789,7 @@ end module test_mod
         func_spaced = file_data["functions"]["spaced_specs"]
         expected_spaced = {
             "attributes": [],
-            "description": "Function with different spacing in coarray specs",
+            "description": "\nFunction with different spacing in coarray specs\n\n",
             "arguments": ["vec", "mat"],
             "in": {
                 "vec": {
