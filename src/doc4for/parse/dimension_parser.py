@@ -55,47 +55,95 @@ def extract_variable_dimension(name: str) -> Optional[Dimension]:
     return {"dimensions": dims} if dims else None
 
 def parse_dimension_spec(spec: str) -> ArrayBound:
-    """
-    Parse a dimension specification string and return an ArrayBound object.
-
-    :param spec: The dimension specification string (e.g., "1:10", "*", ":").
-    :return: An ArrayBound object.
-    """
     spec = spec.strip()
 
     if spec == '..':
-        # Assumed rank dimension
         return ArrayBound(bound_type=BoundType.ASSUMED_RANK)
     
     if spec == ':':
-        # Allocatable dimension
         return ArrayBound(bound_type=BoundType.ALLOCATABLE)
 
     if spec == '*':
-        # Assumed dimension
         return ArrayBound(bound_type=BoundType.ASSUMED)
 
     if ':' in spec:
-        # Parse fixed bounds (e.g., "1:10", "1:10:2")
         parts = [p.strip() for p in spec.split(':')]
         lower = parse_expression(parts[0]) if len(parts) > 0 and parts[0] else None
         upper = parse_expression(parts[1]) if len(parts) > 1 and parts[1] else None
         stride = parse_expression(parts[2]) if len(parts) > 2 and parts[2] else None
 
+        # Check if any bound is a variable expression or function call
+        is_variable = any(
+            bound and (
+                bound.expr_type == ExpressionType.VARIABLE or 
+                bound.expr_type == ExpressionType.FUNCTION_CALL
+            )
+            for bound in [lower, upper, stride] if bound
+        )
+
         return ArrayBound(
-            bound_type=BoundType.FIXED,
+            bound_type=BoundType.VARIABLE if is_variable else BoundType.FIXED,
             lower=lower,
             upper=upper,
             stride=stride
         )
 
-    # Default case: fixed upper bound with lower bound of 1
+    # Single bound case
+    expr = parse_expression(spec)
+    is_variable = (
+        expr.expr_type == ExpressionType.VARIABLE or 
+        expr.expr_type == ExpressionType.FUNCTION_CALL
+    )
+    
     return ArrayBound(
-        bound_type=BoundType.FIXED,
+        bound_type=BoundType.VARIABLE if is_variable else BoundType.FIXED,
         lower=Expression(ExpressionType.LITERAL, "1"),
-        upper=parse_expression(spec),
+        upper=expr,
         stride=None
     )
+
+# def parse_dimension_spec(spec: str) -> ArrayBound:
+#     """
+#     Parse a dimension specification string and return an ArrayBound object.
+
+#     :param spec: The dimension specification string (e.g., "1:10", "*", ":").
+#     :return: An ArrayBound object.
+#     """
+#     spec = spec.strip()
+
+#     if spec == '..':
+#         # Assumed rank dimension
+#         return ArrayBound(bound_type=BoundType.ASSUMED_RANK)
+    
+#     if spec == ':':
+#         # Allocatable dimension
+#         return ArrayBound(bound_type=BoundType.ALLOCATABLE)
+
+#     if spec == '*':
+#         # Assumed dimension
+#         return ArrayBound(bound_type=BoundType.ASSUMED)
+
+#     if ':' in spec:
+#         # Parse fixed bounds (e.g., "1:10", "1:10:2")
+#         parts = [p.strip() for p in spec.split(':')]
+#         lower = parse_expression(parts[0]) if len(parts) > 0 and parts[0] else None
+#         upper = parse_expression(parts[1]) if len(parts) > 1 and parts[1] else None
+#         stride = parse_expression(parts[2]) if len(parts) > 2 and parts[2] else None
+
+#         return ArrayBound(
+#             bound_type=BoundType.FIXED,
+#             lower=lower,
+#             upper=upper,
+#             stride=stride
+#         )
+
+#     # Default case: fixed upper bound with lower bound of 1
+#     return ArrayBound(
+#         bound_type=BoundType.FIXED,
+#         lower=Expression(ExpressionType.LITERAL, "1"),
+#         upper=parse_expression(spec),
+#         stride=None
+#     )
 
 def extract_coarray_dimensions(spec: str) -> Optional[Dimension]:
     """Extract coarray dimensions from a variable name.

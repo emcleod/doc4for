@@ -1,7 +1,7 @@
 from typing import TypedDict, Dict, List
 from doc4for.models.variable_models import VariableDescription, ParameterDescription
-from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
-from doc4for.models.type_models import InterfaceDescription, TypeDescription
+from doc4for.models.procedure_models import FunctionDescription, InterfaceDescription, SubroutineDescription
+from doc4for.models.type_models import TypeDescription
 
 Uses = TypedDict("Uses", {"module_name": str, "selections": List[str]})
 

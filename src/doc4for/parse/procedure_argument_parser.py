@@ -3,10 +3,12 @@ import re
 from collections import defaultdict
 from typing import List, Any, Tuple, Optional, Union
 from fparser.one.block_statements import (
-    Comment
+    Comment,
+    Interface,
+    SpecificBinding
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN, RETURN_PATTERN
+from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_type_declaration_statement
@@ -193,40 +195,80 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
 
 
 def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
-    args: List[str] = procedure.args
+    args: List[str] = procedure.args.copy()  # Copy of all argument names
+    remaining_args = args.copy()  # Will remove args as we find their types
     result: str = procedure.result
+
+        # Handle return type for functions first (if not using result variable)
+    if is_function_description(arg_info) and hasattr(procedure, 'typedecl') and procedure.typedecl:
+        variables = parse_type_declaration_statement(procedure.typedecl, "")
+        # There should be only one variable - the function name
+        if variables and variables[0]['name'] == procedure.name:
+            arg_info['return'][procedure.name] = {
+                'type': variables[0]['type'],
+                'description': '',
+                'dimension': format_dimension_string(variables[0]['dimension'])
+            }
+
+    # First pass: handle regular type declarations
     for item in procedure.content:
-        if isinstance(item, TypeDeclarationStatement):
-            # Use parse_variables to get detailed variable information
-            variables = parse_type_declaration_statement(item, "", [])
+        match item:
+            case TypeDeclarationStatement():
+                variables = parse_type_declaration_statement(item, "")
+                intentin, intentout = determine_argument_intent(item)
 
-            intentin, intentout = determine_argument_intent(item)
-
-            for var in variables:
-                if var['name'] in args:
+                for var in variables:
+                    if var['name'] in args:
+                        update_single_argument(
+                            var['name'],
+                            var['type'],
+                            intentin,
+                            intentout,
+                            arg_info,
+                            var['dimension']
+                        )
+                        # Remove from remaining_args as we've handled it
+                        if var['name'] in remaining_args:
+                            remaining_args.remove(var['name'])
+                    elif is_function_description(arg_info) and var['name'] == result:
+                        arg_info['return'][var['name']] = {
+                            'type': var['type'],
+                            'description': '',
+                            'dimension': format_dimension_string(var['dimension'])
+                        }
+            case SpecificBinding():
+                if item.name in args:
                     update_single_argument(
-                        var['name'],
-                        var['type'],
-                        intentin,
-                        intentout,
+                        item.name,
+                        'procedure',
+                        True,  # assume intent(in) for procedure arguments
+                        False,
                         arg_info,
-                        var['dimension']
+                        None
                     )
-                elif is_function_description(arg_info) and var['name'] == result:
-                    # Update return information
-                    arg_info['return'][var['name']] = {
-                        'type': var['type'],
-                        'description': '',
-                        'dimension': format_dimension_string(var['dimension'])
-                    }
+                    arg_info['in'][item.name]["interface_name"] = item.iname
+                    if item.name in remaining_args:
+                        remaining_args.remove(item.name)
+            case _:
+                pass
 
-    # If return info still not set, use the old method as fallback
-    if is_function_description(arg_info) and not arg_info['return']:
-        return_type = extract_return_type(procedure)
-        arg_info['return'][result] = {
-            'type': return_type, 'description': '', 'dimension': ''}
+    # Second pass: handle interface blocks for remaining arguments
+    interface_index = 0
+    for item in procedure.content:
+        if isinstance(item, Interface):
+            if interface_index < len(remaining_args):
+                arg_name = remaining_args[interface_index]
+                update_single_argument(
+                    arg_name,
+                    'procedure',
+                    True,  # assume intent(in) for function arguments
+                    False,
+                    arg_info,
+                    None
+                )
+                interface_index += 1
 
-
+        
 def extract_content_without_annotation(content: str) -> str:
     return ' '.join(content.split()[1:])
 
@@ -246,9 +288,9 @@ def extract_and_validate_type(description: str, expected_type: str) -> Tuple[Opt
     return None, description
 
 def update_with_argument_description(content: str,
-                                     arg_info: Union[FunctionDescription, SubroutineDescription],
-                                     annotation_types: List[str]) -> None:
-    annotation_type = content.split()[0][1:]
+                                   arg_info: Union[FunctionDescription, SubroutineDescription],
+                                   annotation_types: List[str]) -> None:
+    annotation_type = content.split()[0][1:]  # Remove the @ from @in/@out etc
     content_without_annotation = extract_content_without_annotation(content)
 
     argument_regex = re.compile(ARGUMENT_PATTERN, re.VERBOSE)
@@ -258,53 +300,36 @@ def update_with_argument_description(content: str,
         return
 
     var_name = match.group('var_name')
-    var_type = match.group('var_type')
     description = match.group('description')
 
+    # Check if the variable exists in any of the specified argument types
     if not any(var_name in arg_info[at] for at in annotation_types):
         logger.warning('Warning: "%s" annotation "%s" not found in arguments %s',
-                       annotation_type, var_name, [list(arg_info[at].keys()) for at in annotation_types])
+                      annotation_type, var_name, [list(arg_info[at].keys()) for at in annotation_types])
     else:
+        # Update description for the variable in all relevant argument types
         for at in annotation_types:
             if var_name in arg_info[at]:
                 arg_info[at][var_name]['description'] = description
 
 def update_with_return_description(content: str, 
-                                   arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
+                                 arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     if "return" not in arg_info:
         logger.warning('Warning: @return annotation found in a subroutine comment: %s', content)
         return
     
     content_without_annotation = extract_content_without_annotation(content)
-    if not content_without_annotation:  # Check if there's any content after the @return
+    if not content_without_annotation:
         logger.warning('Warning: Not enough content in return annotation: %s', content)
         return
 
-    return_regex = re.compile(RETURN_PATTERN, re.VERBOSE)
-    match = return_regex.match(content_without_annotation)
-    if not match:
-        logger.warning('Warning: Unexpected return annotation format: %s', content)
-        return
-
-    return_name = match.group('return_name') or next(iter(arg_info["return"]))
-    return_type = match.group('return_type') or match.group('unnamed_type')
-    description = match.group('description')
-
-    if return_name not in arg_info["return"]:
-        logger.warning('Return name "%s" in documentation does not match that in code', return_name)
-        return_name = next(iter(arg_info["return"]))
-
-    expected_type = arg_info["return"][return_name]['type']
-    extracted_type, new_description = extract_and_validate_type(description, expected_type)
-
-    if extracted_type:
-        return_type = extracted_type
-        description = new_description
-        logger.warning('Return type information found in description. Assuming "%s" is the return type.', return_type)
-
+    # Just get the description (everything after @return)
+    description = content_without_annotation.strip()
+    
+    # Update the description for the return value
+    # (we know there's only one return value in Fortran)
+    return_name = next(iter(arg_info["return"]))
     arg_info["return"][return_name]['description'] = description
-    if return_type:
-        arg_info["return"][return_name]['type'] = get_base_type(return_type)
 
 def collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[List[str], int]:
     full_content = [comments[start_index].content.strip()]
@@ -343,7 +368,5 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
             annotation_processors[annotation_type](content, arg_info)
         else:
             procedure_comment_stack.append(comment)
-        # elif not content.startswith(IGNORE_PREFIX) and not content.endswith(IGNORE_SUFFIX):
-        #     arg_info['description'] += format_comment_for_html(content)
     if procedure_comment_stack:
         arg_info['description'] += format_comments(procedure_comment_stack)

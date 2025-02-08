@@ -24,8 +24,7 @@ from doc4for.utils.file_utils import check_write_permissions
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.parse.parameter_parser import parse_parameter, is_parameter
-from doc4for.parse.procedure_parser import parse_subroutine, parse_function
-from doc4for.parse.interface_parser import parse_interface
+from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
 from doc4for.f90.populate_data_models import (
     parse_module,
     parse_type, 

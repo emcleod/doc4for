@@ -56,8 +56,9 @@ end module test_mod
             "out": {},
             "in": {},
             "return": {"simple": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -70,8 +71,9 @@ end module test_mod
             "out": {},
             "in": {},
             "return": {"simple_no_doc": {"description": "", "dimension": "", "type": "integer"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -85,9 +87,9 @@ end module test_mod
 
     !!*
     ! Calculates the area of a rectangle
-    ! @in length   : real      The length of the rectangle
-    ! @in width: real   The width of the rectangle
-    ! @in scale :real The scale, not used
+    ! @in length         The length of the rectangle
+    ! @in width    The width of the rectangle
+    ! @in scale  The scale, not used
     ! @return  Area of the rectangle
     !*!
     REAL FUNCTION rectangle_area(length, width, scale)
@@ -124,8 +126,9 @@ end module test_mod
             },
             "out": {},
             "return": {"rectangle_area": {"description": "Area of the rectangle", "dimension": "", "type": "real"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -141,8 +144,9 @@ end module test_mod
             },
             "out": {},
             "return": {"rectangle_area_no_doc": {"description": "", "dimension": "", "type": "real"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -156,11 +160,11 @@ end module test_mod
 
     !!*
     ! Test function with various annotation styles
-    ! @in arg1 : integer     Input argument 1
-    ! @out arg2: real        Output argument 2
-    ! @inout arg3 :character Argument 3 for both input and output
-    ! @in arg4:logical       Argument 4 with no space after colon
-    ! @return res : real     The result of the calculation
+    ! @in    arg1  Input argument 1
+    ! @out   arg2  Output argument 2
+    ! @inout arg3  Argument 3 for both input and output
+    ! @in    arg4  Argument 4 with no space after colon
+    ! @return      The result of the calculation
     !*!
     function test_annotations(arg1, arg2, arg3, arg4) result(res)
         integer, intent(in) :: arg1
@@ -172,7 +176,7 @@ end module test_mod
 
     !!*
     ! Function with unnamed return
-    ! @return: integer  Always returns 42
+    ! @return  Always returns 42
     !*!
     function unnamed_return()
         integer :: unnamed_return
@@ -199,21 +203,23 @@ end module test_mod
                 "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
             },
             "return": {"res": {"description": "The result of the calculation", "dimension": "", "type": "real"}},
-            "binding_type": "",
-            "interface": ""
+ #           "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_annotations, expected_annotations)
 
         func_unnamed = file_data["functions"]["unnamed_return"]
         expected_unnamed = {
             "attributes": [],
-            "description": "Function with unnamed return",
+            "description": "\nFunction with unnamed return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
             "return": {"unnamed_return": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_unnamed, expected_unnamed)
 
@@ -227,9 +233,9 @@ end module test_mod
 
     !!*
     ! Function with array arguments
-    ! @in matrix : real  The input matrix
-    ! @out vector: real  The output vector
-    ! @return:logical    Whether the operation was successful
+    ! @in matrix   The input matrix
+    ! @out vector  The output vector
+    ! @return    Whether the operation was successful
     !*!
     function process_matrix(matrix, vector)
         real, intent(in) :: matrix(100, 100)
@@ -253,8 +259,9 @@ end module test_mod
                 "vector": {"type": "real", "description": "The output vector", "dimension": "1:100"}
             },
             "return": {"process_matrix": {"description": "Whether the operation was successful", "dimension": "", "type": "logical"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_array, expected_array)
 
@@ -267,128 +274,44 @@ end module test_mod
     end program test_prog
 
     !!*
-    ! Function with colon-attached return type
-    ! @return:real Description for colon-attached return type
+    ! Unnamed return
+    ! @return Description for unnamed return
     !*!
-    function attached_type()
-        real :: attached_type
-    end function attached_type
+    function unnamed_return()
+        real :: unnamed_return
+    end function unnamed_return
 
     !!*
-    ! Function with spaced return type
-    ! @return : integer  Description for spaced return type
+    ! Named return 
+    ! @return Named return with attached type description
     !*!
-    function spaced_type()
-        integer :: spaced_type
-    end function spaced_type
-
-    !!*
-    ! Function with colon-attached spaced return type
-    ! @return :logical   Description for colon-attached spaced return type
-    !*!
-    function attached_spaced_type()
-        logical :: attached_spaced_type
-    end function attached_spaced_type
-
-    !!*
-    ! Named return with colon-attached type
-    ! @return result:character Named return with attached type description
-    !*!
-    function named_attached(x) result(result)
+    function named_return(x) result(result)
         real, intent(in) :: x
         character :: result
-    end function named_attached
-
-    !!*
-    ! Named return with spaced type
-    ! @return result : complex  Named return with spaced type description
-    !*!
-    function named_spaced(y) result(result)
-        real, intent(in) :: y
-        complex :: result
-    end function named_spaced
-    """
+    end function named_return
+"""
         )
         result = extract_file_data([Path("/fake/path/returns.f90")])
         file_data = result[0]
-        self.assertEqual(len(file_data["functions"]), 5)
+        self.assertEqual(len(file_data["functions"]), 2)
 
-        # Colon-attached return type
-        func_attached = file_data["functions"]["attached_type"]
+        func_attached = file_data["functions"]["unnamed_return"]
         expected_attached = {
             "attributes": [],
-            "description": "\nFunction with colon-attached return type\n\n",
+            "description": "\nUnnamed return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"attached_type": {"description": "Description for colon-attached return type",
+            "return": {"unnamed_return": {"description": "Description for unnamed return",
                                          "dimension": "", "type": "real"}},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_attached, expected_attached)
 
-        # Spaced return type
-        func_spaced = file_data["functions"]["spaced_type"]
-        expected_spaced = {
-            "attributes": [],
-            "description": "\nFunction with spaced return type\n\n",
-            "arguments": [],
-            "in": {},
-            "out": {},
-            "return": {"spaced_type": {"description": "Description for spaced return type",
-                                       "dimension": "", "type": "integer"}},
-            "binding_type": "",
-            "interface": ""
-        }
-        self.assertEqual(func_spaced, expected_spaced)
 
-        # Colon-attached spaced return type
-        func_attached_spaced = file_data["functions"]["attached_spaced_type"]
-        expected_attached_spaced = {
-            "attributes": [],
-            "description": "\nFunction with colon-attached spaced return type\n\n",
-            "arguments": [],
-            "in": {},
-            "out": {},
-            "return": {"attached_spaced_type": {"description": "Description for colon-attached spaced return type",
-                                                "dimension": "", "type": "logical"}},
-            "binding_type": "",
-            "interface": ""
-        }
-        self.assertEqual(func_attached_spaced, expected_attached_spaced)
-
-        # Named return with attached type
-        func_named_attached = file_data["functions"]["named_attached"]
-        expected_named_attached = {
-            "attributes": [],
-            "description": "\nNamed return with colon-attached type\n\n",
-            "arguments": ["x"],
-            "in": {"x": {"type": "real", "description": "", "dimension": ""}},
-            "out": {},
-            "return": {"result": {"description": "Named return with attached type description",
-                                  "dimension": "", "type": "character"}},
-            "binding_type": "",
-            "interface": ""
-        }
-        self.assertEqual(func_named_attached, expected_named_attached)
-
-        # Named return with spaced type
-        func_named_spaced = file_data["functions"]["named_spaced"]
-        expected_named_spaced = {
-            "attributes": [],
-            "description": "\nNamed return with spaced type\n\n",
-            "arguments": ["y"],
-            "in": {"y": {"type": "real", "description": "", "dimension": ""}},
-            "out": {},
-            "return": {"result": {"description": "Named return with spaced type description",
-                                  "dimension": "", "type": "complex"}},
-            "binding_type": "",
-            "interface": ""
-        }
-        self.assertEqual(func_named_spaced, expected_named_spaced)
-
-    def test_various_argument_annotation_styles(self):
+    def test_many_arguments(self):
         self.fs.create_file(
             "/fake/path/arguments.f90",
             contents="""\
@@ -398,24 +321,24 @@ end module test_mod
 
     !!*
     ! Function to test all argument annotation styles
-    ! @in a : integer        Standard input annotation
-    ! @in b: integer         No space after variable name
-    ! @in c :integer         Space before type
-    ! @in d:integer          No spaces around colon
-    ! @in e : integer(10)    Array input
-    ! @out f : real          Standard output annotation
-    ! @out g: real           No space after variable name
-    ! @out h :real           Space before type
-    ! @out i:real            No spaces around colon
-    ! @out j : real(5)       Array output
-    ! @inout k : logical     Standard inout annotation
-    ! @inout l: logical      No space after variable name
-    ! @inout m :logical      Space before type
-    ! @inout n:logical       No spaces around colon
-    ! @inout o : logical(3)  Array inout
-    ! @inout p: integer(4)   Array input and output
-    ! @inout q :integer(2)   Array inout
-    ! @return : character    Return type
+    ! @in a         Standard input annotation
+    ! @in b         No space after variable name
+    ! @in c         Space before type
+    ! @in d         No spaces around colon
+    ! @in e         Array input
+    ! @out f        Standard output annotation
+    ! @out g        No space after variable name
+    ! @out h        Space before type
+    ! @out i        No spaces around colon
+    ! @out j        Array output
+    ! @inout k      Standard inout annotation
+    ! @inout l      No space after variable name
+    ! @inout m      Space before type
+    ! @inout n      No spaces around colon
+    ! @inout o      Array inout
+    ! @inout p      Array input and output
+    ! @inout q      Array inout
+    ! @return       Return type
     !*!
     function test_arg_styles(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) result(res)
         integer, intent(in) :: a, b, c, d, e(10)
@@ -478,19 +401,19 @@ end module test_mod
 
     !!*
     ! Function with complex argument descriptions
-    ! @in matrix : real            The input matrix, 
+    ! @in matrix                   The input matrix, 
     !                              used for primary calculations
-    ! @out stats: real             Output statistics array:
+    ! @out stats                   Output statistics array:
     !                              1: mean
     !                              2: median
     !                              3-5: quartiles
     !                              6-10: reserved for future use
-    ! @inout flag : integer        Processing flag:
+    ! @inout flag                  Processing flag:
     !                              0 = not started
     !                              1 = in progress
     !                              2 = completed
     !                              negative = error code
-    ! @return : logical            True if processing was successful,
+    ! @return                      True if processing was successful,
     !                              False otherwise
     !*!
     function complex_args(matrix, stats, flag)
@@ -559,7 +482,7 @@ end module test_mod
 
         !!*
         ! Function returning an array
-        ! @return: real(10)      Returns a vector of results
+        ! @return Returns a vector of results
         !*!
         function vector_return()
             real :: vector_return(10)
@@ -567,7 +490,7 @@ end module test_mod
 
         !!*
         ! Function with named array return
-        ! @return result: integer(5,5)  Returns a matrix of counts
+        ! @return Returns a matrix of counts
         !*!
         function matrix_return() result(result)
             integer :: result(5,5)
@@ -575,7 +498,7 @@ end module test_mod
 
         !!*
         ! Function with different spacing in array spec
-        ! @return res : complex ( 3 )  Returns complex values
+        ! @return  Returns complex values
         !*!
         function spaced_array() result(res)
             complex :: res(3)
@@ -583,7 +506,7 @@ end module test_mod
 
         !!*
         ! Function with no spaces around array spec
-        ! @return output:real(100)  Returns many values
+        ! @return  Returns many values
         !*!
         function dense_array() result(output)
             real :: output(100)
@@ -607,8 +530,9 @@ end module test_mod
                 "dimension": "1:10",
                 "type": "real"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_vector, expected_vector)
 
@@ -625,8 +549,9 @@ end module test_mod
                 "dimension": "1:5 &times; 1:5",
                 "type": "integer"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_matrix, expected_matrix)
 
@@ -643,8 +568,9 @@ end module test_mod
                 "dimension": "1:3",
                 "type": "complex"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_spaced, expected_spaced)
 
@@ -661,8 +587,9 @@ end module test_mod
                 "dimension": "1:100",
                 "type": "real"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}            
         }
         self.assertEqual(func_dense, expected_dense)
 
@@ -676,7 +603,7 @@ end module test_mod
 
         !!*
         ! Function with coarray return
-        ! @return: real[*]      Returns a coarray distributed across images
+        ! @return      Returns a coarray distributed across images
         !*!
         function coarray_return()
             real :: coarray_return[*]
@@ -684,7 +611,7 @@ end module test_mod
 
         !!*
         ! Function with array and coarray specs
-        ! @return result: integer(10)[2,*]  Returns a distributed array of counts
+        ! @return   Returns a distributed array of counts
         !*!
         function array_coarray() result(result)
             integer :: result(10)[2,*]
@@ -692,9 +619,9 @@ end module test_mod
 
         !!*
         ! Function with coarray arguments
-        ! @in  data : real[*]         Input coarray
-        ! @out res  : real(3)[3,*]    Output array coarray
-        ! @return   : logical         Success status
+        ! @in  data         Input coarray
+        ! @out res          Output array coarray
+        ! @return           Success status
         !*!
         function process_coarrays(data, res)
             real, intent(in) :: data[*]
@@ -704,9 +631,9 @@ end module test_mod
 
         !!*
         ! Function with different spacing in coarray specs
-        ! @in  vec : complex ( 3 ) [ 2, * ]  Input vector
-        ! @out mat : real(2,2)[*]            Output matrix
-        ! @return result : integer[*]         Distributed status codes
+        ! @in  vec  Input vector
+        ! @out mat  Output matrix
+        ! @return   Distributed status codes
         !*!
         function spaced_specs(vec, mat) result(result)
             complex, intent(in) :: vec(3)[2,*]
@@ -732,8 +659,9 @@ end module test_mod
                 "dimension": "* (assumed-size)",
                 "type": "real"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_coarray, expected_coarray)
 
@@ -750,8 +678,9 @@ end module test_mod
                 "dimension": "1:10 &times; 1:2 &times; * (assumed-size)",
                 "type": "integer"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_array_coarray, expected_array_coarray)
 
@@ -780,8 +709,9 @@ end module test_mod
                 "dimension": "",
                 "type": "logical"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_process, expected_process)
 
@@ -810,8 +740,9 @@ end module test_mod
                 "dimension": "* (assumed-size)",
                 "type": "integer"
             }},
-            "binding_type": "",
-            "interface": ""
+#            "binding_type": "",
+            "interface": "",
+            "argument_interfaces": {}
         }
         self.assertEqual(func_spaced, expected_spaced)
 

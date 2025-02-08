@@ -25,10 +25,9 @@ def parse_variable(
     """
     description = format_comments(
         comment_stack) if is_doc4for_comment(comment_stack) else ""
-    shared_attributes = get_attributes(declaration)
 
     try:
-        return parse_type_declaration_statement(declaration, description, shared_attributes)
+        return parse_type_declaration_statement(declaration, description)
     except Exception as e:
         # TODO log this and continue
         raise ValueError(
@@ -36,10 +35,11 @@ def parse_variable(
     
 def parse_type_declaration_statement(
     declaration: TypeDeclarationStatement,
-    description: str,
-    shared_attributes: List[str],
+    description: str
 ) -> List[VariableDescription]:
     
+    shared_attributes = get_attributes(declaration)
+
     # Extract dimension from attributes
     dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
     
