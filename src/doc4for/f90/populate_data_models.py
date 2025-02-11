@@ -143,14 +143,8 @@ def parse_data_statement(var_names, values, block_data_details):
                     var_info["initial_value"] = str(values[value_index])
                     value_index += 1
 
-# TODO
-# use 
-# common block
-# namelist
-# equivalence
-# entry
-# enum
-def parse_module(
+
+def initialise_module_description(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:
     module_data: ModuleDescription = {
@@ -170,7 +164,7 @@ def parse_module(
 
 
 def parse_type(
-    type: Type, comment_stack: List[Comment], public_declarations: List[str]
+    type: Type, comment_stack: List[Comment]
 ) -> TypeDescription:
     type_name: str = type.name
     type_description: TypeDescription = {
@@ -191,8 +185,7 @@ def parse_type(
             type_description["extends"] = base_type
     else:
         type_description["attributes"].extend(type.specs)
-    if type_name in public_declarations:
-        type_description["attributes"].append("public")
+    type_description["attributes"].append("public")
     update_type_with_parsed_data(type, type_description)
     if comment_stack:
         type_description["description"] = format_comments(comment_stack)

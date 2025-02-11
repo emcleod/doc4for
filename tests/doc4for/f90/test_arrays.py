@@ -47,7 +47,7 @@ class TestArrays(TestCase):
             if v is None:
                 return None
             if isinstance(v, Expression):
-                return v
+                return v            
             if v.isdigit() or (v[0] in '+-' and v[1:].isdigit()):
                 return self.create_literal(v)
             return self.create_variable(v)

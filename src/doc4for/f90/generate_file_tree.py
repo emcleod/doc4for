@@ -4,22 +4,10 @@ from pathlib import Path
 from typing import List, Union, Optional, Iterator, Any, Dict, Set
 from jinja2 import Environment, FileSystemLoader, Template
 from fparser.api import parse as fortran_parser  # type: ignore
-from fparser.one.block_statements import (
-    Module,
-    Comment,
-    Function,
-    Subroutine,
-    Program,
-    BlockData
-)
+from fparser.one.block_statements import Comment 
 from doc4for.models.file_models import FileDescription
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
-from doc4for.parse.procedure_parser import parse_function, parse_subroutine
-from doc4for.f90.populate_data_models import (
-    parse_program,
-    parse_module,
-    parse_block_data
-)
+from doc4for.parse.file_parser import parse_file_content
+from doc4for.models.file_models import FileDescription
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -73,7 +61,6 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
 def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
     files: List[FileDescription] = []
     for f90_file in f90_files:
-        comment_stack: List[Comment] = []
         f90_file_str: str = os.fspath(f90_file)
         tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
         file_data: FileDescription = {
@@ -85,43 +72,9 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
             'programs': {},
             'block_data': {}
         }
-        first_non_comment_node: bool = True
-        file_description_set: bool = False
-        
-        for child in tree.content:
-            if isinstance(child, Comment):
-                if child.content:
-                    comment_stack.append(child)
-                    if is_end_of_doc4for_comment(child) and first_non_comment_node and not file_description_set:
-                        if is_doc4for_comment(comment_stack):
-                            file_data['file_description'] = format_comments(comment_stack)
-                            file_description_set = True
-                            comment_stack.clear()
-                else:
-                    # We have an empty comment (most likely a blank line in the source), so do nothing
-                    pass
-            else:
-                first_non_comment_node = False
-                match child:
-                    case Module():
-                        file_data['modules'][child.name] = parse_module(child, comment_stack, f90_file_str)
-                    case Function():
-                        file_data['functions'][child.name] = parse_function(child, comment_stack)
-                    case Subroutine():
-                        file_data['subroutines'][child.name] = parse_subroutine(child, comment_stack)
-                    case Program():
-                        file_data['programs'][child.name] = parse_program(child, comment_stack, f90_file_str)
-                    case BlockData():
-                        file_data['block_data'][child.name] = parse_block_data(child, comment_stack)
-                    case _:
-                        logger.warning(f"Unhandled data type {type(child)}")
-                        pass
-                comment_stack.clear()
+        parse_file_content(tree, file_data, f90_file_str)
         files.append(file_data)
-        comment_stack.clear()
     return files
-
-
 
 def generate_file_pages(directory_tree: DirectoryTree,
                         file_data: Dict[str, FileDescription],

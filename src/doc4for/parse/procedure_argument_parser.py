@@ -199,7 +199,7 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
     remaining_args = args.copy()  # Will remove args as we find their types
     result: str = procedure.result
 
-        # Handle return type for functions first (if not using result variable)
+    # Handle return type for functions first (if not using result variable)
     if is_function_description(arg_info) and hasattr(procedure, 'typedecl') and procedure.typedecl:
         variables = parse_type_declaration_statement(procedure.typedecl, "")
         # There should be only one variable - the function name
@@ -208,6 +208,13 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
                 'type': variables[0]['type'],
                 'description': '',
                 'dimension': format_dimension_string(variables[0]['dimension'])
+            }
+    else:
+        if procedure.name == procedure.result:
+            arg_info['return'][procedure.name] = {
+                'type': 'Unknown', #TODO
+                'description': '',
+                'dimension': '' #TODO
             }
 
     # First pass: handle regular type declarations

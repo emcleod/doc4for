@@ -22,14 +22,8 @@ from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
 from doc4for.utils.file_utils import check_write_permissions
 from doc4for.models.module_models import ModuleDescription
-from doc4for.models.type_models import TypeDescription
-from doc4for.parse.parameter_parser import parse_parameter, is_parameter
-from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
-from doc4for.f90.populate_data_models import (
-    parse_module,
-    parse_type, 
-    parse_variable
-)
+from doc4for.f90.populate_data_models import initialise_module_description
+from doc4for.parse.module_parser import parse_module_content
 
 class Visibility(Enum):
     PUBLIC = auto()
@@ -47,48 +41,13 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
             if isinstance(child, Comment) and child.content:
                 comment_stack.append(child)
             elif isinstance(child, Module):
-                module_data: ModuleDescription = parse_module(child, comment_stack, f90_file_path)
+                module_data: ModuleDescription = initialise_module_description(child, comment_stack, f90_file_path)
                 comment_stack.clear()
-                parse_module_content(comment_stack, child, module_data, visibility)
+                parse_module_content(child, module_data, comment_stack)
                 modules.append(module_data)
                 comment_stack.clear() 
     return modules
 
-#TODO recursive modules
-def parse_module_content(comment_stack: List[Comment], module: Any, module_data: ModuleDescription, visibility: Dict[str, Visibility], 
-                         is_public: bool = True) -> None:
-    public_declarations: List[str] = []
-    for item in module.content:
-        if isinstance(item, Comment) and item.content:
-            comment_stack.append(item)
-        elif isinstance(item, Public):
-             is_public = True
-             public_declarations.extend(item.items)
-        elif isinstance(item, Private):
-            is_public = False
-        else:
-            match item:
-                case Function():
-                    module_data['functions'][item.name] = parse_function(item, comment_stack)
-                case Subroutine():
-                    module_data['subroutines'][item.name] = parse_subroutine(item, comment_stack)
-                case Type():
-                    type_description: TypeDescription = parse_type(item, comment_stack, public_declarations)
-                    module_data['types'][type_description['type_name']] = type_description
-                case TypeDeclarationStatement():
-                    if is_parameter(item):
-                        parameter_descriptions = parse_parameter(item, comment_stack)
-                        for param in parameter_descriptions:
-                            module_data['parameters'][param['name']] = param
-                    else:
-                        variable_descriptions = parse_variable(item, comment_stack)
-                        for var in variable_descriptions:
-                            module_data['variables'][var['name']] = var                
-                case Interface():
-                    module_data['interfaces'].append(parse_interface(item, comment_stack))
-                case _:
-                    pass
-            comment_stack.clear()
 
 def create_modules_directory(output_dir: str, max_retries: int = 5, base_delay: float = 0.1) -> None:
     """
