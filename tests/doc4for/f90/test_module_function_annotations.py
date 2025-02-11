@@ -15,8 +15,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in x: real
-    ! @in y: real
+    ! @in x
+    ! @in y
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -42,7 +42,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in z: real
+    ! @in z
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -72,7 +72,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in x: real
+    ! @in x
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -97,7 +97,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in x: integer
+    ! @in x
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -126,7 +126,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @out res: real
+    ! @out res
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -154,7 +154,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @out z: real
+    ! @out z
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -184,7 +184,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @out y: real
+    ! @out y
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -210,7 +210,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @out y: integer
+    ! @out y
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -240,7 +240,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: real
+    ! @inout x
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -268,7 +268,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout z: real
+    ! @inout z
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -304,7 +304,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: real
+    ! @inout x
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -332,7 +332,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: integer
+    ! @inout x
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -390,7 +390,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in z: real The first variable
+    ! @in z The first variable
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -420,7 +420,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in x: real The first variable
+    ! @in x The first variable
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -445,7 +445,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @in annotation
-    ! @in x: integer The first variable
+    ! @in x The first variable
     !*!
     function test_in_annotation(x, y) result(res)
         real, intent(in) :: x, y
@@ -474,8 +474,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @in x: real The first variable
-    ! @out y: real The second variable
+    ! @in x The first variable
+    ! @out y The second variable
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -534,8 +534,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @in x: real The first variable
-    ! @out y: real The second variable
+    ! @in x The first variable
+    ! @out y The second variable
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -563,8 +563,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @out annotation
-    ! @in x: real The first variable
-    ! @out y: integer The second variable
+    ! @in x The first variable
+    ! @out y The second variable
     !*!
     function test_out_annotation(x, y) result(res)
         real, intent(in) :: x
@@ -594,8 +594,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: real The first variable
-    ! @in y: real The second variable
+    ! @inout x The first variable
+    ! @in y The second variable
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -624,7 +624,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout z: real The first variable
+    ! @inout z The first variable
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -660,8 +660,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: real The first variable
-    ! @inout y: real The second variable
+    ! @inout x The first variable
+    ! @inout y The second variable
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -690,8 +690,8 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with @inout annotation
-    ! @inout x: integer The first variable
-    ! @in y: integer The second variable
+    ! @inout x The first variable
+    ! @in y The second variable
     !*!
     function test_inout_annotation(x, y) result(res)
         real, intent(inout) :: x
@@ -725,7 +725,7 @@ class TestFunctionAnnotations(TestCase):
     contains
     !!*
     ! A function with return type
-    ! @return res: integer The result
+    ! @return  The result
     !*!
     function test_return_type(x, y) result(res)
         real, intent(in) :: x, y

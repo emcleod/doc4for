@@ -32,7 +32,7 @@ end module pure_subroutines
         self.assertIn('test', module['subroutines'])
         subroutine = module['subroutines']['test']
         self.assertIn('attributes', subroutine)
-        self.assertEqual(subroutine['description'], 'A test pure subroutine')
+        self.assertEqual(subroutine['description'], '\nA test pure subroutine\n\n')
         attributes = subroutine['attributes']
         self.assertEqual(attributes, ['pure'])
 

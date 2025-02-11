@@ -50,12 +50,11 @@ end module test_mod
         sub_doc = file_data["subroutines"]["simple"]
         expected_doc = {
             "attributes": [],
-            "description": "Does nothing.",
+            "description": "\nDoes nothing.\n\n",
             "arguments": [],
             "out": {},
             "in": {},
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -67,8 +66,7 @@ end module test_mod
             "arguments": [],
             "out": {},
             "in": {},
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -82,10 +80,10 @@ end module test_mod
 
     !!*
     ! Calculates the area of a rectangle
-    ! @in length   : real      The length of the rectangle
-    ! @in width: real   The width of the rectangle
-    ! @in scale :real The scale, not used
-    ! @out area: real The area of the rectangle
+    ! @in length  The length of the rectangle
+    ! @in width   The width of the rectangle
+    ! @in scale The scale, not used
+    ! @out area The area of the rectangle
     !*!
     SUBROUTINE rectangle_area(length, width, scale, area)
         REAL, INTENT(IN) :: length, width, scale
@@ -114,7 +112,7 @@ end module test_mod
         sub_doc = file_data["subroutines"]["rectangle_area"]
         expected_doc = {
             "attributes": [],
-            "description": "Calculates the area of a rectangle",
+            "description": "\nCalculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale", "area"],
             "in": {
                 "length": {"type": "real", "description": "The length of the rectangle", "dimension": ""},
@@ -124,8 +122,7 @@ end module test_mod
             "out": {
                 "area": {"type": "real", "description": "The area of the rectangle", "dimension": ""}
             },
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -142,8 +139,7 @@ end module test_mod
             "out": {
                 "area": {"type": "real", "description": "", "dimension": ""},
             },
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(sub_no_doc, expected_no_doc)
 
@@ -157,10 +153,10 @@ end module test_mod
 
     !!*
     ! Test subroutine with various annotation styles
-    ! @in arg1 : integer     Input argument 1
-    ! @out arg2: real        Output argument 2
-    ! @inout arg3 :character Argument 3 for both input and output
-    ! @in arg4:logical       Argument 4 with no space after colon
+    ! @in arg1     Input argument 1
+    ! @out arg2        Output argument 2
+    ! @inout arg3 Argument 3 for both input and output
+    ! @in arg4       Argument 4 with no space after colon
     !*!
     subroutine test_annotations(arg1, arg2, arg3, arg4) 
         integer, intent(in) :: arg1
@@ -179,7 +175,7 @@ end module test_mod
         sub_annotations = file_data["subroutines"]["test_annotations"]
         expected_annotations = {
             "attributes": [],
-            "description": "Test subroutine with various annotation styles",
+            "description": "\nTest subroutine with various annotation styles\n\n",
             "arguments": ["arg1", "arg2", "arg3", "arg4"],
             "in": {
                 "arg1": {"type": "integer", "description": "Input argument 1", "dimension": ""},
@@ -190,8 +186,7 @@ end module test_mod
                 "arg2": {"type": "real", "description": "Output argument 2", "dimension": ""},
                 "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
             },
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(sub_annotations, expected_annotations)
 
@@ -205,8 +200,8 @@ end module test_mod
 
     !!*
     ! Subroutine with array arguments
-    ! @in matrix : real  The input matrix
-    ! @out vector: real  The output vector
+    ! @in matrix  The input matrix
+    ! @out vector  The output vector
     !*!
     subroutine process_matrix(matrix, vector)
         real, intent(in) :: matrix(100, 100)
@@ -220,7 +215,7 @@ end module test_mod
         sub_array = file_data["subroutines"]["process_matrix"]
         expected_array = {
             "attributes": [],
-            "description": "Subroutine with array arguments",
+            "description": "\nSubroutine with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
                 "matrix": {"type": "real", "description": "The input matrix", "dimension": "1:100 &times; 1:100"}
@@ -228,8 +223,7 @@ end module test_mod
             "out": {
                 "vector": {"type": "real", "description": "The output vector", "dimension": "1:100"}
             },
-            "binding_type": "",
-            "interface": ""
+            "argument_interfaces": {}
         }
         self.assertEqual(sub_array, expected_array)
 
@@ -242,35 +236,35 @@ end module test_mod
     end program main
 
     !!*
-    ! Subroutine to test all argument annotation styles
-    ! @in a : integer        Standard input annotation
-    ! @in b: integer         No space after variable name
-    ! @in c :integer         Space before type
-    ! @in d:integer          No spaces around colon
-    ! @in e : integer(10)    Array input
-    ! @out f : real          Standard output annotation
-    ! @out g: real           No space after variable name
-    ! @out h :real           Space before type
-    ! @out i:real            No spaces around colon
-    ! @out j : real(5)       Array output
-    ! @inout k : logical     Standard inout annotation
-    ! @inout l: logical      No space after variable name
-    ! @inout m :logical      Space before type
-    ! @inout n:logical       No spaces around colon
-    ! @inout o : logical(3)  Array inout
+    ! Subroutine to test many arguments
+    ! @in a        Standard input annotation
+    ! @in b         No space after variable name
+    ! @in c         Space before type
+    ! @in d          No spaces around colon
+    ! @in e    Array input
+    ! @out f          Standard output annotation
+    ! @out g           No space after variable name
+    ! @out h           Space before type
+    ! @out i            No spaces around colon
+    ! @out j       Array output
+    ! @inout k     Standard inout annotation
+    ! @inout l      No space after variable name
+    ! @inout m      Space before type
+    ! @inout n       No spaces around colon
+    ! @inout o  Array inout
     !*!
-    subroutine test_arg_styles(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) 
+    subroutine test_many_args(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) 
         integer, intent(in) :: a, b, c, d, e(10)
         real, intent(out) :: f, g, h, i, j(5)
         logical, intent(inout) :: k, l, m, n, o(3)
         character :: res
-    end subroutine test_arg_styles
+    end subroutine test_many_args
     """
         )
         result = extract_file_data([Path("/fake/path/arguments.f90")])
         file_data = result[0]
         
-        sub_styles = file_data["subroutines"]["test_arg_styles"]
+        sub_styles = file_data["subroutines"]["test_many_args"]
         
         # Check input arguments
         self.assertEqual(sub_styles['in'], {
@@ -309,15 +303,15 @@ end module test_mod
     end program main
 
     !!*
-    ! Subroutine with complex argument descriptions
-    ! @in matrix : real            The input matrix, 
+    ! Subroutine with complex descriptions 
+    ! @in matrix                   The input matrix, 
     !                              used for primary calculations
-    ! @out stats: real             Output statistics array:
+    ! @out stats                   Output statistics array:
     !                              1: mean
     !                              2: median
     !                              3-5: quartiles
     !                              6-10: reserved for future use
-    ! @inout flag : integer        Processing flag:
+    ! @inout flag                  Processing flag:
     !                              0 = not started
     !                              1 = in progress
     !                              2 = completed
@@ -379,19 +373,19 @@ end module test_mod
 
     !!*
     ! Subroutine with complex argument descriptions
-    ! @in matrix : real            The input matrix, 
+    ! @in matrix                   The input matrix, 
     !                              used for primary calculations
-    ! @out stats: real             Output statistics array:
+    ! @out stats                   Output statistics array:
     !                              1: mean
     !                              2: median
     !                              3-5: quartiles
     !                              6-10: reserved for future use
-    ! @inout flag : integer        Processing flag:
+    ! @inout flag                  Processing flag:
     !                              0 = not started
     !                              1 = in progress
     !                              2 = completed
     !                              negative = error code
-    ! @return : logical            True if processing was successful,
+    ! @return                      True if processing was successful,
     !                              False otherwise
     !*!
     subroutine complex_args(matrix, stats, flag)

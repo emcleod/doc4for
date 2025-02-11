@@ -32,7 +32,6 @@ def parse_function(
         "in": {},
         "out": {},
         "return": {},
-        "interface": "",
         "argument_interfaces": {},
     }
     update_arguments_with_parsed_data(function, function_description)
@@ -84,8 +83,6 @@ def parse_subroutine(
         "arguments": subroutine.args,
         "in": {},
         "out": {},
- #       "binding_type": "",
-        "interface": "",
         "argument_interfaces": {}
     }
     update_arguments_with_parsed_data(subroutine, subroutine_description)

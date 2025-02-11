@@ -39,8 +39,6 @@ FunctionDescription = TypedDict(
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
         "return": Dict[str, Argument],
-        "binding_type": Optional[str],  # 'deferred', 'non-deferred', 'type-bound', or 'final'
-        "interface": Optional[str],  #TODO not sure if this is necessary
         "argument_interfaces": Dict[str, InterfaceDescription]
     },
 )
@@ -53,8 +51,6 @@ SubroutineDescription = TypedDict(
         "arguments": List[str],
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
-        "binding_type": Optional[str],  # 'deferred', 'non-deferred', 'type-bound', or 'final'
-        "interface": Optional[str],  # TODO not sure if necessary
         "argument_interfaces": Dict[str, InterfaceDescription]
     },
 )

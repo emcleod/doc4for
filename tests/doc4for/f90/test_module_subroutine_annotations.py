@@ -14,8 +14,8 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @in annotation
-    ! @in x: real
-    ! @in y: real
+    ! @in x
+    ! @in y
     !*!
     subroutine test_subroutine_in_annotation(x, y)
         real, intent(in) :: x, y
@@ -40,7 +40,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @in annotation
-    ! @in z: real
+    ! @in z
     !*!
     subroutine test_subroutine_in_annotation(x, y)
         real, intent(in) :: x, y
@@ -66,7 +66,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @out annotation
-    ! @out y: real
+    ! @out y
     !*!
     subroutine test_subroutine_out_annotation(x, y)
         real, intent(in) :: x
@@ -93,7 +93,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @out annotation
-    ! @out z: real
+    ! @out z
     !*!
     subroutine test_subroutine_out_annotation(x, y)
         real, intent(in) :: x
@@ -121,7 +121,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @inout annotation
-    ! @inout x: real
+    ! @inout x
     !*!
     subroutine test_subroutine_inout_annotation(x)
         real, intent(inout) :: x
@@ -147,7 +147,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @inout annotation
-    ! @inout z: real
+    ! @inout z
     !*!
     subroutine test_subroutine_inout_annotation(x)
         real, intent(inout) :: x
@@ -175,8 +175,8 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @in annotation
-    ! @in x: real The first input
-    ! @in y: real The second input
+    ! @in x The first input
+    ! @in y The second input
     !*!
     subroutine test_subroutine_in_annotation(x, y)
         real, intent(in) :: x, y
@@ -201,8 +201,8 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @out annotation
-    ! @in x: real The input
-    ! @out y: real The output
+    ! @in x The input
+    ! @out y The output
     !*!
     subroutine test_subroutine_out_annotation(x, y)
         real, intent(in) :: x
@@ -229,7 +229,7 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @inout annotation
-    ! @inout x: real The variable to be updated
+    ! @inout x The variable to be updated
     !*!
     subroutine test_subroutine_inout_annotation(x)
         real, intent(inout) :: x

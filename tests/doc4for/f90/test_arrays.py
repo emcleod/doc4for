@@ -10,7 +10,8 @@ from doc4for.models.dimension_models import ArrayBound, BoundType
 
 
 class TestArrays(TestCase):
-
+    maxDiff=None
+    
     def setUp(self):
         self.base_expected = {
             "description": "",
