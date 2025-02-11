@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import Any, List, Optional, Union, Tuple, Dict, Callable, Type
 
 from fparser.one.block_statements import (
@@ -13,7 +14,7 @@ from doc4for.models.dimension_models import Dimension_TEMP
 from doc4for.models.variable_models import DataComponent
 from doc4for.models.type_models import TypeDescription, GenericInterface
 from doc4for.models.procedure_models import ProcedureDescription
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.utils.comment_utils import get_formatted_description
 
 # Compile regex patterns
 NAME_VALUE_PATTERN = re.compile(r'(\w+)\s*(?:=\s*(.+))?$')
@@ -24,6 +25,7 @@ LEN_PATTERN = re.compile(r'\blen\s*=\s*(\d+|:)')
 # Type aliases
 HandlerType = Callable[[Any, TypeDescription, str], None]
 
+logger: logging.Logger = logging.getLogger(__name__)
 
 class TypeHandler:
    """A class that maps types of Fortran statements to functions that will populate a TypeDescription.
@@ -222,20 +224,8 @@ def handle_other_type(item: Any, type_info: TypeDescription, description: str) -
        type_info: The type description dictionary.
        description: The description string.
    """
+   logger.warning("Unhandled type %s", type(item))
    pass
-
-
-def get_formatted_description(comment_stack: List[Comment]) -> str:
-   """Get a formatted description from the comment stack.
-
-   Args:
-       comment_stack: The stack of comments to format.
-
-   Returns:
-       The formatted description or an empty string if not a doc4for comment.
-   """
-   return format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ''
-
 
 def get_name_and_initial_value(entity_decl: str) -> Tuple[str, Optional[str]]:
    """Extract the name and initial value from an entity declaration.

@@ -143,7 +143,13 @@ def parse_data_statement(var_names, values, block_data_details):
                     var_info["initial_value"] = str(values[value_index])
                     value_index += 1
 
-
+# TODO
+# use 
+# common block
+# namelist
+# equivalence
+# entry
+# enum
 def parse_module(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:

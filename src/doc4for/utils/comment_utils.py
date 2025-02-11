@@ -46,3 +46,15 @@ def format_comments(comment_stack: List[Comment]) -> str:
 
 def is_end_of_doc4for_comment(comment: Comment) -> bool:
     return "*!" in comment.content
+
+
+def get_formatted_description(comment_stack: List[Comment]) -> str:
+   """Get a formatted description from the comment stack.
+
+   Args:
+       comment_stack: The stack of comments to format.
+
+   Returns:
+       The formatted description or an empty string if not a doc4for comment.
+   """
+   return format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ''

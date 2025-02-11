@@ -14,8 +14,6 @@ BlockDataDescription = TypedDict(
     },
 )
 
-# TODO add @version annotation
-# TODO add @author annotation
 ModuleDescription = TypedDict(
     "ModuleDescription",
     {
