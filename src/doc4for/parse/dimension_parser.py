@@ -1,4 +1,3 @@
-# dimension_parser.py - dimension-specific parsing
 from typing import List, Optional, Tuple
 from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.dimension_models import Dimension, ArrayBound, BoundType

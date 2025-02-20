@@ -1,4 +1,4 @@
-from typing import Optional, List, TypedDict
+from typing import Optional, List, TypedDict, Dict
 from enum import Enum, auto
 from dataclasses import dataclass
 
@@ -44,4 +44,24 @@ BindingType = TypedDict(
         "type": BindingTypeEnum,
         "name": Optional[str] # External name for C binding if specified
     }
+)
+
+EnumeratorDescription = TypedDict(
+    "EnumeratorDescription",
+    {
+        "name": str,
+        "value": str,  
+        "description": str,
+    }
+)
+
+EnumDescription = TypedDict(
+    "EnumDescription",
+    {
+        "name": Optional[str],  # Enums might not always have names
+        "description": str,
+        "attributes": List[str],  # For public/private, bind(c), etc.
+        "enumerators": Dict[str, EnumeratorDescription],
+        "binding_type": BindingType
+    },
 )

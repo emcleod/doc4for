@@ -1,6 +1,7 @@
+import re
 import logging
 from dataclasses import dataclass, field
-from typing import TypeVar, Generic, Dict, Type, Callable, List, Any
+from typing import TypeVar, Generic, Dict, Type, Callable, List, Any, Tuple, Optional
 from fparser.one.block_statements import (
     Comment,
     Module,
@@ -16,15 +17,20 @@ from fparser.one.block_statements import (
     Contains,
     Implicit,
     Private,
-    Public
+    Public,
+    Enum,
+    Enumerator
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
+from doc4for.models.common import BindingType, BindingTypeEnum, EnumDescription
 from doc4for.models.file_models import FileDescription
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter, is_parameter
 from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
+from doc4for.parse.enum_parser import parse_enum
+
 from doc4for.f90.populate_data_models import (
     initialise_module_description, 
     parse_variable,
@@ -138,3 +144,63 @@ def handle_interface(item: Interface, data: ModuleDescription,
                      comment_stack: List[Comment]) -> None:
     data['interfaces'].append(parse_interface(item, comment_stack))    
 
+def handle_enum(item: Enum, data: ModuleDescription,
+                comment_stack: List[Comment]) -> None:
+    
+    enum_description = parse_enum(item, comment_stack)
+    attributes, binding_type = extract_enum_attributes(item.item.line)
+    enum_description['attributes'] = attributes
+    enum_description['binding_type'] = binding_type
+    
+    # Find the name to use as key
+    if not item.name or item.name == "__ENUM__":
+        # Look explicitly for first enumerator's name
+        for content in item.content:
+            if isinstance(content, Enumerator) and content.items:
+                first_item = content.items[0]
+                name = first_item.split('=')[0].strip() if '=' in first_item else first_item.strip()
+                break
+        else:
+            # Fallback in case no enumerator is found
+            name = "__ENUM__" + str(len(data['enums']) + 1)
+    else:
+        name = item.name
+    
+    data['enums'][name] = enum_description
+    
+def handle_enum(item: Enum, data: ModuleDescription,
+                comment_stack: List[Comment]) -> None:
+    first_name, enum_description = parse_enum(item, comment_stack)
+    attributes, binding_type = extract_enum_attributes(item.item.line)
+    enum_description['attributes'] = attributes
+    enum_description['binding_type'] = binding_type
+    
+    name = item.name if item.name and item.name != "__ENUM__" else first_name
+    data['enums'][name] = enum_description
+    
+def extract_enum_attributes(line: str) -> Tuple[List[str], Optional[BindingType]]:
+    # Remove any comments (everything after !)
+    line = line.split('!')[0].strip()
+    
+    # Split on commas and remove 'enum'
+    parts = [part.strip() for part in line.split(',')]
+    parts = [part for part in parts if part.lower() != 'enum']
+    
+    attributes = []
+    binding_type = None
+    
+    for part in parts:
+        if part.lower().startswith('bind'):
+            # Extract binding information
+            match = re.match(r'bind\s*\(\s*c\s*(?:,\s*name\s*=\s*[\'"]([^\'"]*)[\'"])?\s*\)', part, re.IGNORECASE)
+            if match:
+                binding_name = match.group(1)  # Will be None if no name specified
+                binding_type = {
+                    "type": BindingTypeEnum.BIND_C,
+                    "name": binding_name
+                }
+        else:
+            # It's a regular attribute
+            attributes.append(part)
+    
+    return attributes, binding_type

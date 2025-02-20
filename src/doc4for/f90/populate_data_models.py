@@ -181,6 +181,7 @@ def initialise_module_description(
         "variables": {},
         "functions": {},
         "subroutines": {},
+        "enums": {},
         "interfaces": [],
         "types": {},
         "file_name": file_name,

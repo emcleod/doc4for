@@ -7,7 +7,8 @@ Argument = TypedDict(
         "type": str,
         "description": str,
         "dimension": Optional[str],  # TODO replace with Dimension
-        "interface_name": Optional[str]
+        "interface_name": Optional[str],
+        "enum_type": Optional[str],  # Reference to enum if this is an enum type
     },
 )
 
