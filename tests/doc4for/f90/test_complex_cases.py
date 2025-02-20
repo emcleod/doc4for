@@ -3,7 +3,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
-from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
 from doc4for.models.dimension_models import ArrayBound, BoundType
 
 # Helper function for creating dimension expressions
@@ -37,7 +37,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -47,7 +49,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -57,7 +61,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -80,7 +86,8 @@ class TestComplexCases(TestCase):
                 "attributes": ["save"],
                 "kind": '8',
                 "initial_value": "0.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)           
@@ -103,7 +110,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter", "public"],
                 "kind": '8',
                 "initial_value": "3.14159265359",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -125,7 +134,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "1",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -135,7 +146,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "2*x",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -145,7 +158,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "y**2",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
            },
         ]
         self.assertEqual(result, expected)
@@ -167,7 +182,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "2.0 * sin(3.14159/2.0) ** 2",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -190,7 +207,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -200,7 +219,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -210,7 +231,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(in)"],
                 "kind": '8',
                 "initial_value": "1.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -232,7 +255,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "f(1), g(x, y), 3.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -255,7 +280,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["intent(inout)", "public"],
                 "kind": 'selected_real_kind(15)',
                 "initial_value": "reshape([1,2,3,4,5,6,7,8,9,10], [10])",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -281,7 +308,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": "8",
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -293,7 +322,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": "8",
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -303,7 +334,9 @@ class TestComplexCases(TestCase):
                 "attributes": [],
                 "kind": "8",
                 "initial_value": "1.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -328,7 +361,9 @@ class TestComplexCases(TestCase):
                 "attributes": ["public"],
                 "kind": "8",
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)

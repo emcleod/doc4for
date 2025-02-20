@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-
+from doc4for.models.common import BindingTypeEnum
 
 class TestFunctionSignatures(TestCase):
     maxDiff = None
@@ -54,7 +54,8 @@ end module test_mod
             "arguments": [],
             "out": {},
             "in": {},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -66,7 +67,8 @@ end module test_mod
             "arguments": [],
             "out": {},
             "in": {},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -122,7 +124,8 @@ end module test_mod
             "out": {
                 "area": {"type": "real", "description": "The area of the rectangle", "dimension": ""}
             },
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -139,7 +142,8 @@ end module test_mod
             "out": {
                 "area": {"type": "real", "description": "", "dimension": ""},
             },
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(sub_no_doc, expected_no_doc)
 
@@ -186,7 +190,8 @@ end module test_mod
                 "arg2": {"type": "real", "description": "Output argument 2", "dimension": ""},
                 "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
             },
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(sub_annotations, expected_annotations)
 
@@ -223,7 +228,8 @@ end module test_mod
             "out": {
                 "vector": {"type": "real", "description": "The output vector", "dimension": "1:100"}
             },
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(sub_array, expected_array)
 

@@ -3,6 +3,8 @@ from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
 from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.common import BindingTypeEnum
+
 class TestAttributes(TestCase):
 
     def test_parameter_attribute(self):
@@ -22,7 +24,9 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "3.14159",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -44,7 +48,9 @@ class TestAttributes(TestCase):
                 "attributes": ["save"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -66,7 +72,9 @@ class TestAttributes(TestCase):
                 "attributes": ["target"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -88,7 +96,9 @@ class TestAttributes(TestCase):
                 "attributes": ["pointer"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -119,7 +129,9 @@ class TestAttributes(TestCase):
                 "attributes": ["allocatable"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]        
         self.assertEqual(result, expected)
@@ -143,7 +155,9 @@ class TestAttributes(TestCase):
                     "attributes": [f"intent({intent})"],
                     "kind": None,
                     "initial_value": None,
-                    "length": None
+                    "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
                 },
             ]
             self.assertEqual(result, expected)
@@ -165,7 +179,9 @@ class TestAttributes(TestCase):
                 "attributes": ["optional"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
         },
         ]
         self.assertEqual(result, expected)
@@ -188,7 +204,9 @@ class TestAttributes(TestCase):
                     "attributes": [visibility],
                     "kind": None,
                     "initial_value": None,
-                    "length": None
+                    "length": None,
+                   "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
                },
             ]
             self.assertEqual(result, expected)
@@ -210,7 +228,9 @@ class TestAttributes(TestCase):
                 "attributes": ["external"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -232,7 +252,9 @@ class TestAttributes(TestCase):
                 "attributes": ["intrinsic"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -254,7 +276,9 @@ class TestAttributes(TestCase):
                 "attributes": ["save", "intent(in)", "optional"],
                 "kind": None,
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -276,7 +300,9 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "1.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -286,7 +312,9 @@ class TestAttributes(TestCase):
                 "attributes": ["parameter"],
                 "kind": None,
                 "initial_value": "2.0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)

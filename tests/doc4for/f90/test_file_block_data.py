@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
 from doc4for.models.dimension_models import ArrayBound, BoundType
 
 # Helper function for creating dimension expressions
@@ -49,7 +49,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "",
@@ -59,8 +60,9 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
-                    },
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                   },
                 }
             },
         }
@@ -97,8 +99,9 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
-                    },
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                   },
                     "y": {
                         "description": "",
                         "type": "real",
@@ -107,7 +110,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },
@@ -144,7 +148,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "",
@@ -154,7 +159,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },
@@ -192,7 +198,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "",
@@ -202,8 +209,9 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
-                    },
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                   },
                 }
             },
         }
@@ -240,7 +248,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "",
@@ -250,7 +259,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "z": {
                         "description": "",
@@ -260,7 +270,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "3.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "theta": {
                         "description": "",
@@ -270,7 +281,8 @@ END BLOCK DATA simple
                         "attributes": [],
                         "kind": None,
                         "initial_value": "0.45",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },
@@ -307,7 +319,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },
@@ -345,7 +358,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1, 2, 3",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "",
@@ -355,7 +369,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "4, 5",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },
@@ -518,7 +533,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "1.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                     "y": {
                         "description": "Coordinates\n",
@@ -528,7 +544,8 @@ END BLOCK DATA
                         "attributes": [],
                         "kind": None,
                         "initial_value": "2.0",
-                        "length": None
+                        "length": None,
+                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
                     },
                 }
             },

@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
+from doc4for.models.common import BindingTypeEnum
 
 class TestInterfaces(TestCase):
     maxDiff=None
@@ -43,7 +44,7 @@ end module abstract_interface_mod
         function = interface['procedures']['func']
         self.assertEqual(function['arguments'], ['x'])
         self.assertEqual(function['attributes'], [])
-        self.assertNotIn('binding_type', function)
+        self.assertEqual(function['binding_type'], { "type": BindingTypeEnum.DEFAULT, "name": None})
         self.assertEqual(function['description'], "Transforms x into y somehow\n\n")
         self.assertEqual(function['in'], {'x': {'type': 'real', 'description': '', 'dimension': ''}})
         self.assertEqual(function['out'], {})
@@ -103,7 +104,7 @@ end module test_mod
         function = interface['procedures']['integrand']
         self.assertEqual(function['arguments'], ['f', 'a', 'b'])
         self.assertEqual(function['attributes'], [])
-        self.assertNotIn('binding_type', function)
+        self.assertEqual(function['binding_type'], { "type": BindingTypeEnum.DEFAULT, "name": None})
         
         # Check input parameters
         self.assertEqual(function['in'], {

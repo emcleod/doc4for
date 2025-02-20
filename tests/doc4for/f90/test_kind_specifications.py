@@ -2,7 +2,7 @@ import unittest
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
-
+from doc4for.models.common import BindingTypeEnum
 
 class TestKindSpecifications(TestCase):
 
@@ -24,7 +24,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -47,7 +48,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -70,7 +72,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -93,7 +96,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_real_kind',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -116,7 +120,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_real_kind(15)',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -139,7 +144,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             }
             for name in ['x', 'y', 'z']
         ]
@@ -163,7 +169,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": '8',
                 "initial_value": "1.0d0",
-                "length": None
+                "length": None,
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -186,7 +193,8 @@ class TestKindSpecifications(TestCase):
                 "attributes": [],
                 "kind": 'selected_char_kind(\'ASCII\')',
                 "initial_value": None,
-                "length": "1"
+                "length": "1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)

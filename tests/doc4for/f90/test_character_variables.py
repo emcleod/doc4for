@@ -3,7 +3,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.f90.populate_data_models import parse_variable
 from doc4for.models.dimension_models import ArrayBound, BoundType
-from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
 
 class TestCharacterVariables(TestCase):
     maxDiff=None
@@ -26,7 +26,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "1"
+                "length": "1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -49,7 +51,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "10"
+                "length": "10",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -72,7 +76,8 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "20"
+                "length": "20",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
             },
         ]
         self.assertEqual(result, expected)
@@ -95,7 +100,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "'Hello, World!'",
-                "length": "13"
+                "length": "13",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -118,7 +125,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": "'Hello'",
-                "length": "10"
+                "length": "10",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -141,7 +150,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "n"
+                "length": "n",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -164,7 +175,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "*"
+                "length": "*",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -187,7 +200,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "10"
+                "length": "10",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
             {
                 "description": "",
@@ -197,7 +212,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "10"
+                "length": "10",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -220,7 +237,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
-                "length": '20'
+                "length": '20',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -243,7 +262,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
-                "length": '20'
+                "length": '20',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -266,7 +287,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
-                "length": '30'
+                "length": '30',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -289,7 +312,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
-                "length": '1'  # Default length since no explicit length
+                "length": '1',  # Default length since no explicit length
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -312,7 +337,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "selected_char_kind('ISO_10646')",
                 "initial_value": None,
-                "length": "1"
+                "length": "1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -335,7 +362,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "4",
                 "initial_value": None,
-                "length": "1"
+                "length": "1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)       
@@ -358,7 +387,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,  
                 "initial_value": None,
-                "length": "char_kind"
+                "length": "char_kind",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)   
@@ -381,7 +412,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "max(selected_char_kind('ASCII'),4)",
                 "initial_value": None,
-                "length": "1"
+                "length": "1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)              
@@ -404,7 +437,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "ascii_kind",
                 "initial_value": None,
-                "length": '1'
+                "length": '1',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -436,7 +471,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": '30'
+                "length": '30',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -459,7 +496,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "1",
                 "initial_value": None,
-                "length": '1'
+                "length": '1',
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -482,7 +521,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": None,
                 "initial_value": None,
-                "length": "2*n+1"
+                "length": "2*n+1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)
@@ -505,7 +546,9 @@ class TestCharacterVariables(TestCase):
                 "attributes": [],
                 "kind": "merge(ascii, utf8, use_ascii)",
                 "initial_value": None,
-                "length": "2*n+1"
+                "length": "2*n+1",
+                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+
             },
         ]
         self.assertEqual(result, expected)

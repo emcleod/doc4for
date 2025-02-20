@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-
+from doc4for.models.common import BindingTypeEnum
 
 class TestFunctionSignatures(TestCase):
     maxDiff = None
@@ -56,7 +56,8 @@ end module test_mod
             "out": {},
             "in": {},
             "return": {"simple": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -69,7 +70,8 @@ end module test_mod
             "out": {},
             "in": {},
             "return": {"simple_no_doc": {"description": "", "dimension": "", "type": "integer"}},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -122,7 +124,8 @@ end module test_mod
             },
             "out": {},
             "return": {"rectangle_area": {"description": "Area of the rectangle", "dimension": "", "type": "real"}},
-            "argument_interfaces": {}            
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -138,7 +141,8 @@ end module test_mod
             },
             "out": {},
             "return": {"rectangle_area_no_doc": {"description": "", "dimension": "", "type": "real"}},
-            "argument_interfaces": {}            
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -195,7 +199,8 @@ end module test_mod
                 "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
             },
             "return": {"res": {"description": "The result of the calculation", "dimension": "", "type": "real"}},
-            "argument_interfaces": {}            
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
         }
         self.assertEqual(func_annotations, expected_annotations)
 
@@ -207,7 +212,8 @@ end module test_mod
             "in": {},
             "out": {},
             "return": {"unnamed_return": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
-            "argument_interfaces": {}            
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}            
         }
         self.assertEqual(func_unnamed, expected_unnamed)
 
@@ -247,7 +253,8 @@ end module test_mod
                 "vector": {"type": "real", "description": "The output vector", "dimension": "1:100"}
             },
             "return": {"process_matrix": {"description": "Whether the operation was successful", "dimension": "", "type": "logical"}},
-            "argument_interfaces": {}            
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
         }
         self.assertEqual(func_array, expected_array)
 
@@ -290,7 +297,8 @@ end module test_mod
             "out": {},
             "return": {"unnamed_return": {"description": "Description for unnamed return",
                                          "dimension": "", "type": "real"}},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_attached, expected_attached)
 
@@ -514,7 +522,8 @@ end module test_mod
                 "dimension": "1:10",
                 "type": "real"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_vector, expected_vector)
 
@@ -531,7 +540,8 @@ end module test_mod
                 "dimension": "1:5 &times; 1:5",
                 "type": "integer"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_matrix, expected_matrix)
 
@@ -548,7 +558,8 @@ end module test_mod
                 "dimension": "1:3",
                 "type": "complex"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_spaced, expected_spaced)
 
@@ -565,7 +576,8 @@ end module test_mod
                 "dimension": "1:100",
                 "type": "real"
             }},
-            "argument_interfaces": {}            
+            "argument_interfaces": {}  ,
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}          
         }
         self.assertEqual(func_dense, expected_dense)
 
@@ -635,7 +647,8 @@ end module test_mod
                 "dimension": "* (assumed-size)",
                 "type": "real"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_coarray, expected_coarray)
 
@@ -652,7 +665,8 @@ end module test_mod
                 "dimension": "1:10 &times; 1:2 &times; * (assumed-size)",
                 "type": "integer"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_array_coarray, expected_array_coarray)
 
@@ -681,7 +695,8 @@ end module test_mod
                 "dimension": "",
                 "type": "logical"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_process, expected_process)
 
@@ -710,7 +725,8 @@ end module test_mod
                 "dimension": "* (assumed-size)",
                 "type": "integer"
             }},
-            "argument_interfaces": {}
+            "argument_interfaces": {},
+            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
         }
         self.assertEqual(func_spaced, expected_spaced)
 

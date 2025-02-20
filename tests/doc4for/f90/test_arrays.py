@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from typing import List, Dict, Any, Optional, Union, Tuple
 
 from doc4for.f90.populate_data_models import parse_variable
-from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType, BindingType, BindingTypeEnum
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.dimension_models import ArrayBound, BoundType
 
@@ -95,6 +95,7 @@ class TestArrays(TestCase):
         if initial_value is not None:
             result["initial_value"] = initial_value
         result["length"] = length
+        result["binding_type"] = { "type": BindingTypeEnum.DEFAULT, "name": None}
         return result
 
     def create_mock_declaration(self,
