@@ -414,12 +414,3 @@ if __name__ == '__main__':
     unittest.main()
 
 
-#derived type
-#global variables
-#type bound procedures
-# generic interface w/ mixed binding
-# pointer procedures with mixed binding
-# pointer procedures with binding
-# other languages
-# optional binding parameters
-# common blocks

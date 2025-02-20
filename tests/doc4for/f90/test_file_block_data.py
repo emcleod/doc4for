@@ -23,12 +23,12 @@ class TestBlockData(TestCase):
         self.fs.create_file(
             "/fake/path/blockdata.f90",
             contents="""\
-BLOCK DATA
-    COMMON // x, y
-    REAL x, y
-    DATA x, y/1.0, 2.0/
-END BLOCK DATA
-""",
+    BLOCK DATA
+        COMMON // x, y
+        REAL x, y
+        DATA x, y/1.0, 2.0/
+    END BLOCK DATA
+    """,
         )
         result = extract_file_data([Path("/fake/path/blockdata.f90")])
         self.assertEqual(len(result), 1)
@@ -36,38 +36,41 @@ END BLOCK DATA
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
         block_data = file_data["block_data"]['']
+        
         expected = {
             "name": "",
             "description": "",
             "common_blocks": {
                 "": {
-                    "x": {
-                        "description": "",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "y": {
-                        "description": "",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                   },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0", 
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                        }
+                    }
                 }
-            },
+            }
         }
         self.assertEqual(block_data, expected)
-
 
     def test_unnamed_common_block_data_no_comments(self):
         self.fs.create_file(
@@ -91,31 +94,34 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "": {
-                    "x": {
-                        "description": "",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                   },
-                    "y": {
-                        "description": "",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None }
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None }
+                        }
+                    }
                 }
-            },
-        }
+            }
+        }        
         self.assertEqual(block_data, expected)
 
     def test_simple_block_data_no_comments(self):
@@ -140,28 +146,31 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
-                    "x": {
-                        "description": "",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "y": {
-                        "description": "",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                    }
                 }
             },
         }
@@ -190,28 +199,31 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
-                    "x": {
-                        "description": "",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        }
                     },
-                    "y": {
-                        "description": "",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                   },
                 }
             },
         }
@@ -240,50 +252,53 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
-                    "x": {
-                        "description": "",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "y": {
-                        "description": "",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "z": {
-                        "description": "",
-                        "type": "real",
-                        "name": "z",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "3.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "theta": {
-                        "description": "",
-                        "type": "real",
-                        "name": "theta",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "0.45",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "z": {
+                            "description": "",
+                            "type": "real",
+                            "name": "z",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "3.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "theta": {
+                            "description": "",
+                            "type": "real",
+                            "name": "theta",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "0.45",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                    }
                 }
             },
         }
@@ -311,17 +326,20 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "": {
-                    "x": {
-                        "description": "",
-                        "type": "integer",
-                        "name": "x",
-                        "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "integer",
+                            "name": "x",
+                            "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                    }
                 }
             },
         }
@@ -350,28 +368,31 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "arrays": {
-                    "x": {
-                        "description": "",
-                        "type": "integer",
-                        "name": "x",
-                        "dimension": {'dimensions': [create_dimension_expr(1, 3)]},
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1, 2, 3",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "y": {
-                        "description": "",
-                        "type": "integer",
-                        "name": "y",
-                        "dimension": {'dimensions': [create_dimension_expr(1, 2)]},
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "4, 5",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "integer",
+                            "name": "x",
+                            "dimension": {'dimensions': [create_dimension_expr(1, 3)]},
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1, 2, 3",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "y": {
+                            "description": "",
+                            "type": "integer",
+                            "name": "y",
+                            "dimension": {'dimensions': [create_dimension_expr(1, 2)]},
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "4, 5",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                    }
                 }
             },
         }
@@ -446,7 +467,7 @@ END BLOCK DATA
         self.assertIn("strings", block_data["common_blocks"])
 
         # Check physics common block
-        physics = block_data["common_blocks"]["physics"]
+        physics = block_data["common_blocks"]["physics"]["variables"]
         self.assertEqual(physics["gravity"]["type"], "real")
         self.assertEqual(physics["gravity"]["kind"], "8")
         self.assertEqual(physics["gravity"]["initial_value"], "9.81d0")
@@ -460,7 +481,7 @@ END BLOCK DATA
         self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
 
         # Check settings common block
-        settings = block_data["common_blocks"]["settings"]
+        settings = block_data["common_blocks"]["settings"]["variables"]
         self.assertEqual(settings["max_iterations"]["type"], "integer")
         self.assertEqual(settings["max_iterations"]["initial_value"], "1000")
         self.assertEqual(settings["debug_level"]["type"], "integer")
@@ -469,7 +490,7 @@ END BLOCK DATA
         self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
 
         # Check tables common block (arrays)
-        tables = block_data["common_blocks"]["tables"]
+        tables = block_data["common_blocks"]["tables"]["variables"]
         self.assertEqual(tables["temp_points"]["type"], "real")
         self.assertEqual(tables["temp_points"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
         self.assertEqual(len(tables["temp_points"]["initial_value"].split(",")), 10)
@@ -484,7 +505,7 @@ END BLOCK DATA
         self.assertEqual(len(tables["coefficients"]["initial_value"].split(",")), 9)
 
         # Check strings common block
-        strings = block_data["common_blocks"]["strings"]
+        strings = block_data["common_blocks"]["strings"]["variables"]
         self.assertEqual(strings["model_name"]["type"], "character")
         self.assertEqual(strings["model_name"]["length"], "20")
         self.assertEqual(strings["model_name"]["initial_value"], "'Atmospheric Model   '")
@@ -525,28 +546,31 @@ END BLOCK DATA
             "description": "\nDefines some constants\n\n",
             "common_blocks": {
                 "": {
-                    "x": {
-                        "description": "Coordinates\n",
-                        "type": "real",
-                        "name": "x",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "1.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
-                    "y": {
-                        "description": "Coordinates\n",
-                        "type": "real",
-                        "name": "y",
-                        "dimension": None,
-                        "attributes": [],
-                        "kind": None,
-                        "initial_value": "2.0",
-                        "length": None,
-                        "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-                    },
+                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "variables": {
+                        "x": {
+                            "description": "Coordinates\n",
+                            "type": "real",
+                            "name": "x",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                        "y": {
+                            "description": "Coordinates\n",
+                            "type": "real",
+                            "name": "y",
+                            "dimension": None,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "2.0",
+                            "length": None,
+                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                        },
+                    }
                 }
             },
         }
@@ -633,7 +657,7 @@ END BLOCK DATA
         self.assertIn("strings", block_data["common_blocks"])
 
         # Check physics common block
-        physics = block_data["common_blocks"]["physics"]
+        physics = block_data["common_blocks"]["physics"]["variables"]
         self.assertEqual(physics["gravity"]["description"], "Gravitational acceleration and air properties\n")
         self.assertEqual(physics["gravity"]["type"], "real")
         self.assertEqual(physics["gravity"]["kind"], "8")
@@ -650,7 +674,7 @@ END BLOCK DATA
         self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
 
         # Check settings common block
-        settings = block_data["common_blocks"]["settings"]
+        settings = block_data["common_blocks"]["settings"]["variables"]
         self.assertEqual(settings["max_iterations"]["description"], "Configuration for simulation execution\n")
         self.assertEqual(settings["max_iterations"]["type"], "integer")
         self.assertEqual(settings["max_iterations"]["initial_value"], "1000")
@@ -664,7 +688,7 @@ END BLOCK DATA
         self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
 
         # Check tables common block (arrays)
-        tables = block_data["common_blocks"]["tables"]
+        tables = block_data["common_blocks"]["tables"]["variables"]
         expected_tables_description = "\nLookup tables for temperature and pressure calculations\nUsed for interpolation in the simulation\n\n"
 
         self.assertEqual(tables["temp_points"]["description"], expected_tables_description)
@@ -684,7 +708,7 @@ END BLOCK DATA
         self.assertEqual(len(tables["coefficients"]["initial_value"].split(",")), 9)
 
         # Check strings common block
-        strings = block_data["common_blocks"]["strings"]
+        strings = block_data["common_blocks"]["strings"]["variables"]
         self.assertEqual(strings["model_name"]["description"], "Full model name\n")
         self.assertEqual(strings["model_name"]["type"], "character")
         self.assertEqual(strings["model_name"]["length"], "20")
@@ -769,31 +793,31 @@ END BLOCK DATA other_data
         self.assertIn("arrays", unnamed_block["common_blocks"])
         self.assertIn("strings", unnamed_block["common_blocks"])
 
-        self.assertIn("x1", unnamed_block["common_blocks"]["block1"])
-        self.assertIn("x2", unnamed_block["common_blocks"]["block2"])
-        self.assertIn("arr", unnamed_block["common_blocks"]["arrays"])
-        self.assertIn("str", unnamed_block["common_blocks"]["strings"])
+        self.assertIn("x1", unnamed_block["common_blocks"]["block1"]["variables"])
+        self.assertIn("x2", unnamed_block["common_blocks"]["block2"]["variables"])
+        self.assertIn("arr", unnamed_block["common_blocks"]["arrays"]["variables"])
+        self.assertIn("str", unnamed_block["common_blocks"]["strings"]["variables"])
 
         # Check initializations
         self.assertEqual(
-            unnamed_block["common_blocks"]["block1"]["x1"]["initial_value"], "1.0")
+            unnamed_block["common_blocks"]["block1"]["variables"]["x1"]["initial_value"], "1.0")
         self.assertEqual(
-            unnamed_block["common_blocks"]["block2"]["x2"]["initial_value"], "3.0")
+            unnamed_block["common_blocks"]["block2"]["variables"]["x2"]["initial_value"], "3.0")
         # check array initialization (has repeats)
-        self.assertEqual(unnamed_block["common_blocks"]["arrays"]["arr"]["initial_value"],
+        self.assertEqual(unnamed_block["common_blocks"]["arrays"]["variables"]["arr"]["initial_value"],
                          "0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 6.0, 6.0, 6.0, 6.0")
         # Check character initialization
         self.assertEqual(
-            unnamed_block["common_blocks"]["strings"]["str"]["initial_value"], "'ABC'")
+            unnamed_block["common_blocks"]["strings"]["variables"]["str"]["initial_value"], "'ABC'")
 
         # Check other block data
         other_block = file_data["block_data"]["other_data"]
         self.assertEqual(other_block["description"],
                          "Another block data in the same file\n")
         self.assertEqual(other_block["common_blocks"]
-                         ["other"]["a"]["initial_value"], "1")
+                         ["other"]["variables"]["a"]["initial_value"], "1")
         self.assertEqual(other_block["common_blocks"]
-                         ["other"]["b"]["initial_value"], "2")
+                         ["other"]["variables"]["b"]["initial_value"], "2")
 
 
     def test_block_data_array_initialization_styles(self):
@@ -837,37 +861,37 @@ END BLOCK DATA array_init
         self.assertEqual(len(block_data["common_blocks"]), 5)
         
         # Check old style array constructor
-        old_style = block_data["common_blocks"]["old_style"]["arr1"]
+        old_style = block_data["common_blocks"]["old_style"]["variables"]["arr1"]
         self.assertEqual(old_style["type"], "integer")
         self.assertEqual(old_style["initial_value"], "1, 2, 2, 3, 3")
         self.assertEqual(old_style["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
         
         # Check new style array constructor
-        new_style = block_data["common_blocks"]["new_style"]["arr2"]
+        new_style = block_data["common_blocks"]["new_style"]["variables"]["arr2"]
         self.assertEqual(new_style["type"], "integer")
         self.assertEqual(new_style["initial_value"], "1, 2, 2, 3, 4, 4")
         self.assertEqual(new_style["dimension"]["dimensions"][0], create_dimension_expr(1, 6))
         
         # Check mixed format
-        mixed = block_data["common_blocks"]["mixed"]["arr3"]
+        mixed = block_data["common_blocks"]["mixed"]["variables"]["arr3"]
         self.assertEqual(mixed["type"], "real")
         self.assertEqual(mixed["initial_value"], "1.0, 2.0, 2.0, 1.0")
         self.assertEqual(mixed["dimension"]["dimensions"][0], create_dimension_expr(1, 4))
         
         # Check simple repeat
-        simple = block_data["common_blocks"]["simple"]["arr4"]
+        simple = block_data["common_blocks"]["simple"]["variables"]["arr4"]
         self.assertEqual(simple["type"], "integer")
         self.assertEqual(simple["initial_value"], "1, 1, 1")
         self.assertEqual(simple["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
         
         # Check F90 sequence constructor
-        f90_seq = block_data["common_blocks"]["f90_style"]["arr5"]
+        f90_seq = block_data["common_blocks"]["f90_style"]["variables"]["arr5"]
         self.assertEqual(f90_seq["type"], "integer")
         self.assertEqual(f90_seq["initial_value"], "1, 2, 3, 4, 5")
         self.assertEqual(f90_seq["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
         
         # Check F90 arithmetic sequence constructor
-        f90_arith = block_data["common_blocks"]["f90_style"]["arr6"]
+        f90_arith = block_data["common_blocks"]["f90_style"]["variables"]["arr6"]
         self.assertEqual(f90_arith["type"], "integer")
         self.assertEqual(f90_arith["initial_value"], "2, 4, 6, 8, 10")
         self.assertEqual(f90_arith["dimension"]["dimensions"][0], create_dimension_expr(1, 5))

@@ -10,17 +10,18 @@ from fparser.one.block_statements import (
     BlockData,
     Common,
     Data,
+    Bind
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
+from doc4for.models.common import BindingType, BindingTypeEnum
 from doc4for.models.module_models import ModuleDescription, ProgramDescription, Uses, BlockDataDescription
 from doc4for.models.variable_models import VariableDescription
-from doc4for.models.type_models import TypeDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.parse.array_utils import calculate_array_size, expand_array_values
 
 # TODO move these to separate parsers like type_parser
-
+# TODO should use the handlers instead of testing for cases
 
 def parse_program(
     program: Program, comment_stack: List[Comment], file_name: str
@@ -67,14 +68,16 @@ def parse_block_data(
     internal_comment_stack = []
     variable_descriptions: Dict[str, VariableDescription] = {}
     common_block_comments: Dict[str, str] = {}
+    common_block_bindings: Dict[str, BindingType] = {}  # Track bindings for common blocks
 
-    # First pass: collect type declarations and common block comments
+    # First pass: collect type declarations, common block comments, and bindings
     for item in block_data.content:
         if isinstance(item, Comment) and item.content:
             internal_comment_stack.append(item)
             continue
 
         if isinstance(item, TypeDeclarationStatement):
+            # Handle variable declarations (existing code)
             variables = parse_variable(item, [])
             for variable in variables:
                 variable_descriptions[variable["name"]] = variable
@@ -82,10 +85,21 @@ def parse_block_data(
                     variable_descriptions[variable["name"]]["description"] = format_comments(
                         internal_comment_stack)
         elif isinstance(item, Common):
+            # Handle common block (existing code)
             common_name = item.items[0][0] or ""
             if is_doc4for_comment(internal_comment_stack):
                 common_block_comments[common_name] = format_comments(
                     internal_comment_stack)
+        elif isinstance(item, Bind):
+            # Handle binding for common blocks
+            binding_type = extract_binding(item)
+            # Parse the common block names from the items field
+            # Each item has format "/ block_name /"
+            for common_item in item.items:
+                # Strip slashes and whitespace to get the actual common block name
+                common_name = common_item.strip('/').strip()
+                if common_name:
+                    common_block_bindings[common_name] = binding_type
 
         # Clear after each non-comment item
         internal_comment_stack.clear()
@@ -95,17 +109,32 @@ def parse_block_data(
         if isinstance(item, Common):
             common_name = item.items[0][0] or ""
             variable_names = item.items[0][1]
+            
+            # Create common block structure with binding information
             block_data_details["common_blocks"][common_name] = {}
+            common_block = block_data_details["common_blocks"][common_name]
             common_description = common_block_comments.get(common_name, "")
-
+            
+            # Add binding type if available, otherwise use default
+            if common_name in common_block_bindings:
+                common_block["binding_type"] = common_block_bindings[common_name]
+            else:
+                common_block["binding_type"] = {
+                    "type": BindingTypeEnum.DEFAULT,
+                    "name": None
+                }
+            
+            # Create a variables dict to hold the actual variables
+            common_block["variables"] = {}
+            
+            # Add variables to the common block
             for variable_name in variable_names:
                 if variable_name in variable_descriptions:
-                    block_data_details["common_blocks"][common_name][variable_name] = variable_descriptions[variable_name].copy(
-                    )
-                    if not block_data_details["common_blocks"][common_name][variable_name]["description"] and common_description:
-                        block_data_details["common_blocks"][common_name][variable_name]["description"] = common_description
+                    common_block["variables"][variable_name] = variable_descriptions[variable_name].copy()
+                    if not common_block["variables"][variable_name]["description"] and common_description:
+                        common_block["variables"][variable_name]["description"] = common_description
                 else:
-                    block_data_details["common_blocks"][common_name][variable_name] = {
+                    common_block["variables"][variable_name] = {
                         "description": common_description,
                         "type": "",
                         "name": variable_name,
@@ -126,8 +155,9 @@ def parse_data_statement(var_names, values, block_data_details):
     value_index = 0
     for var_name in var_names:
         for common_block in block_data_details["common_blocks"].values():
-            if var_name in common_block:
-                var_info = common_block[var_name]
+            # Check if this common block has a variables dict and the variable is in it
+            if "variables" in common_block and var_name in common_block["variables"]:
+                var_info = common_block["variables"][var_name]
                 if var_info.get("dimension"):
                     # It's an array, determine how many values to take
                     array_size = calculate_array_size(
@@ -141,7 +171,6 @@ def parse_data_statement(var_names, values, block_data_details):
                     # It's a scalar
                     var_info["initial_value"] = str(values[value_index])
                     value_index += 1
-
 
 def initialise_module_description(
     module: Module, comment_stack: List[Comment], file_name: str
@@ -162,7 +191,37 @@ def initialise_module_description(
     return module_data
 
 
-
+def extract_binding(bind_item) -> BindingType:
+    """
+    Extract binding type information directly from fparser Bind object.
+    
+    Args:
+        bind_item: fparser Bind object
+    
+    Returns:
+        BindingType with type and name fields
+    """
+    binding_type: BindingType = {
+        'type': BindingTypeEnum.DEFAULT,
+        'name': None
+    }
+    
+    if not hasattr(bind_item, 'specs') or not bind_item.specs:
+        return binding_type
+        
+    # First element is typically the language code
+    if bind_item.specs and bind_item.specs[0].upper() == 'C':
+        binding_type['type'] = BindingTypeEnum.BIND_C
+        
+        # Look for name parameter in any position in the specs
+        for spec in bind_item.specs[1:]:
+            if 'NAME' in spec.upper():
+                # Extract the name string, handling different quote styles
+                name_match = re.search(r"NAME\s*=\s*['\"](.+?)['\"]", spec, re.IGNORECASE)
+                if name_match:
+                    binding_type['name'] = name_match.group(1)
+                    
+    return binding_type
 
 # TODO public declaration should be handled here?
 

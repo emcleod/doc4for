@@ -5,6 +5,7 @@ from doc4for.models.type_models import TypeDescription
 
 Uses = TypedDict("Uses", {"module_name": str, "selections": List[str]})
 
+#TODO have a common block type rather than a dict of dicts
 BlockDataDescription = TypedDict(
     "BlockDataDescription",
     {

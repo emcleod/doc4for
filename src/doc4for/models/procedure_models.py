@@ -66,6 +66,7 @@ ProcedureDescription = TypedDict(
         "attributes": List[str],
         "is_final": bool,
         "bound_to": Optional[Union[str, List[str]]],
+        "binding_type": Optional[BindingType]
     },
 )
 
