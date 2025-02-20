@@ -4,6 +4,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from fparser.one.block_statements import Comment
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.variable_models import ParameterDescription
+from doc4for.parse.variable_parser import extract_variable_binding
 from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_variable_dimension
 from doc4for.parse.array_utils import parse_initialization_value
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
@@ -44,6 +45,8 @@ def parse_parameters(
     # Extract dimension from attributes
     dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
     
+    # Get binding type from attributes
+    binding_type = extract_variable_binding(shared_attributes)
     # Remove 'dimension' from shared_attributes if present
     shared_attributes = [
         attr for attr in shared_attributes 
@@ -95,7 +98,8 @@ def parse_parameters(
             "attributes": working_attributes,
             "kind": kind,
             "value": value,  # Note: using 'value' instead of 'initial_value'
-            "length": length
+            "length": length,
+            "binding_type": binding_type
         }
 
         parameter_descriptions.append(parameter_description)

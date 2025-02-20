@@ -11,7 +11,10 @@ from doc4for.models.procedure_models import (
     FunctionDescription, 
     SubroutineDescription, 
     InterfaceDescription,
-    ModuleProcedureDescription
+)
+from doc4for.models.common import (
+    BindingType, 
+    BindingTypeEnum
 )
 from doc4for.parse.procedure_argument_parser import (
     update_arguments_with_comment_data,
@@ -33,6 +36,7 @@ def parse_function(
         "out": {},
         "return": {},
         "argument_interfaces": {},
+        'binding_type': None
     }
     update_arguments_with_parsed_data(function, function_description)
     # Get list of procedure-type arguments 
@@ -45,6 +49,9 @@ def parse_function(
     interface_comment_stack = []
     function_arg_index = 0
     
+    # Get any bindings
+    function_description["binding_type"] = extract_binding_type(function.bind)
+
     for item in function.content:
         match item:
             case Comment():
@@ -83,7 +90,8 @@ def parse_subroutine(
         "arguments": subroutine.args,
         "in": {},
         "out": {},
-        "argument_interfaces": {}
+        "argument_interfaces": {},
+        "binding_type": None
     }
     update_arguments_with_parsed_data(subroutine, subroutine_description)
     # Get list of procedure-type arguments 
@@ -91,7 +99,10 @@ def parse_subroutine(
         arg_name for arg_name, arg_info in subroutine_description["in"].items()
         if arg_info["type"] == "procedure"
     ]
-    
+
+    # Get any bindings
+    subroutine_description["binding_type"] = extract_binding_type(subroutine.bind)
+
     # Process interfaces in subroutine content
     interface_comment_stack = []
     subroutine_arg_index = 0
@@ -122,6 +133,39 @@ def parse_subroutine(
                 
     return subroutine_description 
 
+def extract_binding_type(bind: Optional[List[str]]) -> Optional[BindingType]:
+    """
+    Convert fparser's binding attribute to our BindingType structure.
+    
+    Args:
+        bind: The binding information from fparser, e.g., ['C', "NAME = 'c_square'"]
+        
+    Returns:
+        A BindingType dict or None if no binding is specified
+    """        
+    binding_type = {
+        'type': BindingTypeEnum.DEFAULT,
+        'name': None
+    }
+    
+    if not bind:
+        return binding_type
+    
+    # Check for 'C' binding in any position in the list (case-insensitive)
+    has_c_binding = any(param.upper() == 'C' for param in bind)
+    
+    if has_c_binding:
+        binding_type['type'] = BindingTypeEnum.BIND_C
+        
+        # Look for name parameter in any position
+        for param in bind:
+            if 'NAME' in param.upper():
+                # Extract the name string, handling different quote styles
+                match = re.search(r"NAME\s*=\s*['\"](.+?)['\"]", param, re.IGNORECASE)
+                if match:
+                    binding_type['name'] = match.group(1)
+
+    return binding_type
 
 def parse_interface(
         interface: Interface,

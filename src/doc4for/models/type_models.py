@@ -1,6 +1,7 @@
 from typing import TypedDict, List, Dict, Optional
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.models.variable_models import DataComponent
+from doc4for.models.common import BindingType
 
 GenericInterface = TypedDict(
     "GenericInterface",
@@ -9,6 +10,7 @@ GenericInterface = TypedDict(
         "description": str,
         "attributes": List[str],
         "specific_procedures": List[str],
+        "binding_type": Optional[BindingType]
     },
 )
 
@@ -22,5 +24,6 @@ TypeDescription = TypedDict(
         "procedures": Dict[str, ProcedureDescription],
         "generic_interfaces": Dict[str, GenericInterface],
         "extends": Optional[str],
+        "binding_type": Optional[BindingType]
     },
 )

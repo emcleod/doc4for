@@ -1,4 +1,5 @@
 from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any
+from doc4for.models.common import BindingType
 
 Argument = TypedDict(
     "Argument",
@@ -39,7 +40,8 @@ FunctionDescription = TypedDict(
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
         "return": Dict[str, Argument],
-        "argument_interfaces": Dict[str, InterfaceDescription]
+        "argument_interfaces": Dict[str, InterfaceDescription],
+        "binding_type": BindingType
     },
 )
 
@@ -51,7 +53,8 @@ SubroutineDescription = TypedDict(
         "arguments": List[str],
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
-        "argument_interfaces": Dict[str, InterfaceDescription]
+        "argument_interfaces": Dict[str, InterfaceDescription],
+        "binding_type": BindingType
     },
 )
 

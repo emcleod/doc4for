@@ -1126,6 +1126,7 @@ end module matrix_ops_mod
         self.assertEqual(matrix_n['name'], 'matrix_norm')
         self.assertEqual(matrix_n['description'], "\nComputes the Frobenius norm of a matrix\n\n")    
 
+
 if __name__ == '__main__':
     unittest.main()
 

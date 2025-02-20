@@ -3,6 +3,7 @@ from typing import List
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from fparser.one.block_statements import Comment
 from doc4for.models.variable_models import VariableDescription
+from doc4for.models.common import BindingTypeEnum, BindingType
 from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_coarray_dimensions, extract_variable_dimension
 from doc4for.parse.array_utils import parse_initialization_value
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
@@ -43,6 +44,9 @@ def parse_type_declaration_statement(
     # Extract dimension from attributes
     dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
     
+    # Get binding type from attributes
+    binding_type = extract_variable_binding(shared_attributes)
+
     # Remove 'dimension' from shared_attributes if present
     shared_attributes = [
         attr for attr in shared_attributes 
@@ -110,10 +114,41 @@ def parse_type_declaration_statement(
             "attributes": working_attributes,
             "kind": kind,
             "initial_value": initial_value,
-            "length": length
+            "length": length,
+            "binding_type": binding_type
         }
 
         variable_descriptions.append(variable_description)
 
     return variable_descriptions
             
+def extract_variable_binding(attributes) -> BindingType:
+    binding_type: BindingType = {
+        'type': BindingTypeEnum.DEFAULT,
+        'name': None
+    }
+    
+    if not attributes:
+        return binding_type
+    
+    # Look for bind attribute in the attrspec list - need to handle weird spacing
+    bind_attrs = []
+    for attr in attributes:
+        # Remove all spaces to normalize before checking
+        normalized_attr = attr.replace(" ", "").lower()
+        if normalized_attr.startswith('bind('):
+            bind_attrs.append(attr)
+    
+    if bind_attrs:
+        bind_attr = bind_attrs[0]  # Use the first bind attribute found
+        
+        # Look for 'c' binding type - be more tolerant of spacing
+        if re.search(r'bind\s*\(\s*c\b', bind_attr.lower()):
+            binding_type['type'] = BindingTypeEnum.BIND_C
+            
+            # Extract name if present
+            name_match = re.search(r"name\s*=\s*['\"](.+?)['\"]", bind_attr, re.IGNORECASE)
+            if name_match:
+                binding_type['name'] = name_match.group(1)
+    
+    return binding_type

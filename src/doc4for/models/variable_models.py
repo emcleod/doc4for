@@ -1,6 +1,6 @@
 from typing import TypedDict, Optional, List
 from doc4for.models.dimension_models import Dimension, Dimension_TEMP
-
+from doc4for.models.common import BindingType, BindingTypeEnum
 from enum import Enum, auto
 
 #TODO add this information
@@ -22,7 +22,8 @@ VariableDescription = TypedDict(
         "attributes": List[str],  # For public/private, etc.
         "kind": Optional[str],
         "initial_value": Optional[str],
-        "length": Optional[str]  # for character lengths
+        "length": Optional[str],  # for character lengths,
+        "binding_type": BindingType
     },
 )
 
@@ -35,7 +36,8 @@ ParameterDescription = TypedDict(
         "value": "str",
         "dimension": Optional[str],
         "attributes": List[str],  # For public/private, etc.
-        "length": Optional[str]   # for character lengths
+        "length": Optional[str],   # for character lengths
+        "binding_type": BindingType
     },
 )
 

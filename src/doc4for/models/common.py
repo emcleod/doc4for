@@ -1,5 +1,5 @@
-from typing import Optional, List
-from enum import Enum
+from typing import Optional, List, TypedDict
+from enum import Enum, auto
 from dataclasses import dataclass
 
 ANNOTATION_PREFIX = "@"
@@ -33,3 +33,15 @@ ARGUMENT_PATTERN = r'''
     (?P<description>.+)    # Description (rest of the line)
 '''
 
+
+class BindingTypeEnum(Enum):
+    DEFAULT = auto()
+    BIND_C = auto()
+
+BindingType = TypedDict(
+    "BindingType",
+    {
+        "type": BindingTypeEnum,
+        "name": Optional[str] # External name for C binding if specified
+    }
+)
