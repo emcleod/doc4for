@@ -10,8 +10,8 @@ from fparser.one.block_statements import (
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
-from doc4for.parse.base_parser import (
-    FortranHandler, 
+from doc4for.parse.base_parser import ( 
+    FortranHandler,
     VisibilityState,
     handle_function, 
     handle_subroutine, 
@@ -19,13 +19,9 @@ from doc4for.parse.base_parser import (
     handle_module, 
     handle_program)
 
-
-logger: logging.Logger = logging.getLogger(__name__)
-
 FileHandler = FortranHandler[FileDescription]
 
 _file_handler_instance: Optional[FileHandler] = None
-
 
 def _get_file_handler() -> FileHandler:
     """Get an instance of FileHandler and initialize if necessary.

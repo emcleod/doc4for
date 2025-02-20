@@ -39,10 +39,10 @@ class TestArrays(TestCase):
         )
 
     def create_dimension(self,
-                         lower: Optional[Union[str, Expression]] = None,
-                         upper: Optional[Union[str, Expression]] = None,
-                         stride: Optional[Union[str, Expression]] = None
-                         ) -> ArrayBound:
+                        lower: Optional[Union[str, Expression]] = None,
+                        upper: Optional[Union[str, Expression]] = None,
+                        stride: Optional[Union[str, Expression]] = None
+                        ) -> ArrayBound:
         def process_value(v: Optional[Union[str, Expression]]) -> Optional[Expression]:
             if v is None:
                 return None
@@ -52,20 +52,31 @@ class TestArrays(TestCase):
                 return self.create_literal(v)
             return self.create_variable(v)
 
-        # Determine the BoundType based on the provided values
+        processed_lower = process_value(lower)
+        processed_upper = process_value(upper)
+        processed_stride = process_value(stride)
+
+        # Determine if any bound is a variable
+        is_variable = any(
+            bound and (
+                isinstance(bound, Expression) and 
+                bound.expr_type in (ExpressionType.VARIABLE, ExpressionType.FUNCTION_CALL)
+            )
+            for bound in [processed_lower, processed_upper, processed_stride]
+        )
+
         if lower is None and upper is None and stride is None:
             bound_type = BoundType.ALLOCATABLE
         elif lower == "*" or upper == "*":
             bound_type = BoundType.ASSUMED
         else:
-            bound_type = BoundType.FIXED
+            bound_type = BoundType.VARIABLE if is_variable else BoundType.FIXED
 
-        # Create and return an ArrayBound object
         return ArrayBound(
             bound_type=bound_type,
-            lower=process_value(lower),
-            upper=process_value(upper),
-            stride=process_value(stride)
+            lower=processed_lower,
+            upper=processed_upper,
+            stride=processed_stride
         )
 
     def create_declaration(self,

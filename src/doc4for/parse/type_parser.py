@@ -14,7 +14,8 @@ from doc4for.models.dimension_models import Dimension_TEMP
 from doc4for.models.variable_models import DataComponent
 from doc4for.models.type_models import TypeDescription, GenericInterface
 from doc4for.models.procedure_models import ProcedureDescription
-from doc4for.utils.comment_utils import get_formatted_description
+from doc4for.utils.comment_utils import get_formatted_description, format_comments
+from doc4for.parse.base_parser import FortranHandler, handle_module_procedure
 
 # Compile regex patterns
 NAME_VALUE_PATTERN = re.compile(r'(\w+)\s*(?:=\s*(.+))?$')
@@ -25,46 +26,10 @@ LEN_PATTERN = re.compile(r'\blen\s*=\s*(\d+|:)')
 # Type aliases
 HandlerType = Callable[[Any, TypeDescription, str], None]
 
-logger: logging.Logger = logging.getLogger(__name__)
 
-class TypeHandler:
-   """A class that maps types of Fortran statements to functions that will populate a TypeDescription.
-
-   This class maintains a registry of handler functions for different types
-   of Fortran statements and provides methods to register and retrieve these handlers.
-   """
-
-   def __init__(self):
-       """Initialize the TypeHandler with an empty handlers dictionary."""
-       self.handlers: Dict[Type, HandlerType] = {}
-
-   def register_handler(self, item_type: Type, handler: HandlerType) -> None:
-       """Register a handler function for a specific item type.
-
-       Args:
-           item_type: The type of item to be handled.
-           handler: The handler function. Should populate a data structure 
-                   and add the description that is passed in.
-       """
-       self.handlers[item_type] = handler
-
-   def get_handler(self, item_type: Type) -> HandlerType:
-       """Get the appropriate handler function for a given item type.
-
-       Args:
-           item_type: The type of item to get a handler for.
-
-       Returns:
-           A handler function that can process the given item type.
-       """
-       for handler_type, handler in self.handlers.items():
-           if issubclass(item_type, handler_type):
-               return handler
-       return handle_other_type
-
+TypeHandler = FortranHandler[TypeDescription]
 
 _type_handler_instance: Optional[TypeHandler] = None
-
 
 def _get_type_handler() -> TypeHandler:
    """Get an instance of TypeHandler and initialize if necessary.
@@ -75,8 +40,8 @@ def _get_type_handler() -> TypeHandler:
    global _type_handler_instance
    if _type_handler_instance is None:
        handler = TypeHandler()
-       handler.register_handler(SpecificBinding, handle_specific_binding)
        handler.register_handler(ModuleProcedure, handle_module_procedure)
+       handler.register_handler(SpecificBinding, handle_specific_binding)
        handler.register_handler(GenericBinding, handle_generic_binding)
        handler.register_handler(FinalBinding, handle_final_binding)
        handler.register_handler(TypeDeclarationStatement, handle_type_declaration_statement)
@@ -84,28 +49,27 @@ def _get_type_handler() -> TypeHandler:
    return _type_handler_instance
 
 
-def update_type_with_parsed_data(fortran_type: Any, type_info: TypeDescription) -> None:
+def parse_type_content(fortran_type: Any, type_info: TypeDescription, comment_stack: List[Comment]) -> None:
    """Update the type_info dictionary with parsed data from the Fortran type.
 
    Args:
        fortran_type: The Fortran type object to parse.
        type_info: The dictionary to update with parsed information.
    """
-   type_info['type_name'] = fortran_type.name
-   comment_stack: List[Comment] = []
    handlers = _get_type_handler()
-   
+   type_info['type_name'] = fortran_type.name
+#    comment_stack: List[Comment] = []
    for item in fortran_type.content:
-       if isinstance(item, Comment):
+       if isinstance(item, Comment) and item.content:
            comment_stack.append(item)
        else:
            handler = handlers.get_handler(type(item))
-           description = get_formatted_description(comment_stack)
-           handler(item, type_info, description)
+           handler(item, type_info, comment_stack)
            comment_stack.clear()
 
 
-def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription, description: str) -> None:
+def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription, 
+                            comment_stack: List[Comment]) -> None:
    """Handle a SpecificBinding.
 
    Args:
@@ -115,7 +79,7 @@ def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription, d
    """
    procedure_description: ProcedureDescription = {
        'name': item.name,
-       'description': description,
+       'description': get_formatted_description(comment_stack),
        'attributes': [attr.lower() for attr in item.attrs],
        'is_final': False,
        'bound_to': item.bname
@@ -123,27 +87,8 @@ def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription, d
    type_info['procedures'][item.name] = procedure_description
 
 
-def handle_module_procedure(item: ModuleProcedure, type_info: TypeDescription, description: str) -> None:
-   """Handle a ModuleProcedure.
-
-   Args:
-       item: The module procedure item to handle.
-       type_info: The type description dictionary to update.
-       description: The description of this procedure.
-   """
-   # TODO: attributes are missing
-   for name in item.items:
-       procedure_description: ProcedureDescription = {
-           'name': name,
-           'description': description,
-           'attributes': [],
-           'is_final': False,
-           'bound_to': None
-       }
-       type_info['procedures'][name] = procedure_description
-
-
-def handle_generic_binding(item: GenericBinding, type_info: TypeDescription, description: str) -> None:
+def handle_generic_binding(item: GenericBinding, type_info: TypeDescription, 
+                           comment_stack: List[Comment]) -> None:
    """Handle a GenericBinding.
 
    Args:
@@ -155,12 +100,13 @@ def handle_generic_binding(item: GenericBinding, type_info: TypeDescription, des
        'generic_spec': item.spec,
        'attributes': [item.aspec.lower()],
        'specific_procedures': item.items,
-       'description': description,
+       'description': get_formatted_description(comment_stack),
    }
    type_info['generic_interfaces'][item.spec] = generic_description
 
 
-def handle_final_binding(item: FinalBinding, type_info: TypeDescription, description: str) -> None:
+def handle_final_binding(item: FinalBinding, type_info: TypeDescription, 
+                         comment_stack: List[Comment]) -> None:
    """Handle a FinalBinding.
 
    Args:
@@ -171,7 +117,7 @@ def handle_final_binding(item: FinalBinding, type_info: TypeDescription, descrip
    for final_name in item.items:
        procedure_description: ProcedureDescription = {
            'name': final_name,
-           'description': description,
+           'description': get_formatted_description(comment_stack),
            'attributes': ['final'],
            'is_final': True,
            'bound_to': None
@@ -179,7 +125,8 @@ def handle_final_binding(item: FinalBinding, type_info: TypeDescription, descrip
        type_info['procedures'][final_name] = procedure_description
 
 
-def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info: TypeDescription, description: str) -> None:
+def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info: TypeDescription, 
+                                      comment_stack: List[Comment]) -> None:
    """Handle a TypeDeclarationStatement (e.g. Real, Integer, Character).
 
    Args:
@@ -188,11 +135,12 @@ def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info:
        description: The description of this procedure.
    """
    for entity_decl in item.entity_decls:
-       component = create_data_component(item, entity_decl, description)
+       component = create_data_component(item, entity_decl, comment_stack)
        type_info['data_components'][component['name']] = component
 
 
-def create_data_component(item: TypeDeclarationStatement, entity_decl: str, description: str) -> DataComponent:
+def create_data_component(item: TypeDeclarationStatement, entity_decl: str, 
+                          comment_stack: List[Comment]) -> DataComponent:
    """Create a data component description from a type declaration and entity.
 
    Args:
@@ -209,23 +157,12 @@ def create_data_component(item: TypeDeclarationStatement, entity_decl: str, desc
        'type': item.name,
        'kind': extract_kind(item.raw_selector),
        'len': extract_len(item.raw_selector),
-       'description': description,
+       'description': get_formatted_description(comment_stack),
        'dimension': extract_dimension(entity_decl, item.attrspec),
        'initial_value': initial_value,
        'attributes': [attr.lower() for attr in item.attrspec if 'dimension' not in attr]
    }
 
-
-def handle_other_type(item: Any, type_info: TypeDescription, description: str) -> None:
-   """Handle any other type of item by doing nothing.
-
-   Args:
-       item: The item to handle.
-       type_info: The type description dictionary.
-       description: The description string.
-   """
-   logger.warning("Unhandled type %s", type(item))
-   pass
 
 def get_name_and_initial_value(entity_decl: str) -> Tuple[str, Optional[str]]:
    """Extract the name and initial value from an entity declaration.
@@ -354,3 +291,34 @@ def extract_len(type_spec: str) -> Optional[str]:
    if match:
        return match.group(1)
    return None
+
+
+def parse_type(
+    type: Type, comment_stack: List[Comment]
+) -> TypeDescription:
+    type_name: str = type.name
+    type_description: TypeDescription = {
+        "type_name": type_name,
+        "attributes": [],
+        "description": "",
+        "data_components": {},
+        "procedures": {},
+        "generic_interfaces": {},
+        "extends": None,
+    }
+    if comment_stack:
+        type_description["description"] = format_comments(comment_stack)
+        comment_stack.clear()
+        
+    if any(spec.startswith("extends") for spec in type.specs):
+        extends_spec = next(
+            spec for spec in type.specs if spec.startswith("extends"))
+        match = re.search(r"extends\s*\(\s*(\w+)\s*\)", extends_spec)
+        if match:
+            base_type = match.group(1)
+            type_description["extends"] = base_type
+    else:
+        type_description["attributes"].extend(type.specs)
+    type_description["attributes"].append("public")
+    parse_type_content(type, type_description, comment_stack)
+    return type_description

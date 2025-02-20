@@ -16,7 +16,6 @@ from doc4for.models.module_models import ModuleDescription, ProgramDescription, 
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
-from doc4for.parse.type_parser import update_type_with_parsed_data
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.parse.array_utils import calculate_array_size, expand_array_values
 
@@ -163,33 +162,6 @@ def initialise_module_description(
     return module_data
 
 
-def parse_type(
-    type: Type, comment_stack: List[Comment]
-) -> TypeDescription:
-    type_name: str = type.name
-    type_description: TypeDescription = {
-        "type_name": type_name,
-        "attributes": [],
-        "description": "",
-        "data_components": {},
-        "procedures": {},
-        "generic_interfaces": {},
-        "extends": None,
-    }
-    if any(spec.startswith("extends") for spec in type.specs):
-        extends_spec = next(
-            spec for spec in type.specs if spec.startswith("extends"))
-        match = re.search(r"extends\s*\(\s*(\w+)\s*\)", extends_spec)
-        if match:
-            base_type = match.group(1)
-            type_description["extends"] = base_type
-    else:
-        type_description["attributes"].extend(type.specs)
-    type_description["attributes"].append("public")
-    update_type_with_parsed_data(type, type_description)
-    if comment_stack:
-        type_description["description"] = format_comments(comment_stack)
-    return type_description
 
 
 # TODO public declaration should be handled here?

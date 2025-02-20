@@ -1,30 +1,18 @@
 import re
 import logging
 from dataclasses import dataclass, field
-from typing import Callable, Any, Optional, Type, Dict, List, Tuple, Union
+from typing import Any, Optional, List
 from fparser.one.block_statements import (
     Comment,
     Function, 
     Subroutine,
     Interface,
-    Program,
-    BlockData,
-    ModuleProcedure,
     Type as FortranType
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.module_models import ModuleDescription
-from doc4for.models.type_models import TypeDescription
-from doc4for.utils.comment_utils import get_formatted_description
-from doc4for.parse.type_parser import update_type_with_parsed_data
-from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_variable_dimension, extract_coarray_dimensions
-from doc4for.parse.array_utils import parse_initialization_value
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
-from doc4for.parse.parsing_utils import get_attributes, extract_kind, get_character_length
-from doc4for.parse.parameter_parser import parse_parameter, is_parameter
-from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
 from doc4for.parse.base_parser import (
-    FortranHandler, 
+    FortranHandler,
     VisibilityState,
     handle_function, 
     handle_subroutine, 
@@ -32,21 +20,11 @@ from doc4for.parse.base_parser import (
     handle_type_declaration,
     handle_interface
 )
-from doc4for.parse.base_parser import FortranHandler, handle_function, handle_subroutine
+from doc4for.parse.base_parser import handle_function, handle_subroutine
 
-logger: logging.Logger = logging.getLogger(__name__)
-
-ModuleHandlerType = ModuleHandler = FortranHandler[ModuleDescription]
-
-@dataclass
-class VisibilityState:
-    is_public: bool = True
-    explicit_public: List[str] = field(default_factory=list)
-    explicit_private: List[str] = field(default_factory=list)
-
+ModuleHandler = FortranHandler[ModuleDescription]
 
 _module_handler_instance: Optional[ModuleHandler] = None
-
 
 def _get_module_handler() -> ModuleHandler:
     """Get an instance of ModuleHandler and initialize if necessary.
