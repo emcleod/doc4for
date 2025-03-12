@@ -12,15 +12,26 @@ Uses = TypedDict(
     }
 )
 
-#TODO have a common block type rather than a dict of dicts
+
+CommonBlockDescription = TypedDict(
+    "CommonBlockDescription",
+    {
+        "name": str,
+        "variables": Dict[str, VariableDescription],
+        "description": Optional[str],
+    },
+)
+
+
 BlockDataDescription = TypedDict(
     "BlockDataDescription",
     {
         "name": str,
         "description": str,
-        "common_blocks": Dict[str, Dict[str, VariableDescription]],
+        "common_blocks": Dict[str, CommonBlockDescription],
     },
 )
+
 
 ModuleDescription = TypedDict(
     "ModuleDescription",
