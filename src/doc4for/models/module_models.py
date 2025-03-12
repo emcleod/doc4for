@@ -46,7 +46,6 @@ ProgramDescription = TypedDict(
         "file_name": str,
         "program_description": str,
         "uses": Dict[str, Uses],
-        "enums": Dict[str, EnumDescription],  
     },
 )
 

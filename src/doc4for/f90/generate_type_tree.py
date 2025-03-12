@@ -138,3 +138,5 @@ def generate_inheritance_tree_page(
         file.write(output)
 
     print(f"Inheritance tree page generated at {output_path}")
+
+

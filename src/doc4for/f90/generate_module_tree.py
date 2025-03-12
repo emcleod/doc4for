@@ -9,15 +9,7 @@ from fparser.api import parse as fortran_parser  # type: ignore
 from fparser.one.block_statements import (
     Module,
     Comment,
-    Function,
-    Subroutine,
-    Type,
-    Interface,
-    Public,
-    Private,
-    Protected
 )
-from fparser.one.typedecl_statements import TypeDeclarationStatement
 from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
 from doc4for.utils.file_utils import check_write_permissions
