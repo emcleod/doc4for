@@ -34,13 +34,17 @@ def format_comments(comment_stack: List[Comment]) -> str:
     formatted_comments = []
     for comment in comment_stack:
         content = comment.content.strip()
-        if content.startswith('!*'):
-            content = content[2:].strip()
-        elif content.startswith('!'):
-            content = content[1:].strip()
-        if content.endswith('*!'):
-            content = content[:-2].rstrip()
-        formatted_comments.append(format_comment_for_html(content))
+        if not formatted_comments and not content.startswith('!*'):
+            # we have previous comments on the stack that aren't part of the documentation
+            pass
+        else:
+            if content.startswith('!*'):
+                content = content[2:].strip()
+            elif content.startswith('!'):
+                content = content[1:].strip()
+            if content.endswith('*!'):
+                content = content[:-2].rstrip()
+            formatted_comments.append(format_comment_for_html(content))
     return '\n'.join(formatted_comments) + '\n'
 
 

@@ -55,48 +55,40 @@ class TestCommonBlockBindings(TestCase):
     """
         )
         
-        # This test is expected to fail initially, so we can use try/except to document 
-        # the current behavior without breaking the test suite
-        try:
-            self.assertTrue(False) # want it to fail
-            result = extract_module_data([Path('/fake/path/common_block_binding.f90')])
-            module = result[0]
+        result = extract_module_data([Path('/fake/path/common_block_binding.f90')])
+        module = result[0]
+        
+        self.assertTrue(False)
+        # If we get here, common blocks are being parsed. Let's check binding types:
+        if 'common_blocks' in module:
+            # Test c_data_block binding
+            c_block = next((block for block in module['common_blocks'] 
+                        if block['name'] == 'c_data_block'), None)
+            if c_block:
+                self.assertIn('binding_type', c_block)
+                self.assertEqual(c_block['binding_type']['type'], BindingTypeEnum.BIND_C)
+                self.assertEqual(c_block['binding_type']['name'], 'c_data')
             
-            # If we get here, common blocks are being parsed. Let's check binding types:
-            if 'common_blocks' in module:
-                # Test c_data_block binding
-                c_block = next((block for block in module['common_blocks'] 
-                            if block['name'] == 'c_data_block'), None)
-                if c_block:
-                    self.assertIn('binding_type', c_block)
-                    self.assertEqual(c_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-                    self.assertEqual(c_block['binding_type']['name'], 'c_data')
-                
-                # Test normal block - should have default binding
-                normal_block = next((block for block in module['common_blocks'] 
-                                    if block['name'] == 'normal_block'), None)
-                if normal_block:
-                    self.assertIn('binding_type', normal_block)
-                    self.assertEqual(normal_block['binding_type']['type'], BindingTypeEnum.DEFAULT)
-                    self.assertIsNone(normal_block['binding_type']['name'])
-                
-                # Test unusual spacing
-                coords_block = next((block for block in module['common_blocks'] 
-                                if block['name'] == 'coords_block'), None)
-                if coords_block:
-                    self.assertIn('binding_type', coords_block)
-                    self.assertEqual(coords_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-                    self.assertEqual(coords_block['binding_type']['name'], 'coords_data')
+            # Test normal block - should have default binding
+            normal_block = next((block for block in module['common_blocks'] 
+                                if block['name'] == 'normal_block'), None)
+            if normal_block:
+                self.assertIn('binding_type', normal_block)
+                self.assertEqual(normal_block['binding_type']['type'], BindingTypeEnum.DEFAULT)
+                self.assertIsNone(normal_block['binding_type']['name'])
             
-            # Verify function binding still works normally
-            get_x = module['functions']['get_x']
-            self.assertEqual(get_x['binding_type']['type'], BindingTypeEnum.BIND_C)
+            # Test unusual spacing
+            coords_block = next((block for block in module['common_blocks'] 
+                            if block['name'] == 'coords_block'), None)
+            if coords_block:
+                self.assertIn('binding_type', coords_block)
+                self.assertEqual(coords_block['binding_type']['type'], BindingTypeEnum.BIND_C)
+                self.assertEqual(coords_block['binding_type']['name'], 'coords_data')
+        
+        # Verify function binding still works normally
+        get_x = module['functions']['get_x']
+        self.assertEqual(get_x['binding_type']['type'], BindingTypeEnum.BIND_C)
             
-        except Exception as e:
-            # Since we expect this to fail initially, we'll just print the error
-            print(f"Expected failure in common block test: {e}")
-            # Consider this a passing test since we expect failure
-            self.assertTrue(False)            
 
 if __name__ == '__main__':
     unittest.main()

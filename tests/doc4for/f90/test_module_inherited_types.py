@@ -240,7 +240,7 @@ end module shapes
          end function calculate_area
      end interface
 
-     !! Defines a rectangle *!
+     !!* Defines a rectangle *!
      type, extends(shape) :: rectangle
          !!* The length of the rectangle *!
          real :: length

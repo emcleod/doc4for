@@ -1,4 +1,4 @@
-from typing import Optional, List, TypedDict, Dict
+from typing import Optional, List, TypedDict, Dict, Union
 from enum import Enum, auto
 from dataclasses import dataclass
 
@@ -70,7 +70,7 @@ Uses = TypedDict(
     "Uses", 
     {
         "module_name": str, 
-        "selections": List[str],
+        "selections": List[Union[str, Dict[str, str]]],  # Can be either a simple string or a dict with {"local_name": "original_name"}
         "description": Optional[str]
     }
 )

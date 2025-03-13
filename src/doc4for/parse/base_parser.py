@@ -127,21 +127,33 @@ def handle_block_data(item: BlockData, data: FileDescription,
 
 def handle_use(item: Use, data: T, comment_stack: List[Comment]) -> None:
     module_name = item.name  # The first item is the module name
-    # 'items' contains any selections         
-    selections = item.items
+    selections = item.items  # 'items' contains any selections
+    
+    # Process selections to handle renames
+    processed_selections = []
+    if selections:
+        for selection in selections:
+            if '=>' in selection:
+                # This is a renamed import
+                local_name, original_name = [s.strip() for s in selection.split('=>', 1)]
+                processed_selections.append({local_name: original_name})
+            else:
+                # This is a regular import
+                processed_selections.append(selection)
+    
     if module_name in data['uses']:
-        # already imported something from this module
+        # already using something from this module
         if not selections:
-            # if items is empty, we're importing everything, so remove selections
+            # if items is empty, it's using everything, so remove selections
             data['uses'][module_name]["selections"] = []
         else:
-            # otherwise, we've added selections
-            data['uses'][module_name]["selections"].extend(selections)
+            # otherwise, add new selections
+            data['uses'][module_name]["selections"].extend(processed_selections)
     else:
-        # first time we've seen this import
-        uses: Uses = {
+        # first time we've seen this module name
+        uses = {
             "module_name": module_name,
-            "selections": selections
+            "selections": processed_selections
         }
         # Add to the uses dictionary with the module name as the key
         data['uses'][module_name] = uses
