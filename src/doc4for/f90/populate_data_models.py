@@ -37,10 +37,12 @@ def parse_program(
     for program_child in program.content:
         if isinstance(program_child, Use):
             module_name = program_child.name
+            #TODO use the uses parser in base_parser
             if module_name not in program_details["uses"]:
-                uses: Uses = {
-                    "module_name": program_child.name, "selections": []}
-                program_details["uses"][module_name] = uses
+                pass
+                # uses: Uses = {
+                #     "module_name": program_child.name, "selections": []}
+                # program_details["uses"][module_name] = uses
             if (
                 not program_child.items
                 and program_details["uses"][module_name]["selections"]
@@ -184,6 +186,7 @@ def initialise_module_description(
         "enums": {},
         "interfaces": [],
         "types": {},
+        "uses": {},
         "file_name": file_name,
         "module_description": "",
     }

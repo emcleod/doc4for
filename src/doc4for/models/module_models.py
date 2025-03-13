@@ -8,7 +8,8 @@ Uses = TypedDict(
     "Uses", 
     {
         "module_name": str, 
-        "selections": List[str]
+        "selections": List[str],
+        "description": Optional[str]
     }
 )
 
@@ -44,6 +45,7 @@ ModuleDescription = TypedDict(
         "interfaces": List[InterfaceDescription],
         "enums": Dict[str, EnumDescription],
         "types": Dict[str, TypeDescription],
+        "uses": Dict[str, Uses], 
         "file_name": str,
         "module_description": str,
     },

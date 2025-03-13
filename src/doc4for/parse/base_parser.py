@@ -19,12 +19,13 @@ from fparser.one.block_statements import (
     Private,
     Public,
     Enum,
-    Enumerator
+    Enumerator,
+    Use
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import BindingType, BindingTypeEnum, EnumDescription
 from doc4for.models.file_models import FileDescription
-from doc4for.models.module_models import ModuleDescription
+from doc4for.models.module_models import ModuleDescription, Uses
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter, is_parameter
@@ -115,6 +116,7 @@ def handle_module_procedure(item: ModuleProcedure, data: T,
        data['procedures'][name] = procedure_description
 
 
+
 def handle_program(item: Program, data: FileDescription,
                    comment_stack: List[Comment]) -> None:
     data['programs'][item.name] = parse_program(item, comment_stack, data['file_name'])
@@ -122,6 +124,18 @@ def handle_program(item: Program, data: FileDescription,
 def handle_block_data(item: BlockData, data: FileDescription,
                       comment_stack: List[Comment]) -> None:
     data['block_data'][item.name] = parse_block_data(item, comment_stack)
+
+def handle_use(item: Use, data: ModuleDescription, comment_stack: List[Comment]) -> None:
+    module_name = item.name  # The first item is the module name
+    # 'items' contains any selections         
+    selections = item.items
+    uses: Uses = {
+        "module_name": module_name,
+        "selections": selections
+    }
+    # Add to the uses dictionary with the module name as the key
+    data['uses'][module_name] = uses
+
 
 def handle_type(item: FortranType, data: ModuleDescription,
                 comment_stack: List[Comment]) -> None:
