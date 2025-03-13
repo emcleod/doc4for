@@ -4,8 +4,6 @@ from fparser.one.block_statements import (
     Module,
     Comment,
     Program,
-    Public,
-    Type,
     Use,
     BlockData,
     Common,
@@ -36,23 +34,8 @@ def parse_program(
         program_details["program_description"] = format_comments(comment_stack)
     for program_child in program.content:
         if isinstance(program_child, Use):
-            module_name = program_child.name
-            #TODO use the uses parser in base_parser
-            if module_name not in program_details["uses"]:
-                pass
-                # uses: Uses = {
-                #     "module_name": program_child.name, "selections": []}
-                # program_details["uses"][module_name] = uses
-            if (
-                not program_child.items
-                and program_details["uses"][module_name]["selections"]
-            ):
-                # everything in the module is used, so any selections are overwritten
-                program_details["uses"][module_name]["selections"] = []
-            else:
-                program_details["uses"][module_name]["selections"].extend(
-                    program_child.items
-                )
+            from doc4for.parse.base_parser import handle_use
+            handle_use(program_child, program_details, comment_stack)
     return program_details
 
 

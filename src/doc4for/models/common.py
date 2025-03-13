@@ -65,3 +65,12 @@ EnumDescription = TypedDict(
         "binding_type": BindingType
     },
 )
+
+Uses = TypedDict(
+    "Uses", 
+    {
+        "module_name": str, 
+        "selections": List[str],
+        "description": Optional[str]
+    }
+)

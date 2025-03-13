@@ -7,6 +7,7 @@ from fparser.one.block_statements import (
     Subroutine,
     Program,
     BlockData,
+    Use
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
@@ -17,7 +18,8 @@ from doc4for.parse.base_parser import (
     handle_subroutine, 
     handle_block_data, 
     handle_module, 
-    handle_program)
+    handle_program,
+    handle_use)
 
 FileHandler = FortranHandler[FileDescription]
 
@@ -37,6 +39,7 @@ def _get_file_handler() -> FileHandler:
         handler.register_handler(Subroutine, handle_subroutine)
         handler.register_handler(Program, handle_program)
         handler.register_handler(BlockData, handle_block_data)
+        handler.register_handler(Use, handle_use)
         _file_handler_instance = handler
     return _file_handler_instance
 

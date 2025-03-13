@@ -1,6 +1,7 @@
-from typing import TypedDict, Dict, List
+from typing import TypedDict, Dict
 from doc4for.models.module_models import BlockDataDescription, ProgramDescription, ModuleDescription
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
+from doc4for.models.common import Uses
 
 FileDescription = TypedDict(
     "FileDescription",
@@ -12,7 +13,7 @@ FileDescription = TypedDict(
         "modules": Dict[str, ModuleDescription],
         "programs": Dict[str, ProgramDescription],
         "block_data": Dict[str, BlockDataDescription],
-        "uses": List[str],
+        "uses": Dict[str, Uses],
     },
 )
 

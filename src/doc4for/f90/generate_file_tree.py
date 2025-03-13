@@ -70,7 +70,8 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
             'subroutines': {},
             'modules': {},
             'programs': {},
-            'block_data': {}
+            'block_data': {},
+            'uses': {}
         }
         parse_file_content(tree, file_data)
         files.append(file_data)

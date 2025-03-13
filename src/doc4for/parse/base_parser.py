@@ -116,7 +116,6 @@ def handle_module_procedure(item: ModuleProcedure, data: T,
        data['procedures'][name] = procedure_description
 
 
-
 def handle_program(item: Program, data: FileDescription,
                    comment_stack: List[Comment]) -> None:
     data['programs'][item.name] = parse_program(item, comment_stack, data['file_name'])
@@ -125,16 +124,27 @@ def handle_block_data(item: BlockData, data: FileDescription,
                       comment_stack: List[Comment]) -> None:
     data['block_data'][item.name] = parse_block_data(item, comment_stack)
 
-def handle_use(item: Use, data: ModuleDescription, comment_stack: List[Comment]) -> None:
+
+def handle_use(item: Use, data: T, comment_stack: List[Comment]) -> None:
     module_name = item.name  # The first item is the module name
     # 'items' contains any selections         
     selections = item.items
-    uses: Uses = {
-        "module_name": module_name,
-        "selections": selections
-    }
-    # Add to the uses dictionary with the module name as the key
-    data['uses'][module_name] = uses
+    if module_name in data['uses']:
+        # already imported something from this module
+        if not selections:
+            # if items is empty, we're importing everything, so remove selections
+            data['uses'][module_name]["selections"] = []
+        else:
+            # otherwise, we've added selections
+            data['uses'][module_name]["selections"].extend(selections)
+    else:
+        # first time we've seen this import
+        uses: Uses = {
+            "module_name": module_name,
+            "selections": selections
+        }
+        # Add to the uses dictionary with the module name as the key
+        data['uses'][module_name] = uses
 
 
 def handle_type(item: FortranType, data: ModuleDescription,

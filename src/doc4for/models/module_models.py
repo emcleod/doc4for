@@ -2,16 +2,7 @@ from typing import TypedDict, Dict, List, Optional
 from doc4for.models.variable_models import VariableDescription, ParameterDescription
 from doc4for.models.procedure_models import FunctionDescription, InterfaceDescription, SubroutineDescription
 from doc4for.models.type_models import TypeDescription
-from doc4for.models.common import EnumDescription
-
-Uses = TypedDict(
-    "Uses", 
-    {
-        "module_name": str, 
-        "selections": List[str],
-        "description": Optional[str]
-    }
-)
+from doc4for.models.common import EnumDescription, Uses
 
 
 CommonBlockDescription = TypedDict(
