@@ -1,0 +1,22 @@
+{% from "macros/module_macros.html" import render_attributes, binding_display, render_arguments_list %}
+
+{% if module_data.subroutines %}
+<section class="subroutine-details" aria-labelledby="subroutine-details-heading">
+  <h2 id="subroutine-details-heading">Subroutine Details</h2>
+  {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+    <section class="procedure" id="subroutine-{{ subroutine_name }}" aria-labelledby="{{ subroutine_name }}-heading">
+      {% include "components/procedure/header.html" with context %}
+      <div class="subroutine-body">
+        {% if subroutine_data %}
+          <p>{{ subroutine_data.description }}</p>
+          {% include "components/procedure/argument_interfaces.html" with context %}
+          {{ render_arguments_list(subroutine_data.in, "Inputs") }}
+          {{ render_arguments_list(subroutine_data.out, "Outputs") }}
+        {% else %}
+          <p>No detailed information available for this subroutine.</p>
+        {% endif %}
+      </div>
+    </section>
+  {% endfor %}
+</section>
+{% endif %}

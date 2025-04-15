@@ -1,0 +1,23 @@
+{% if type_data.generic_interfaces %}
+  <section class="generic-interfaces">
+    <h4>Generic Interfaces</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Generic</th>
+          <th>Specific Procedures</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for generic_interface_name, generic_interface_data in type_data.generic_interfaces.items() %}
+          <tr>
+            <td>{{ generic_interface_name }}</td>
+            <td>{{ generic_interface_data.specific_procedures|join(', ') }}</td>
+            <td>{{ generic_interface_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

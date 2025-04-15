@@ -1,0 +1,39 @@
+{% if module_data.uses %}
+  <section class="uses-summary">
+    <h2>Uses</h2>
+    <table>
+      <thead>
+        <tr>
+        <th>Module</th>
+        <th>Items</th>
+        <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for use_name, use_data in module_data.uses.items() %}
+        <tr>
+        <td>{{ use_name }}</td>
+        <td>
+          {% if use_data.selections and use_data.selections|length > 0 %}
+          <ul>
+            {% for selection in use_data.selections %}
+            <li>
+              {% if selection is mapping %}
+                {{ selection.keys()|first }} => {{ selection.values()|first }}
+              {% else %}
+                {{ selection }}
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+            <em>All exported items</em>
+          {% endif %}
+          </td>
+          <td>{{ use_data.description if use_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+   </table>
+  </section>
+{% endif %}

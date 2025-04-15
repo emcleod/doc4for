@@ -1,0 +1,38 @@
+{% from "macros/module_macros.html" import format_dimension, render_attributes %}
+
+<section class="variables-summary">
+  <h2>Variables</h2>
+  {% if module_data.variables %}
+    <h2>Variables</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for var_name, var_data in module_data.variables.items() %}
+          <tr>
+            <td><strong>{{ var_name }}</strong></td>
+            <td>
+              {{ var_data.type }}              
+              {% if var_data.kind %}
+                ({{ var_data.kind }})
+              {% endif %}
+              {% if var_data.dimension %}
+                {{ format_dimension(var_data.dimension) }}
+              {% endif %}
+            </td>
+            <td>{{ render_attributes(var_data.attributes) }}</td>
+            <td>{{ var_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No variables defined in this module.</p>
+  {% endif %}
+</section>

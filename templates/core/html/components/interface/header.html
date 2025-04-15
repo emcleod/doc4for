@@ -1,0 +1,6 @@
+{% from "macros/module_macros.html" import format_interface_name, render_attributes %}
+
+<h3 id="{{ interface_id }}-heading" class="interface-header">
+  {{ render_attributes(interface_data.attributes) }}
+  <span class="interface-name">{{ format_interface_name(interface_data) }}</span>
+</h3>

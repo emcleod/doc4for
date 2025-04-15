@@ -1,0 +1,33 @@
+{% from "macros/module_macros.html" import render_attributes, format_dimension, format_type_declaration %}
+
+{% if type_data.data_components %}
+  <section class="data-components">
+    <h4>Data Components</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Dimension</th>
+          <th>Initial Value</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for data_component_name, data_component in type_data.data_components.items() %}
+          <tr>
+            <td>{{ data_component_name }}</td>
+            <td>
+              {{ format_type_declaration(data_component.type, data_component.kind, data_component.len) }}
+            </td>
+            <td>{{ format_dimension(data_component.dimension) if data_component.dimension else '-' }}</td>
+            <td>{{ data_component.initial_value if data_component.initial_value else '-' }}</td>
+            <td>{{ render_attributes(data_component.attributes) }}</td>
+            <td>{{ data_component.description }}</td>
+           </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

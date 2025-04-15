@@ -1,0 +1,60 @@
+{% macro render_attributes(attributes, default='-') %}
+  {% if attributes and attributes|length > 0 %}
+    <span class="attributes">{{ attributes|join(', ') }}</span>
+  {% elif default %}
+    <span class="attributes no-attributes">{{ default }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro binding_display(binding_type) %}
+  {% if binding_type and binding_type.type and binding_type.type.name == 'BIND_C' %}
+    <p class="binding-info"><span class="binding-label">C binding:</span> <code>{{ binding_type.name }}</code></p>
+  {% endif %}
+{% endmacro %}
+
+{% macro format_dimension(dimension) %}
+  {% if dimension %}
+    <span class="dimension">(dimension: {{ dimension }})</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro format_procedure_name(name, arguments=None) %}
+  {{ name }}{% if arguments %}({{ arguments|join(', ') }}){% else %}(){% endif %}
+{% endmacro %}
+
+{% macro format_interface_name(interface_data) %}
+  {% if interface_data.name %}
+    {{ interface_data.name }}
+  {% elif interface_data.operator_symbol %}
+    {{ interface_data.operator_symbol }}
+  {% else %}
+    Abstract Interface
+  {% endif %}
+{% endmacro %}
+
+{% macro determine_procedure_type(proc_data) %}
+  {{ 'Function' if 'return' in proc_data else 'Subroutine' }}
+{% endmacro %}
+
+{% macro render_arguments_list(args_dict, section_title) %}
+  {% if args_dict %}
+    <p><strong>{{ section_title }}:</strong></p>
+    <ul class="procedure-args">
+      {% for arg_name, arg_details in args_dict.items() %}
+        <li>
+          <span class="arg-name">{{ arg_name }}: {{ arg_details.type }}</span>
+          {% if arg_details.dimension %}({{ arg_details.dimension }}){% endif %}
+          {% if arg_details.enum_type %}(enum: {{ arg_details.enum_type }}){% endif %}
+          {% if arg_details.interface_name %}(interface: {{ arg_details.interface_name }}){% endif %}
+          {% if arg_details.description %} - {{ arg_details.description }}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}
+
+{% macro format_type_declaration(type_name, kind=None, len=None) %}
+  {{ type_name }}
+  {%- if kind %}(kind={{ kind }}){% endif %}
+  {%- if len %}(len={{ len }}){% endif %}
+{% endmacro %}

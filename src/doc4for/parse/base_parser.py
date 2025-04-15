@@ -64,6 +64,7 @@ class FortranHandler(Generic[T]):
     def __init__(self):
         self.handlers: Dict[Type, Callable[[Any, T, List[Comment]], None]] = {}
 
+    #TODO metaclass or decorator?
     def register_handler(self, item_type: Type,
                          handler: Callable[[Any, T, List[Comment]], None]) -> None:
         self.handlers[item_type] = handler

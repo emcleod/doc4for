@@ -1,0 +1,21 @@
+{% if interface_data.module_procedures %}
+<section class="module-procedures">
+  <h4>Module Procedures</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for proc_name, proc_data in interface_data.module_procedures.items() %}
+      <tr>
+        <td>{{ proc_name }}</td>
+        <td>{{ proc_data.description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}

@@ -1,0 +1,33 @@
+{% from "macros/module_macros.html" import render_attributes %}
+
+{% if module_data.interfaces %}
+  <section class="interfaces-summary">
+    <h2>Interfaces</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for interface_data in module_data.interfaces %}
+        <tr>
+          <td>
+            {% if interface_data.name %}
+              <strong><a href="#interface-{{ interface_data.name }}">{{ interface_data.name }}</a></strong>
+            {% elif interface_data.operator_symbol %}
+              <strong><a href="#interface-{{ interface_data.operator_symbol }}">{{ interface_data.operator_symbol }}</a></strong>
+            {% else %}
+              <strong>Abstract Interface</strong>
+            {% endif %}
+          </td>
+          <td>{{ render_attributes(interface_data.attributes) }}</td>
+          <td>{{ interface_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

@@ -1,0 +1,35 @@
+{% from "macros/module_macros.html" import render_attributes, binding_display, render_arguments_list %}
+
+{% if module_data.functions %}
+<section class="function-details" aria-labelledby="function-details-heading">
+  <h2 id="function-details-heading">Function Details</h2>
+  {% for function_name, function_data in module_data.functions.items() %}
+    <section class="procedure" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
+      {% include "components/procedure/header.html" with context %}
+      <div class="function-body">
+        {% if function_data %}
+          <p>{{ function_data.description }}</p>
+          {% include "components/procedure/argument_interfaces.html" with context %}
+          {{ render_arguments_list(function_data.in, "Inputs") }}
+          {{ render_arguments_list(function_data.out, "Outputs") }}
+          
+          {% if function_data.return %}
+            <p><strong>Returns:</strong></p>
+            <ul class="function-returns">
+              {% for return_name, return_details in function_data.return.items() %}
+                <li>
+                  <span class="return-name">{{ return_name }}: {{ return_details.type }}</span>
+                  {% if return_details.dimension %}({{ return_details.dimension }}){% endif %}
+                  {% if return_details.description %} - {{ return_details.description }}{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% else %}
+          <p>No detailed information available for this function.</p>
+        {% endif %}
+      </div>
+    </section>
+  {% endfor %}
+</section>
+{% endif %}

@@ -1,0 +1,27 @@
+{% if type_data.enums %}
+  <section class="type-enums">
+    <h4>Enumerations</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Values</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enum_name, enum_data in type_data.enums.items() %}
+          <tr>
+            <td>{{ enum_name }}</td>
+            <td>
+              {% for enumerator_name, enumerator_data in enum_data.enumerators.items() %}
+                {{ enumerator_name }} = {{ enumerator_data.value }}<br>
+              {% endfor %}
+            </td>
+            <td>{{ enum_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

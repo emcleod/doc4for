@@ -8,6 +8,7 @@ from doc4for.models.module_models import ModuleDescription
 from doc4for.models.file_models import FileDescription
 from doc4for.f90.generate_file_tree import build_directory_tree, generate_file_pages, extract_file_data, DirectoryTree
 from doc4for.f90.generate_module_tree import extract_module_data, generate_module_pages
+from doc4for.f90.generate_module_diagram import generate_module_diagram, generate_module_usage_diagram
 from doc4for.utils.file_utils import find_files_by_extensions, create_docs_directory
 from doc4for.f90.generate_type_tree import generate_inheritance_tree, generate_inheritance_tree_page
 from doc4for.config import (load_configuration, ConfigKeys, OutputFormatKeys, CommonOutputKeys, TemplateKeys, CoreTemplateKeys, StaticAssetKeys)
@@ -78,6 +79,29 @@ def main() -> None:
 
         logger.info("Generating module pages")
         generate_module_pages(modules, html_template_dir, module_template, output_dir)
+#TODO enable this
+        # # Create module diagrams directory
+        # module_diagrams_dir = os.path.join(output_dir, "module_diagrams")
+        # os.makedirs(module_diagrams_dir, exist_ok=True)
+        
+        # logger.info("Generating module dependency diagram")
+        # dependency_diagram_path = generate_module_diagram(modules, module_diagrams_dir)
+        # logger.info(f"Module dependency diagram created at: {dependency_diagram_path}")
+        
+        # logger.info("Generating module usage diagrams")
+        # # Generate overall usage diagram
+        # usage_diagram_path = generate_module_usage_diagram(modules, module_diagrams_dir)
+        # logger.info(f"Module usage diagram created at: {usage_diagram_path}")
+        
+        # # Generate individual module usage diagrams
+        # for module in modules:
+        #     module_name = module['module_name']
+        #     module_usage_path = generate_module_usage_diagram(
+        #         modules, 
+        #         module_diagrams_dir,
+        #         module_name=module_name
+        #     )
+        #     logger.info(f"Usage diagram for {module_name} created at: {module_usage_path}")
 
         logger.info("Building inheritance tree")
         inheritance_tree: Dict[str, Any] = generate_inheritance_tree(fortran_files)

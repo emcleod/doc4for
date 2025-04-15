@@ -1,0 +1,35 @@
+{% from "macros/module_macros.html" import render_attributes, format_procedure_name %}
+
+<section class="subroutines-summary">
+  <h2>Subroutines</h2>
+  {% if module_data.subroutines %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+          <tr>
+            <td>
+              <strong>
+                <a href="#subroutine-{{ subroutine_name }}">{{ format_procedure_name(subroutine_name, subroutine_data.arguments) }}                
+                </a>              
+              </strong>
+              {% if subroutine_data.binding_type and subroutine_data.binding_type.type.name == 'BIND_C' %}
+                <br><small>C name: {{ subroutine_data.binding_type.name }}</small>
+              {% endif %}
+            </td>
+            <td>{{ render_attributes(subroutine_data.attributes) }}</td>
+            <td>{{ subroutine_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No subroutines defined in this module.</p>
+  {% endif %}
+</section>

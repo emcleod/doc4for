@@ -1,0 +1,44 @@
+{% from "macros/module_macros.html" import render_attributes %}
+
+<section class="types-summary">
+  <h2>Types</h2>
+  {% if module_data.types %}
+    {% set has_extends = false %}
+    {% for type_data in module_data.types.values() %}
+      {% if type_data.extends is not none %}
+        {% set has_extends = true %}
+      {% endif %}
+    {% endfor %}
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Attributes</th>
+          {% if has_extends %}
+          <th>Extends</th>
+          {% endif %}
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for type_name, type_data in module_data.types.items() %}
+        <tr>
+          <td><strong><a href="#type-{{ type_name }}">{{ type_name }}</a></strong></td>
+          <td>{{ render_attributes(type_data.attributes) }}</td>
+          {% if has_extends %}
+          <td>
+            {% if type_data.extends is not none %}
+            {{ type_data.extends }}
+            {% endif %}
+          </td>
+          {% endif %}
+          <td>{{ type_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No types defined in this module.</p>
+  {% endif %}
+</section>

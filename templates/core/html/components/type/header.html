@@ -1,0 +1,10 @@
+{% from "macros/module_macros.html" import render_attributes, binding_display %}
+
+<h3 id="{{ type_name }}-heading" class="type-header">
+    {{ render_attributes(type_data.attributes) }}
+    <span class="type-name">{{ type_name }}</span>
+  </h3>
+  {% if type_data.extends %}
+    <p class="type-extends">extends: {{ type_data.extends }}</p>
+  {% endif %}
+  {{ binding_display(type_data.binding_type) }}

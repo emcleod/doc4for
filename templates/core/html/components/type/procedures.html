@@ -1,0 +1,35 @@
+{% from "macros/module_macros.html" import render_attributes %}
+
+{% if type_data.procedures %}
+  <section class="procedures">
+    <h4>Procedures</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Bound To</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for procedure_name, procedure_data in type_data.procedures.items() %}
+        <tr>
+          <td>{{ procedure_name }}</td>
+          <td>
+            {% if procedure_data.bound_to %}
+              {% if procedure_data.bound_to is string %}
+                {{ procedure_data.bound_to }}
+              {% else %}
+                {{ procedure_data.bound_to|join(', ') }}
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>{{ render_attributes(procedure_data.attributes) }}</td>
+          <td>{{ procedure_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

@@ -1,0 +1,9 @@
+<h3 id="{{ function_name if function_name is defined else subroutine_name }}-heading" class="{{ 'function' if function_data is defined else 'subroutine' }}-header">
+    {{ render_attributes(function_data.attributes if function_data is defined else subroutine_data.attributes) }}
+    <span class="{{ 'function' if function_data is defined else 'subroutine' }}-name">
+      {{ function_name if function_name is defined else subroutine_name }}
+      {%- set args = (function_data.arguments if function_data is defined else subroutine_data.arguments) -%}
+      {%- if args is defined -%}({{ args|join(', ') }}){%- else -%}(){%- endif -%}
+    </span>
+  </h3>
+{{ binding_display(function_data.binding_type if function_data is defined else subroutine_data.binding_type) }}

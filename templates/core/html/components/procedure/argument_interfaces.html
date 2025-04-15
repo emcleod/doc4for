@@ -1,0 +1,27 @@
+{% set proc_data = function_data if function_data is defined else subroutine_data %}
+{% if proc_data.argument_interfaces %}
+  <section class="argument-interfaces">
+    <h4>Interface Arguments</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Argument</th>
+          <th>Interface</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for arg_name, interface_data in proc_data.argument_interfaces.items() %}
+          <tr>
+            <td>{{ arg_name }}</td>
+            <td>
+              {{ render_attributes(interface_data.attributes) }}
+              {{ interface_data.name or 'abstract interface' }}
+            </td>
+            <td>{{ interface_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}

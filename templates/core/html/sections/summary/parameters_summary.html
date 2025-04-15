@@ -1,0 +1,39 @@
+{% from "macros/module_macros.html" import render_attributes, format_dimension %}
+
+<section class="parameters-summary">
+  <h2>Parameters</h2>
+    {% if module_data.parameters %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Value</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for param_name, param_data in module_data.parameters.items() %}
+        <tr>
+          <td><strong>{{ param_name }}</strong></td>
+          <td>
+            {{ param_data.type }}
+            {% if param_data.kind %}
+              ({{ param_data.kind }})
+            {% endif %}
+            {% if param_data.dimension %}
+              {{ format_dimension(param_data.dimension) }}
+            {% endif %}
+          </td>
+          <td>{{ param_data.value }}</td>
+          <td>{{ render_attributes(param_data.attributes) }}</td>
+          <td>{{ param_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No parameters defined in this module.</p>
+  {% endif %}
+</section>

@@ -1,0 +1,26 @@
+{% from "macros/module_macros.html" import determine_procedure_type %}
+
+{% if interface_data.procedures %}
+  <section class="procedures">
+    <h4>Procedures</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for proc_name, proc_data in interface_data.procedures.items() %}
+          <tr>
+            <td>{{ proc_name }}</td>
+            <td>{{ determine_procedure_type(proc_data) }}</td>
+            <td>{{ proc_data.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+

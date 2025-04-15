@@ -1,0 +1,18 @@
+{% from "macros/module_macros.html" import render_attributes, format_interface_name %}
+
+{% if module_data.interfaces %}
+<section class="interfaces-details" aria-labelledby="interfaces-details-heading">
+  <h2 id="interfaces-details-heading">Interface Details</h2>
+  {% for interface_data in module_data.interfaces %}
+    {% set interface_id = interface_data.name or interface_data.operator_symbol or 'abstract' %}
+    <section class="interface" id="interface-{{ interface_id }}" aria-labelledby="{{ interface_id }}-heading">
+      {% include "components/interface/header.html" %}
+      <div class="interface-body">
+        <p>{{ interface_data.description }}</p>
+        {% include "components/interface/module_procedures.html" %}
+        {% include "components/interface/procedures.html" %}
+      </div>
+    </section>
+  {% endfor %}
+</section>
+{% endif %}

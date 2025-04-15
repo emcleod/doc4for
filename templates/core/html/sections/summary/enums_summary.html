@@ -1,0 +1,25 @@
+{% if module_data.enums %}
+  <section class="enums-summary">
+    <h2>Enumerations</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Attributes</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enum_name, enum_data in module_data.enums.items() %}
+        <tr>
+          <td>
+            <strong><a href="#enum-{{ enum_name }}">{{ enum_name or 'Anonymous' }}</a></strong>
+          </td>
+          <td>{{ enum_data.attributes|join(', ') }}</td>
+          <td>{{ enum_data.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
