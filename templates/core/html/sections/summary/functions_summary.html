@@ -2,7 +2,8 @@
 
 <section class="functions-summary">
   <h2>Functions</h2>
-  {% if module_data.functions %}
+  {% set functions = context_data.functions if context_data and context_data.functions else {} %}
+  {% if functions %}
     <table>
       <thead>
         <tr>
@@ -12,12 +13,11 @@
         </tr>
       </thead>
       <tbody>
-        {% for function_name, function_data in module_data.functions.items() %}
+        {% for function_name, function_data in functions.items() %}
           <tr>
             <td>
               <strong>
-                <a href="#function-{{ function_name }}">{{ format_procedure_name(function_name, function_data.arguments) }}                    
-                </a>
+                <a href="#function-{{ function_name }}">{{ format_procedure_name(function_name, function_data.arguments) }}</a>
               </strong>
             </td>
             <td>{{ render_attributes(function_data.attributes) }}</td>
@@ -27,6 +27,6 @@
       </tbody>
     </table>
   {% else %}
-    <p>No functions defined in this module.</p>
+    <p>No functions defined in this {{ context_type | default('module') }}.</p>
   {% endif %}
 </section>

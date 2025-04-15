@@ -1,6 +1,8 @@
 {% from "macros/module_macros.html" import render_attributes %}
 
-{% if module_data.interfaces %}
+{% set interfaces = context_data.interfaces if context_data and context_data.interfaces else {} %}
+
+{% if interfaces %}
   <section class="interfaces-summary">
     <h2>Interfaces</h2>
     <table>
@@ -12,7 +14,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for interface_data in module_data.interfaces %}
+        {% for interface_data in interfaces %}
         <tr>
           <td>
             {% if interface_data.name %}

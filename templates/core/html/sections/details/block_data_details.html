@@ -1,0 +1,23 @@
+{% from "macros/module_macros.html" import format_dimension, render_attributes %}
+
+{% if file_data.block_data %}
+<section class="block-data-details" aria-labelledby="block-data-details-heading">
+  <h2 id="block-data-details-heading">Block Data Details</h2>
+  {% for block_name, block_data in file_data.block_data.items() %}
+    <section class="block-data" id="block-data-{{ block_name }}" aria-labelledby="{{ block_name }}-heading">
+      <h3 id="{{ block_name }}-heading">{{ block_name }}</h3>
+      
+      {% if block_data.description %}
+        <p>{{ block_data.description }}</p>
+      {% endif %}
+      
+      {% set common_blocks = block_data.common_blocks %}
+      {% include "sections/details/common_blocks_details.html" %}
+      
+      {% if not common_blocks %}
+        <p>No common blocks initialized in this block data.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+</section>
+{% endif %}

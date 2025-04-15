@@ -1,0 +1,25 @@
+{% if file_data.programs %}
+<section class="programs-summary">
+  <h2>Programs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for program_name, program_data in file_data.programs.items() %}
+        <tr>
+          <td>
+            <strong>
+              <a href="#program-{{ program_name }}">{{ program_name }}</a>
+            </strong>
+          </td>
+          <td>{{ program_data.program_description | default('') }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}

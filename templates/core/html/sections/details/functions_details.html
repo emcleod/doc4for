@@ -1,9 +1,10 @@
 {% from "macros/module_macros.html" import render_attributes, binding_display, render_arguments_list %}
 
-{% if module_data.functions %}
+{% set functions = context_data.functions if context_data and context_data.functions else {} %}
+{% if functions %}
 <section class="function-details" aria-labelledby="function-details-heading">
   <h2 id="function-details-heading">Function Details</h2>
-  {% for function_name, function_data in module_data.functions.items() %}
+  {% for function_name, function_data in functions.items() %}
     <section class="procedure" id="function-{{ function_name }}" aria-labelledby="{{ function_name }}-heading">
       {% include "components/procedure/header.html" with context %}
       <div class="function-body">

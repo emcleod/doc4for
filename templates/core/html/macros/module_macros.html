@@ -54,7 +54,5 @@
 {% endmacro %}
 
 {% macro format_type_declaration(type_name, kind=None, len=None) %}
-  {{ type_name }}
-  {%- if kind %}(kind={{ kind }}){% endif %}
-  {%- if len %}(len={{ len }}){% endif %}
+  {{ type_name }}{% if kind or len %}({% if kind %}kind={{ kind }}{% endif %}{% if kind and len %}, {% endif %}{% if len %}len={{ len }}{% endif %}){% endif %}
 {% endmacro %}

@@ -2,9 +2,10 @@
 
 <section class="types-summary">
   <h2>Types</h2>
-  {% if module_data.types %}
+  {% set types = context_data.types if context_data and context_data.types else {} %}
+  {% if types %}
     {% set has_extends = false %}
-    {% for type_data in module_data.types.values() %}
+    {% for type_data in types.values() %}
       {% if type_data.extends is not none %}
         {% set has_extends = true %}
       {% endif %}
@@ -22,7 +23,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for type_name, type_data in module_data.types.items() %}
+        {% for type_name, type_data in types.items() %}
         <tr>
           <td><strong><a href="#type-{{ type_name }}">{{ type_name }}</a></strong></td>
           <td>{{ render_attributes(type_data.attributes) }}</td>
@@ -39,6 +40,6 @@
       </tbody>
     </table>
   {% else %}
-    <p>No types defined in this module.</p>
+    <p>No types defined in this {{ context_type | default('module') }}.</p>
   {% endif %}
 </section>

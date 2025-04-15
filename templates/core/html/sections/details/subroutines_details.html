@@ -1,9 +1,11 @@
 {% from "macros/module_macros.html" import render_attributes, binding_display, render_arguments_list %}
 
-{% if module_data.subroutines %}
+{% set subroutines = context_data.subroutines if context_data and context_data.subroutines else {} %}
+
+{% if subroutines %}
 <section class="subroutine-details" aria-labelledby="subroutine-details-heading">
   <h2 id="subroutine-details-heading">Subroutine Details</h2>
-  {% for subroutine_name, subroutine_data in module_data.subroutines.items() %}
+  {% for subroutine_name, subroutine_data in subroutines.items() %}
     <section class="procedure" id="subroutine-{{ subroutine_name }}" aria-labelledby="{{ subroutine_name }}-heading">
       {% include "components/procedure/header.html" with context %}
       <div class="subroutine-body">

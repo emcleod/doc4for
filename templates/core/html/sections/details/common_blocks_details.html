@@ -1,0 +1,51 @@
+{% from "macros/module_macros.html" import format_dimension, render_attributes %}
+
+{% if common_blocks %}
+  <div class="common-blocks-details">
+    {% for common_name, common_data in common_blocks.items() %}
+      <div class="common-block">
+        <h4>Common Block: {{ common_name }}</h4>
+        
+        {% if common_data.description %}
+          <p>{{ common_data.description }}</p>
+        {% endif %}
+        
+        {% if common_data.variables %}
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Attributes</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for var_name, var_data in common_data.variables.items() %}
+                <tr>
+                  <td><strong>{{ var_name }}</strong></td>
+                  <td>
+                    {{ var_data.type }}              
+                    {% if var_data.kind %}
+                      ({{ var_data.kind }})
+                    {% endif %}
+                    {% if var_data.dimension %}
+                      {{ format_dimension(var_data.dimension) }}
+                    {% endif %}
+                    {% if var_data.initial_value %}
+                      = {{ var_data.initial_value }}
+                    {% endif %}
+                  </td>
+                  <td>{{ render_attributes(var_data.attributes) }}</td>
+                  <td>{{ var_data.description }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No variables defined in this common block.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

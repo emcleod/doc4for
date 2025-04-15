@@ -30,17 +30,23 @@
 
     {% include "sections/summary/uses_summary.html" %}
     {% include "sections/summary/enums_summary.html" %}
-    {% include "sections/summary/types_summary.html" %}
-    {% include "sections/summary/parameters_summary.html" %}
-    {% include "sections/summary/variables_summary.html" %}
-    {% include "sections/summary/interfaces_summary.html" %}
-    {% include "sections/summary/functions_summary.html" %}
-    {% include "sections/summary/subroutines_summary.html" %}
-    
+    {% with context_data=module_data, context_type="module" %}
+      {% include "sections/summary/types_summary.html" %}
+      {% include "sections/summary/parameters_summary.html" %}
+      {% include "sections/summary/variables_summary.html" %}
+      {% include "sections/summary/interfaces_summary.html" %}
+      {% include "sections/summary/functions_summary.html" %}
+      {% include "sections/summary/subroutines_summary.html" %}
+    {% endwith %}
+
     {% include "sections/details/enums_details.html" %}
-    {% include "sections/details/types_details.html" %}
-    {% include "sections/details/interfaces_details.html" %}
-    {% include "sections/details/functions_details.html" %}
-    {% include "sections/details/subroutines_details.html" %}
+    {% with context_data=module_data, context_type="module" %}
+      {% include "sections/details/types_details.html" %}
+      {% include "sections/details/interfaces_details.html" %}
+      {% include "sections/details/functions_details.html" %}
+      {% include "sections/details/subroutines_details.html" %}
+      {% set common_blocks = module_data.common_blocks %}
+      {% include "sections/details/common_blocks_details.html" %}
+    {% endwith %}
   {% endif %}
 {% endblock %}

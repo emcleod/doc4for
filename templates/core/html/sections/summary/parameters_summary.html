@@ -2,7 +2,8 @@
 
 <section class="parameters-summary">
   <h2>Parameters</h2>
-    {% if module_data.parameters %}
+    {% set parameters = context_data.parameters if context_data and context_data.parameters else {} %}
+    {% if parameters %}
     <table>
       <thead>
         <tr>
@@ -14,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for param_name, param_data in module_data.parameters.items() %}
+        {% for param_name, param_data in parameters.items() %}
         <tr>
           <td><strong>{{ param_name }}</strong></td>
           <td>
@@ -34,6 +35,6 @@
       </tbody>
     </table>
   {% else %}
-    <p>No parameters defined in this module.</p>
+    <p>No parameters defined in this {{ context_type | default('module') }}.</p>
   {% endif %}
 </section>

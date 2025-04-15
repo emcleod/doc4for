@@ -1,0 +1,39 @@
+{% from "macros/module_macros.html" import render_attributes %}
+
+{% if file_data.block_data %}
+<section class="block-data-summary">
+  <h2>Block Data</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Common Blocks</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for block_name, block_data in file_data.block_data.items() %}
+        <tr>
+          <td>
+            <strong>
+              <a href="#block-data-{{ block_name }}">{{ block_name }}</a>
+            </strong>
+          </td>
+          <td>
+            {% if block_data.common_blocks %}
+              <ul class="common-block-list">
+                {% for common_block_name in block_data.common_blocks %}
+                  <li>{{ common_block_name }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>{{ block_data.description }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}

@@ -2,7 +2,8 @@
 
 <section class="variables-summary">
   <h2>Variables</h2>
-  {% if module_data.variables %}
+  {% set variables = context_data.variables if context_data and context_data.variables else {} %}
+  {% if variables %}
     <h2>Variables</h2>
     <table>
       <thead>
@@ -14,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for var_name, var_data in module_data.variables.items() %}
+        {% for var_name, var_data in variables.items() %}
           <tr>
             <td><strong>{{ var_name }}</strong></td>
             <td>
@@ -33,6 +34,6 @@
       </tbody>
     </table>
   {% else %}
-    <p>No variables defined in this module.</p>
+    <p>No variables defined in this {{ context_type | default('module') }}.</p>
   {% endif %}
 </section>

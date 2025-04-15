@@ -1,0 +1,80 @@
+{% from "macros/module_macros.html" import format_procedure_name, render_arguments_list %}
+
+{% if file_data.programs %}
+<section class="program-details" aria-labelledby="program-details-heading">
+  <h2 id="program-details-heading">Program Details</h2>
+  {% for program_name, program_data in file_data.programs.items() %}
+    <section class="program" id="program-{{ program_name }}" aria-labelledby="{{ program_name }}-heading">
+      <h3 id="{{ program_name }}-heading" class="program-header">
+        <span class="program-name">{{ program_name }}</span>
+        {% if program_data.program_description %}
+          - <span class="program-description">{{ program_data.program_description }}</span>
+        {% endif %}
+      </h3>
+      
+      <div class="program-body">
+        {% if program_data %}
+          {% if program_data.uses %}
+            <p><strong>Uses:</strong></p>
+            <ul class="program-uses">
+              {% for module_name, use_data in program_data.uses.items() %}
+                <li>
+                  <span class="module-name">
+                    <a href="{{ relative_path }}modules/{{ module_name }}.html">{{ module_name }}</a>
+                  </span>
+                  {% if use_data.only %}
+                    (Only: {{ use_data.only|join(', ') }})
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if program_data.variables %}
+            <p><strong>Variables:</strong></p>
+            <table class="program-variables">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for var_name, var_data in program_data.variables.items() %}
+                  <tr>
+                    <td>{{ var_name }}</td>
+                    <td>{{ var_data.type }}{% if var_data.kind %}({{ var_data.kind }}){% endif %}</td>
+                    <td>{{ var_data.description | default('') }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+
+          {% if program_data.subroutines %}
+            <p><strong>Subroutines:</strong></p>
+            <ul class="program-subroutines">
+              {% for sub_name in program_data.subroutines %}
+                <li>{{ format_procedure_name(sub_name) }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if program_data.functions %}
+            <p><strong>Functions:</strong></p>
+            <ul class="program-functions">
+              {% for func_name in program_data.functions %}
+                <li>{{ format_procedure_name(func_name) }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+        {% else %}
+          <p>No detailed information available for this program.</p>
+        {% endif %}
+      </div>
+    </section>
+  {% endfor %}
+</section>
+{% endif %}

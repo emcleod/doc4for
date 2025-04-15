@@ -1,7 +1,9 @@
-{% if module_data.types %}
+{% set types = context_data.types if context_data and context_data.types else {} %}
+
+{% if types %}
   <section class="types-details" aria-labelledby="types-details-heading">
     <h2 id="types-details-heading">Type Details</h2>
-    {% for type_name, type_data in module_data.types.items() %}
+    {% for type_name, type_data in types.items() %}
       <section class="type" id="type-{{ type_name }}" aria-labelledby="{{ type_name }}-heading">
         {% include "components/type/header.html" %}
         <div class="type-body">
