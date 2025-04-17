@@ -4,6 +4,15 @@ from doc4for.models.procedure_models import FunctionDescription, InterfaceDescri
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.common import EnumDescription, Uses
 
+DataStatementDescription = TypedDict(
+    "DataStatementDescription",
+    {
+        "variable": str,            
+        "value": str,              
+        "description": Optional[str],  
+        "implied_initialisation": Optional[str]   
+    }
+)
 
 CommonBlockDescription = TypedDict(
     "CommonBlockDescription",
@@ -21,9 +30,11 @@ BlockDataDescription = TypedDict(
         "name": str,
         "description": str,
         "common_blocks": Dict[str, CommonBlockDescription],
+        "data_statements": List[DataStatementDescription],
+        "other_variables": Dict[str, VariableDescription] # variables can be declared but not used in common blocks
+        #TODO what about parameters that are used for initialisation
     },
 )
-
 
 ModuleDescription = TypedDict(
     "ModuleDescription",

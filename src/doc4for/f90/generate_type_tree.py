@@ -1,12 +1,11 @@
 import os
-from typing import List, Union, TypedDict, Dict, Any, cast, Literal, Optional
+from typing import List, Union, TypedDict, Dict, Any, cast, Optional
 from pathlib import Path
 from fparser.one.block_statements import Type
 from fparser.api import parse as fortran_parser  # type: ignore
 from jinja2 import Environment, FileSystemLoader, Template
+from doc4for.models.common import UNKNOWN, UnknownType
 
-UNKNOWN_TYPE = 'UNKNOWN'
-UnknownType = Literal['UNKNOWN']
 
 class TypeInfo(TypedDict):
     children: List[Union[str, UnknownType]]
@@ -48,18 +47,18 @@ def generate_inheritance_tree(f90_files: List[Path]) -> InheritanceTree:
         program: Any = fortran_parser(f90_file_str, ignore_comments=False)
         explore_node(program, tree)
     for type_name, type_info in tree.items():
-        if type_info['parent'] == UNKNOWN_TYPE:
+        if type_info['parent'] == UNKNOWN:
             parent_name = type_info['parent']
             if parent_name in tree:
                 tree[type_name]['parent'] = parent_name
             else:
                 tree[type_name]['parent'] = None
         for i, child_name in enumerate(type_info['children']):
-            if child_name == UNKNOWN_TYPE:
+            if child_name == UNKNOWN:
                 if child_name in tree:
                     tree[type_name]['children'][i] = child_name
                 else:
-                    tree[type_name]['children'][i] = cast(UnknownType, UNKNOWN_TYPE)
+                    tree[type_name]['children'][i] = cast(UnknownType, UNKNOWN)
     return tree
 
 def transform_inheritance_tree(inheritance_tree: Dict[str, Any]) -> List[Dict[str, Any]]:

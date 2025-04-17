@@ -1,4 +1,4 @@
-from typing import Optional, List, TypedDict, Dict, Union
+from typing import Optional, List, TypedDict, Dict, Union, Literal
 from enum import Enum, auto
 from dataclasses import dataclass
 
@@ -10,6 +10,10 @@ IGNORE_PREFIX = "!*"
 
 IGNORE_SUFFIX = "*!"
 """Suffix used to mark the end of a section to be ignored."""
+
+UNKNOWN = 'UNKNOWN'
+
+UnknownType = Literal['UNKNOWN']
 
 class ExpressionType(Enum):
     LITERAL = "literal"

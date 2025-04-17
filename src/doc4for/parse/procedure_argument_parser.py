@@ -5,7 +5,9 @@ from typing import List, Any, Tuple, Optional, Union
 from fparser.one.block_statements import (
     Comment,
     Interface,
-    SpecificBinding
+    SpecificBinding,
+    Subroutine,
+    Function
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN
@@ -13,6 +15,7 @@ from doc4for.models.procedure_models import FunctionDescription, SubroutineDescr
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_type_declaration_statement
 from doc4for.models.dimension_models import Dimension, format_dimension
+from doc4for.models.common import UNKNOWN
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -128,39 +131,6 @@ def format_dimension_string(dims: List[int]) -> str:
         return ''
     return format_dimension(dims)
 
-def update_single_argument_1(decl: str, arg_type: str, intentin: bool, intentout: bool,
-                             dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
-                             dims: Optional[List[int]] = None) -> None:
-    """Populate the `Argument` type with information from the dummy argument
-    declaration.
-
-    Args:
-        decl (str): The name of the argument as found by the parser.
-        arg_type (str): The type of the argument as found by the parser, e.g.,
-            'real', 'integer'.
-        intentin (bool): True if the argument is an input to the function
-            (`intent(in)` or `intent(inout)`).
-        intentout (bool): True if the argument is an output of the function
-            (`intent(out)` or `intent(inout)`), excluding the return type.
-        dummy_arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary 
-            containing information about a function or subroutines's arguments, 
-            The 'in' and 'out' keys will be populated in this function.
-        dims (Optional[List[int]]): An optional list of integers representing the
-            dimensions of the argument. An empty list or string are
-            interpreted as allocatable dimensions. Defaults to an empty list if
-            not provided.
-    """
-    if dims is None:
-        dims = []
-    arg_info: Argument = {'type': arg_type,
-                          'description': '',
-                          'dimension': format_dimension_string(dims)}
-    if intentin or not intentout:
-        dummy_arg_info['in'][decl] = arg_info
-    if intentout or not intentin:
-        dummy_arg_info['out'][decl] = arg_info
-
-
 def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: bool,
                            dummy_arg_info: Union[FunctionDescription, SubroutineDescription],
                            dims: Optional[Dimension] = None) -> None:
@@ -192,7 +162,6 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
         dummy_arg_info['in'][decl] = arg_info
     if intentout or not intentin:
         dummy_arg_info['out'][decl] = arg_info
-
 
 def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     args: List[str] = procedure.args.copy()  # Copy of all argument names
@@ -261,6 +230,7 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
 
     # Second pass: handle interface blocks for remaining arguments
     interface_index = 0
+    non_interface_args = remaining_args.copy()
     for item in procedure.content:
         if isinstance(item, Interface):
             if interface_index < len(remaining_args):
@@ -273,9 +243,20 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
                     arg_info,
                     None
                 )
+                non_interface_args.remove(arg_name)
                 interface_index += 1
+    # If there are remaining arguments but there was no explicit declaration block, assume inout for all of them
+    if non_interface_args:
+        for remaining_arg in non_interface_args:
+            update_single_argument(
+                remaining_arg,
+                UNKNOWN, 
+                True,
+                True,
+                arg_info,
+                None 
+            )
 
-        
 def extract_content_without_annotation(content: str) -> str:
     return ' '.join(content.split()[1:])
 

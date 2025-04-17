@@ -42,6 +42,8 @@ class TestBlockData(TestCase):
             "description": "",
             "common_blocks": {
                 "": {
+                    "name": "",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -68,7 +70,16 @@ class TestBlockData(TestCase):
                         }
                     }
                 }
-            }
+            },
+            "data_statements": [{"description": None,
+                                "implied_initialisation": "",
+                                "variable": "x",
+                                "value": "1.0"},
+                               {"description": None,
+                                "implied_initialisation": "",
+                                "variable": "y",
+                                "value": "2.0"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -94,6 +105,8 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "": {
+                    "name": "",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -120,7 +133,16 @@ END BLOCK DATA simple
                         }
                     }
                 }
-            }
+            },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "y",
+                                 "value": "2.0"}],
+            "other_variables": {}
         }        
         self.assertEqual(block_data, expected)
 
@@ -146,6 +168,8 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "name": "basic",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -173,6 +197,15 @@ END BLOCK DATA simple
                     }
                 }
             },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "y",
+                                 "value": "2.0"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -199,6 +232,8 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "name": "basic",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -226,6 +261,15 @@ END BLOCK DATA simple
                     },
                 }
             },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "y",
+                                 "value": "2.0"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -252,6 +296,8 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "name": "basic",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -301,6 +347,23 @@ END BLOCK DATA simple
                     }
                 }
             },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "y",
+                                 "value": "2.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "theta",
+                                 "value": "0.45"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "z",
+                                 "value": "3.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1.0"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -326,6 +389,8 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "": {
+                    "name": "",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -342,6 +407,11 @@ END BLOCK DATA
                     }
                 }
             },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -368,6 +438,8 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "arrays": {
+                    "name": "arrays",
+                    "description": "",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -395,6 +467,15 @@ END BLOCK DATA
                     }
                 }
             },
+            "data_statements": [{"description": None,
+                               "implied_initialisation": "",
+                               "variable": "x",
+                               "value": "1, 2, 3"},
+                              {"description": None,
+                               "implied_initialisation": "",
+                               "variable": "y",
+                               "value": "4, 5"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -514,6 +595,10 @@ END BLOCK DATA
         self.assertEqual(strings["version"]["length"], "8")
         self.assertEqual(strings["version"]["initial_value"], "'v1.2.3  '")
 
+        # Check data_statements and other_variables fields exist
+        self.assertIn("data_statements", block_data)
+        self.assertIn("other_variables", block_data)
+
 
     def test_unnamed_block_data_with_comments(self):
         self.fs.create_file(
@@ -546,6 +631,8 @@ END BLOCK DATA
             "description": "\nDefines some constants\n\n",
             "common_blocks": {
                 "": {
+                    "name": "",
+                    "description": "Coordinates\n",
                     "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
                     "variables": {
                         "x": {
@@ -573,6 +660,15 @@ END BLOCK DATA
                     }
                 }
             },
+            "data_statements": [{"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "x",
+                                 "value": "1.0"},
+                                {"description": None,
+                                 "implied_initialisation": "",
+                                 "variable": "y",
+                                 "value": "2.0"}],
+            "other_variables": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -719,6 +815,10 @@ END BLOCK DATA
         self.assertEqual(strings["version"]["length"], "8")
         self.assertEqual(strings["version"]["initial_value"], "'v1.2.3  '")
 
+        # Check data_statements and other_variables fields exist
+        self.assertIn("data_statements", block_data)
+        self.assertIn("other_variables", block_data)
+
 
     def test_block_data_edge_cases(self):
         self.fs.create_file("/fake/path/edge_cases.f90",
@@ -810,6 +910,10 @@ END BLOCK DATA other_data
         self.assertEqual(
             unnamed_block["common_blocks"]["strings"]["variables"]["str"]["initial_value"], "'ABC'")
 
+        # Check data_statements and other_variables fields exist
+        self.assertIn("data_statements", unnamed_block)
+        self.assertIn("other_variables", unnamed_block)
+
         # Check other block data
         other_block = file_data["block_data"]["other_data"]
         self.assertEqual(other_block["description"],
@@ -818,6 +922,10 @@ END BLOCK DATA other_data
                          ["other"]["variables"]["a"]["initial_value"], "1")
         self.assertEqual(other_block["common_blocks"]
                          ["other"]["variables"]["b"]["initial_value"], "2")
+        
+        # Check data_statements and other_variables fields exist
+        self.assertIn("data_statements", other_block)
+        self.assertIn("other_variables", other_block)
 
 
     def test_block_data_array_initialization_styles(self):
@@ -895,6 +1003,10 @@ END BLOCK DATA array_init
         self.assertEqual(f90_arith["type"], "integer")
         self.assertEqual(f90_arith["initial_value"], "2, 4, 6, 8, 10")
         self.assertEqual(f90_arith["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        
+        # Check data_statements and other_variables fields exist
+        self.assertIn("data_statements", block_data)
+        self.assertIn("other_variables", block_data)
 
 
 if __name__ == "__main__":
