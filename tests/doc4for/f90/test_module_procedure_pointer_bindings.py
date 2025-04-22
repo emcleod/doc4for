@@ -1,8 +1,9 @@
 import unittest
 from pathlib import Path
+from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum
+from doc4for.models.common import BindingTypeEnum, BindingType
 
 class TestTypeBindingProcedures(TestCase):
 
@@ -172,13 +173,15 @@ class TestTypeBindingProcedures(TestCase):
         # Check c_proc - now in the procedures section
         c_proc = callback_type['procedures']['c_proc']
         self.assertIn('binding_type', c_proc)
-        self.assertEqual(c_proc['binding_type']['type'], BindingTypeEnum.BIND_C)
+        binding_type = cast(BindingType, c_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
         self.assertIn('nopass', c_proc['attributes'])
         
         # Check f_proc - now in the procedures section
         f_proc = callback_type['procedures']['f_proc']
         self.assertIn('binding_type', f_proc)
-        self.assertEqual(f_proc['binding_type']['type'], BindingTypeEnum.DEFAULT)
+        binding_type = cast(BindingType, f_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.DEFAULT)
         self.assertIn('nopass', f_proc['attributes'])
         
         # Check the abstract interfaces

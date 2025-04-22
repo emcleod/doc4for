@@ -1,8 +1,9 @@
 import unittest
+from typing import cast
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.models.common import Expression, ExpressionType
-from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
 from doc4for.f90.generate_module_tree import extract_module_data
 
 # Helper function for creating dimension expressions
@@ -117,39 +118,46 @@ class TestVariableDeclarations(TestCase):
 
         # Check simple array with modern syntax
         self.assertEqual(variables["arr1"]["type"], "integer")
-        self.assertEqual(variables["arr1"]["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, variables["arr1"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(variables["arr1"]["initial_value"], "1, 2, 3, 4, 5")
 
         # Check array with old syntax
         self.assertEqual(variables["arr2"]["type"], "integer")
-        self.assertEqual(variables["arr2"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["arr2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(variables["arr2"]["initial_value"], "1, 2, 3")
 
         # Check array with repeat syntax
         self.assertEqual(variables["arr3"]["type"], "real")
-        self.assertEqual(variables["arr3"]["dimension"]["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, variables["arr3"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         self.assertEqual(variables["arr3"]["initial_value"], "1.0, 2.0, 2.0, 1.0")
 
         # Check multi-dimensional array
         self.assertEqual(variables["matrix"]["type"], "real")
-        self.assertEqual(variables["matrix"]["dimension"]["dimensions"][0], create_dimension_expr(1, 2))
-        self.assertEqual(variables["matrix"]["dimension"]["dimensions"][1], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, variables["matrix"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 2))
         self.assertEqual(variables["matrix"]["initial_value"], "reshape([1.0, 2.0, 3.0, 4.0], [2,2])")
 
         # Check explicit bounds
         self.assertEqual(variables["explicit"]["type"], "integer")
-        self.assertEqual(variables["explicit"]["dimension"]["dimensions"][0], create_dimension_expr(-1, 1))
+        dimension = cast(Dimension, variables["explicit"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-1, 1))
         self.assertEqual(variables["explicit"]["initial_value"], "-1, 0, 1")
 
         # Check array with operations
         self.assertEqual(variables["computed"]["type"], "real")
-        self.assertEqual(variables["computed"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["computed"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(variables["computed"]["initial_value"], "[1.0, 1.5, 2.0] * 2.0")
 
         # Check character array
         self.assertEqual(variables["str_arr"]["type"], "character")
         self.assertEqual(variables["str_arr"]["length"], "5")
-        self.assertEqual(variables["str_arr"]["dimension"]["dimensions"][0], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, variables["str_arr"]["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
         self.assertEqual(variables["str_arr"]["initial_value"], '"Hello", "World"')
 
     def test_character_array_declarations(self):
@@ -176,13 +184,15 @@ class TestVariableDeclarations(TestCase):
         # Check new-style character array
         self.assertEqual(variables["str_arr"]["type"], "character")
         self.assertEqual(variables["str_arr"]["length"], "5")
-        self.assertEqual(variables["str_arr"]["dimension"]["dimensions"][0], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, variables["str_arr"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
         self.assertEqual(variables["str_arr"]["initial_value"], '"Hello", "World"')
 
         # Check old-style character array
         self.assertEqual(variables["names"]["type"], "character")
         self.assertEqual(variables["names"]["length"], "10")
-        self.assertEqual(variables["names"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["names"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(variables["names"]["initial_value"], '"aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"')
 
     def test_derived_type_declarations(self):
@@ -247,7 +257,8 @@ class TestVariableDeclarations(TestCase):
         # Check array of derived types
         self.assertEqual(variables["points"]["type"], "point")
         self.assertEqual(variables["points"]["name"], "points")
-        self.assertEqual(variables["points"]["dimension"]["dimensions"][0], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, variables["points"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
         self.assertEqual(variables["points"]["initial_value"], "point(0.0, 0.0), point(1.0, 1.0)")
 
         # Check nested derived type
@@ -288,31 +299,37 @@ class TestVariableDeclarations(TestCase):
 
         # Check array constructor function initializations
         self.assertEqual(variables["seq"]["type"], "real")
-        self.assertEqual(variables["seq"]["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, variables["seq"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(variables["seq"]["initial_value"], "(real(i), i=1,5)")
 
         self.assertEqual(variables["seq2"]["type"], "real")
-        self.assertEqual(variables["seq2"]["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, variables["seq2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(variables["seq2"]["initial_value"], "(2.0*i, i=1,5)")
 
         # Check intrinsic function initializations
         self.assertEqual(variables["zeros"]["type"], "real")
-        self.assertEqual(variables["zeros"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["zeros"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(variables["zeros"]["initial_value"], "spread(0.0, dim=1, ncopies=3)")
 
         self.assertEqual(variables["ones"]["type"], "real")
-        self.assertEqual(len(variables["ones"]["dimension"]["dimensions"]), 2)
-        self.assertEqual(variables["ones"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(variables["ones"]["dimension"]["dimensions"][1], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["ones"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
         self.assertEqual(variables["ones"]["initial_value"], "reshape([9*1.0], [3,3])")
 
         # Check array section initializations
         self.assertEqual(variables["full"]["type"], "integer")
-        self.assertEqual(variables["full"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
+        dimension = cast(Dimension, variables["full"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
         self.assertEqual(variables["full"]["initial_value"], "(i, i=1,10)")
 
         self.assertEqual(variables["part"]["type"], "integer")
-        self.assertEqual(variables["part"]["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, variables["part"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(variables["part"]["initial_value"], "full(1:10:2)")
 
 
@@ -357,17 +374,19 @@ class TestVariableDeclarations(TestCase):
         # Check allocatable arrays
         self.assertEqual(variables["alloc_arr"]["type"], "real")
         self.assertIn("allocatable", variables["alloc_arr"]["attributes"])
-        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0].lower)
-        self.assertIsNone(variables["alloc_arr"]["dimension"]["dimensions"][0].upper)
+        dimension = cast(Dimension, variables["alloc_arr"]["dimension"])
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertIsNone(variables["alloc_arr"]["initial_value"])
 
         self.assertEqual(variables["alloc_matrix"]["type"], "real")
         self.assertIn("allocatable", variables["alloc_matrix"]["attributes"])
-        self.assertEqual(len(variables["alloc_matrix"]["dimension"]["dimensions"]), 2)
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0].lower)
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][0].upper)
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1].lower)
-        self.assertIsNone(variables["alloc_matrix"]["dimension"]["dimensions"][1].upper)
+        dimension = cast(Dimension, variables["alloc_matrix"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
+        self.assertIsNone(dimension["dimensions"][1].lower)
+        self.assertIsNone(dimension["dimensions"][1].upper)
         self.assertIsNone(variables["alloc_matrix"]["initial_value"])
 
         # Check pointers
@@ -377,8 +396,9 @@ class TestVariableDeclarations(TestCase):
 
         self.assertEqual(variables["p_arr"]["type"], "real")
         self.assertIn("pointer", variables["p_arr"]["attributes"])
-        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0].lower)
-        self.assertIsNone(variables["p_arr"]["dimension"]["dimensions"][0].upper)
+        dimension = cast(Dimension, variables["p_arr"]["dimension"])
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertEqual(variables["p_arr"]["initial_value"], "null()")
 
         # Check targets
@@ -388,7 +408,8 @@ class TestVariableDeclarations(TestCase):
 
         self.assertEqual(variables["target_arr"]["type"], "real")
         self.assertIn("target", variables["target_arr"]["attributes"])
-        self.assertEqual(variables["target_arr"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, variables["target_arr"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(variables["target_arr"]["initial_value"], "1.0, 2.0, 3.0")
 
         # Test pointers to actual targets
@@ -398,14 +419,16 @@ class TestVariableDeclarations(TestCase):
 
         self.assertEqual(variables["p_to_array"]["type"], "real")
         self.assertIn("pointer", variables["p_to_array"]["attributes"])
-        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0].lower)
-        self.assertIsNone(variables["p_to_array"]["dimension"]["dimensions"][0].upper)
+        dimension = cast(Dimension, variables["p_to_array"]["dimension"])
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertEqual(variables["p_to_array"]["initial_value"], "array_target")
 
         self.assertEqual(variables["p_to_slice"]["type"], "real")
         self.assertIn("pointer", variables["p_to_slice"]["attributes"])
-        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0].lower)
-        self.assertIsNone(variables["p_to_slice"]["dimension"]["dimensions"][0].upper)
+        dimension = cast(Dimension, variables["p_to_slice"]["dimension"])
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertEqual(variables["p_to_slice"]["initial_value"], "array_target(1:2)")
 
     def test_special_initializations(self):
@@ -452,7 +475,8 @@ class TestVariableDeclarations(TestCase):
         
         # Check array with mixed operations
         self.assertEqual(variables["mixed"]["type"], "real")
-        self.assertEqual(variables["mixed"]["dimension"]["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, variables["mixed"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         self.assertEqual(variables["mixed"]["initial_value"], "1.0, factor*2.0, 3.0**2, sqrt(16.0)")
         
         # Check character with len

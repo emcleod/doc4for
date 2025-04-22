@@ -58,6 +58,7 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
         print(f'An unexpected error occurred: {e}')
         raise
 
+#TODO see generate module tree - don't initialise in this method
 def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
     files: List[FileDescription] = []
     for f90_file in f90_files:

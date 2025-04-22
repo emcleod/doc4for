@@ -6,7 +6,8 @@ from fparser.one.block_statements import (
     Interface,
     Type as FortranType,
     Enum,
-    Use
+    Use,
+    Common
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.module_models import ModuleDescription
@@ -19,7 +20,8 @@ from doc4for.parse.base_parser import (
     handle_type_declaration,
     handle_interface,
     handle_enum,
-    handle_use
+    handle_use,
+    handle_common_block
 )
 
 ModuleHandler = FortranHandler[ModuleDescription]
@@ -44,6 +46,7 @@ def _get_module_handler() -> ModuleHandler:
         handler.register_handler(Interface, handle_interface)
         handler.register_handler(Enum, handle_enum)
         handler.register_handler(Use, handle_use)
+        handler.register_handler(Common, handle_common_block)
         _module_handler_instance = handler
     return _module_handler_instance
 

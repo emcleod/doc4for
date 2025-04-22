@@ -1,9 +1,10 @@
 import unittest
 from pathlib import Path
+from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
-from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
 
 # Helper function for creating dimension expressions
 def create_dimension_expr(lower, upper):
@@ -573,17 +574,23 @@ END BLOCK DATA
         # Check tables common block (arrays)
         tables = block_data["common_blocks"]["tables"]["variables"]
         self.assertEqual(tables["temp_points"]["type"], "real")
-        self.assertEqual(tables["temp_points"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
-        self.assertEqual(len(tables["temp_points"]["initial_value"].split(",")), 10)
+        dimension = cast(Dimension, tables["temp_points"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(len(initial_value.split(",")), 10)
 
         self.assertEqual(tables["pressure_values"]["type"], "real")
-        self.assertEqual(tables["pressure_values"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
-        self.assertEqual(len(tables["pressure_values"]["initial_value"].split(",")), 10)
+        dimension = cast(Dimension, tables["pressure_values"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(len(initial_value.split(",")), 10)
 
         self.assertEqual(tables["coefficients"]["type"], "real")
-        self.assertEqual(tables["coefficients"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(tables["coefficients"]["dimension"]["dimensions"][1], create_dimension_expr(1, 3))
-        self.assertEqual(len(tables["coefficients"]["initial_value"].split(",")), 9)
+        dimension = cast(Dimension, tables["coefficients"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
+        initial_value = cast(str, tables["coefficients"]["initial_value"])        
+        self.assertEqual(len(initial_value.split(",")), 9)
 
         # Check strings common block
         strings = block_data["common_blocks"]["strings"]["variables"]
@@ -788,20 +795,26 @@ END BLOCK DATA
         expected_tables_description = "\nLookup tables for temperature and pressure calculations\nUsed for interpolation in the simulation\n\n"
 
         self.assertEqual(tables["temp_points"]["description"], expected_tables_description)
-        self.assertEqual(tables["temp_points"]["type"], "real")
-        self.assertEqual(tables["temp_points"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
-        self.assertEqual(len(tables["temp_points"]["initial_value"].split(",")), 10)
+        self.assertEqual(tables["temp_points"]["type"], "real")        
+        dimension = cast(Dimension, tables["temp_points"]["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(len(initial_value.split(",")), 10)
 
         self.assertEqual(tables["pressure_values"]["description"], expected_tables_description)
         self.assertEqual(tables["pressure_values"]["type"], "real")
-        self.assertEqual(tables["pressure_values"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
-        self.assertEqual(len(tables["pressure_values"]["initial_value"].split(",")), 10)
+        dimension = cast(Dimension, tables["pressure_values"]["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        initial_value = cast(str, tables["pressure_values"]["initial_value"])        
+        self.assertEqual(len(initial_value.split(",")), 10)
 
         self.assertEqual(tables["coefficients"]["description"], expected_tables_description)
         self.assertEqual(tables["coefficients"]["type"], "real")
-        self.assertEqual(tables["coefficients"]["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(tables["coefficients"]["dimension"]["dimensions"][1], create_dimension_expr(1, 3))
-        self.assertEqual(len(tables["coefficients"]["initial_value"].split(",")), 9)
+        dimension = cast(Dimension, tables["coefficients"]["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
+        initial_value = cast(str, tables["coefficients"]["initial_value"])                
+        self.assertEqual(len(initial_value.split(",")), 9)
 
         # Check strings common block
         strings = block_data["common_blocks"]["strings"]["variables"]
@@ -972,37 +985,43 @@ END BLOCK DATA array_init
         old_style = block_data["common_blocks"]["old_style"]["variables"]["arr1"]
         self.assertEqual(old_style["type"], "integer")
         self.assertEqual(old_style["initial_value"], "1, 2, 2, 3, 3")
-        self.assertEqual(old_style["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, old_style["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         
         # Check new style array constructor
         new_style = block_data["common_blocks"]["new_style"]["variables"]["arr2"]
         self.assertEqual(new_style["type"], "integer")
         self.assertEqual(new_style["initial_value"], "1, 2, 2, 3, 4, 4")
-        self.assertEqual(new_style["dimension"]["dimensions"][0], create_dimension_expr(1, 6))
+        dimension = cast(Dimension, new_style["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 6))
         
         # Check mixed format
         mixed = block_data["common_blocks"]["mixed"]["variables"]["arr3"]
         self.assertEqual(mixed["type"], "real")
         self.assertEqual(mixed["initial_value"], "1.0, 2.0, 2.0, 1.0")
-        self.assertEqual(mixed["dimension"]["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, mixed["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         
         # Check simple repeat
         simple = block_data["common_blocks"]["simple"]["variables"]["arr4"]
         self.assertEqual(simple["type"], "integer")
         self.assertEqual(simple["initial_value"], "1, 1, 1")
-        self.assertEqual(simple["dimension"]["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, simple["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         
         # Check F90 sequence constructor
         f90_seq = block_data["common_blocks"]["f90_style"]["variables"]["arr5"]
         self.assertEqual(f90_seq["type"], "integer")
         self.assertEqual(f90_seq["initial_value"], "1, 2, 3, 4, 5")
-        self.assertEqual(f90_seq["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, f90_seq["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         
         # Check F90 arithmetic sequence constructor
         f90_arith = block_data["common_blocks"]["f90_style"]["variables"]["arr6"]
         self.assertEqual(f90_arith["type"], "integer")
         self.assertEqual(f90_arith["initial_value"], "2, 4, 6, 8, 10")
-        self.assertEqual(f90_arith["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, f90_arith["dimension"])        
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", block_data)

@@ -1,8 +1,9 @@
 import unittest
 from pathlib import Path
+from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum
+from doc4for.models.common import BindingTypeEnum, BindingType
 
 class TestTypeBindingProcedures(TestCase):
 
@@ -117,29 +118,33 @@ end module type_bound_proc_binding_mod
         # Check C-bound procedure
         calculate_proc = shape_type['procedures']['calculate']
         self.assertIn('binding_type', calculate_proc)
-        self.assertEqual(calculate_proc['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertIsNone(calculate_proc['binding_type']['name'])
+        binding_type = cast(BindingType, calculate_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertIsNone(binding_type['name'])
         self.assertIn('nopass', calculate_proc['attributes'])
         
         # Check regular procedure without binding
         regular_proc = shape_type['procedures']['regular_method']
         self.assertIn('binding_type', regular_proc)
-        self.assertEqual(regular_proc['binding_type']['type'], BindingTypeEnum.DEFAULT)
-        self.assertIsNone(regular_proc['binding_type']['name'])
+        binding_type = cast(BindingType, regular_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(binding_type['name'])
         
         # Check binding with custom name
         complex_type = module['types']['complex_shape']
         area_proc = complex_type['procedures']['area']
         self.assertIn('binding_type', area_proc)
-        self.assertEqual(area_proc['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(area_proc['binding_type']['name'], 'complex_area_calc')
+        binding_type = cast(BindingType, area_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertEqual(binding_type['name'], 'complex_area_calc')
         
         # Check unusual binding syntax
         weird_type = module['types']['weird_shape']
         weird_proc = weird_type['procedures']['weird_method']
         self.assertIn('binding_type', weird_proc)
-        self.assertEqual(weird_proc['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertIsNone(weird_proc['binding_type']['name'])
+        binding_type = cast(BindingType, weird_proc['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertIsNone(binding_type['name'])
         
         # Check binding variations
         var_type = module['types']['binding_variations']
@@ -147,22 +152,25 @@ end module type_bound_proc_binding_mod
         # Mixed case
         method1 = var_type['procedures']['method1']
         self.assertIn('binding_type', method1)
-        self.assertEqual(method1['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertIsNone(method1['binding_type']['name'])
+        binding_type = cast(BindingType, method1['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertIsNone(binding_type['name'])
         self.assertIn('pass(self)', method1['attributes'])
         
         # With other attributes
         method2 = var_type['procedures']['method2']
         self.assertIn('binding_type', method2)
-        self.assertEqual(method2['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertIsNone(method2['binding_type']['name'])
+        binding_type = cast(BindingType, method2['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertIsNone(binding_type['name'])
         self.assertIn('public', method2['attributes'])
         
         # Double quotes
         method3 = var_type['procedures']['method3']
         self.assertIn('binding_type', method3)
-        self.assertEqual(method3['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(method3['binding_type']['name'], 'quoted_name')
+        binding_type = cast(BindingType, method3['binding_type'])
+        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
+        self.assertEqual(binding_type['name'], 'quoted_name')
         
         # Check function implementations
         

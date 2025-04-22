@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum, BindingType
+from doc4for.models.common import BindingTypeEnum
 
 class TestEnumerations(TestCase):
 

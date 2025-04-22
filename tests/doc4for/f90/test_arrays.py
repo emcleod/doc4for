@@ -1,12 +1,12 @@
 import unittest
 from unittest import TestCase
 from unittest.mock import Mock
-from typing import List, Dict, Any, Optional, Union, Tuple
+from typing import List, Dict, Any, Optional, Union, Tuple, cast
 
-from doc4for.f90.populate_data_models import parse_variable
-from doc4for.models.common import Expression, ExpressionType, BindingType, BindingTypeEnum
+from doc4for.parse.variable_parser import parse_variable
+from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
 from doc4for.models.variable_models import VariableDescription
-from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
 
 
 class TestArrays(TestCase):
@@ -82,9 +82,8 @@ class TestArrays(TestCase):
     def create_declaration(self,
                            name: str,
                            type_name: str = "real",
-                           dims: Optional[List[Dict[str,
-                                                    Optional[Expression]]]] = None,
-                           attributes: List[str] = None,
+                           dims: List[ArrayBound] = [],
+                           attributes: List[str] = [],
                            initial_value: Optional[str] = None,
                            length: Optional[str] = None) -> VariableDescription:
         result = {**self.base_expected, "type": type_name, "name": name}
@@ -96,14 +95,14 @@ class TestArrays(TestCase):
             result["initial_value"] = initial_value
         result["length"] = length
         result["binding_type"] = { "type": BindingTypeEnum.DEFAULT, "name": None}
-        return result
+        return cast(VariableDescription, result)
 
     def create_mock_declaration(self,
                                 line: str,
                                 decls: List[str],
                                 type_name: str = "real",
-                                attrspec: List[str] = None,
-                                selector: Tuple[str, str] = None) -> Mock:
+                                attrspec: List[str] = [],
+                                selector: Optional[Tuple[str, str]] = None) -> Mock:
         declaration = Mock()
         declaration.name = type_name
         declaration.item.line = line
@@ -266,9 +265,10 @@ class TestArrays(TestCase):
             # Check dimensions if they exist
             if "dimension" in e:
                 self.assertIn("dimension", r)
-                self.assertEqual(
-                    r["dimension"]["dimensions"],
-                    e["dimension"]["dimensions"]
+                self.assertIn("dimension", e)
+                r_dim = cast(Dimension, r["dimension"])
+                e_dim = cast(Dimension, e["dimension"])
+                self.assertEqual(r_dim["dimensions"], e_dim["dimensions"]
                 )
 
     def test_multiple_arrays_same_attributes(self):
@@ -284,7 +284,8 @@ class TestArrays(TestCase):
             self.create_dimension(lower="1", upper="10")
         ]
         for var in result:
-            self.assertEqual(var["dimension"]["dimensions"], expected_dims)
+            dimension = cast(Dimension, var["dimension"])
+            self.assertEqual(dimension["dimensions"], expected_dims)
 
     def test_allocatable_arrays(self):
         test_cases = [
@@ -316,9 +317,9 @@ class TestArrays(TestCase):
                 self.assertEqual(r["name"], e["name"])
                 self.assertEqual(r["type"], e["type"])
                 self.assertEqual(r["attributes"], e["attributes"])
-                self.assertEqual(
-                    r["dimension"]["dimensions"],
-                    e["dimension"]["dimensions"]
+                r_dim = cast(Dimension, r["dimension"])
+                e_dim = cast(Dimension, e["dimension"])
+                self.assertEqual(r_dim["dimensions"], e_dim["dimensions"]
                 )
 
     def test_assumed_size_arrays(self):
@@ -558,7 +559,7 @@ class TestArrays(TestCase):
         declaration = self.create_mock_declaration(
             "DIMENSION X(10), Y(20)",
             ['X(10)', 'Y(20)'],
-            type_name=None
+            type_name='none'
         )
         result = parse_variable(declaration, [])
         expected = [
