@@ -20,24 +20,21 @@ from fparser.one.block_statements import (
     Public,
     Enum,
     Enumerator,
-    Use
+    Use,
+    Common
 )
 from fparser.one.typedecl_statements import TypeDeclarationStatement
-from doc4for.models.common import BindingType, BindingTypeEnum, EnumDescription
+from doc4for.models.common import BindingType, BindingTypeEnum
 from doc4for.models.file_models import FileDescription
-from doc4for.models.module_models import ModuleDescription, Uses
+from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter, is_parameter
 from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
 from doc4for.parse.enum_parser import parse_enum
-
-from doc4for.f90.populate_data_models import (
-    initialise_module_description, 
-    parse_variable,
-    parse_block_data,
-    parse_program
-)
+from doc4for.parse.shared_data_parser import parse_block_data
+from doc4for.parse.variable_parser import parse_variable
+from doc4for.f90.populate_data_models import initialise_module_description, parse_program
 from doc4for.utils.comment_utils import get_formatted_description
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -181,6 +178,10 @@ def handle_interface(item: Interface, data: ModuleDescription,
                      comment_stack: List[Comment]) -> None:
     data['interfaces'].append(parse_interface(item, comment_stack))    
 
+def handle_common_block(item: Common, data: ModuleDescription,
+                        comment_stack: List[Comment]) -> None:
+    data['common_blocks'].append(parse_common_block(item, comment_stack))
+    
 def handle_enum(item: Enum, data: ModuleDescription,
                 comment_stack: List[Comment]) -> None:
     

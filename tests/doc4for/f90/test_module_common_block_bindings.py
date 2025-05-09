@@ -1,8 +1,9 @@
 import unittest
 from pathlib import Path
+from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum
+from doc4for.models.common import BindingTypeEnum, BindingType
 
 class TestCommonBlockBindings(TestCase):
 
@@ -58,32 +59,26 @@ class TestCommonBlockBindings(TestCase):
         result = extract_module_data([Path('/fake/path/common_block_binding.f90')])
         module = result[0]
         
-        self.assertTrue(False)
-        # If we get here, common blocks are being parsed. Let's check binding types:
-        if 'common_blocks' in module:
-            # Test c_data_block binding
-            c_block = next((block for block in module['common_blocks'] 
-                        if block['name'] == 'c_data_block'), None)
-            if c_block:
-                self.assertIn('binding_type', c_block)
-                self.assertEqual(c_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-                self.assertEqual(c_block['binding_type']['name'], 'c_data')
-            
-            # Test normal block - should have default binding
-            normal_block = next((block for block in module['common_blocks'] 
-                                if block['name'] == 'normal_block'), None)
-            if normal_block:
-                self.assertIn('binding_type', normal_block)
-                self.assertEqual(normal_block['binding_type']['type'], BindingTypeEnum.DEFAULT)
-                self.assertIsNone(normal_block['binding_type']['name'])
-            
-            # Test unusual spacing
-            coords_block = next((block for block in module['common_blocks'] 
-                            if block['name'] == 'coords_block'), None)
-            if coords_block:
-                self.assertIn('binding_type', coords_block)
-                self.assertEqual(coords_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-                self.assertEqual(coords_block['binding_type']['name'], 'coords_data')
+        # Test c_data_block binding
+        c_block = c_block = module['common_blocks']['c_data_block']
+        if c_block:
+            self.assertIn('binding_type', c_block)
+            self.assertEqual(c_block['binding_type']['type'], BindingTypeEnum.BIND_C)
+            self.assertEqual(c_block['binding_type']['name'], 'c_data')
+        
+        # Test normal block - should have default binding
+        normal_block = module['common_blocks']['normal_block']
+        if normal_block:
+            self.assertIn('binding_type', normal_block)
+            self.assertEqual(normal_block['binding_type']['type'], BindingTypeEnum.DEFAULT)
+            self.assertIsNone(normal_block['binding_type']['name'])
+        
+        # Test unusual spacing
+        coords_block = module['common_blocks']['coords_block']
+        if coords_block:
+            self.assertIn('binding_type', coords_block)
+            self.assertEqual(coords_block['binding_type']['type'], BindingTypeEnum.BIND_C)
+            self.assertEqual(coords_block['binding_type']['name'], 'coords_data')
         
         # Verify function binding still works normally
         get_x = module['functions']['get_x']

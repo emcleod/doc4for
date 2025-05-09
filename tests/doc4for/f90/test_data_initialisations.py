@@ -2,7 +2,6 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-from doc4for.models.common import BindingTypeEnum
 
 class TestComplexDataInitializations(TestCase):
     

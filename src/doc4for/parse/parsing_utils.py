@@ -1,7 +1,8 @@
+import re
 from typing import List, Optional, Tuple
 from functools import wraps
 from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
-from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.common import Expression, ExpressionType, BindingType, BindingTypeEnum
 
 CHARACTER_KIND_FUNC = 'selected_char_kind'
 
@@ -128,3 +129,35 @@ def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
         return kind_spec_1 if not kind_spec_2 else kind_spec_2
     
     return None
+
+def extract_binding(bind_item) -> BindingType:
+    """
+    Extract binding type information directly from fparser Bind object.
+    
+    Args:
+        bind_item: fparser Bind object
+    
+    Returns:
+        BindingType with type and name fields
+    """
+    binding_type: BindingType = {
+        'type': BindingTypeEnum.DEFAULT,
+        'name': None
+    }
+    
+    if not hasattr(bind_item, 'specs') or not bind_item.specs:
+        return binding_type
+        
+    # First element is typically the language code
+    if bind_item.specs and bind_item.specs[0].upper() == 'C':
+        binding_type['type'] = BindingTypeEnum.BIND_C
+        
+        # Look for name parameter in any position in the specs
+        for spec in bind_item.specs[1:]:
+            if 'NAME' in spec.upper():
+                # Extract the name string, handling different quote styles
+                name_match = re.search(r"NAME\s*=\s*['\"](.+?)['\"]", spec, re.IGNORECASE)
+                if name_match:
+                    binding_type['name'] = name_match.group(1)
+                    
+    return binding_type

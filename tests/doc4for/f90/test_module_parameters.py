@@ -1,8 +1,9 @@
 import unittest
 from pathlib import Path
+from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.models.common import Expression, ExpressionType
-from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
 from doc4for.f90.generate_module_tree import extract_module_data
 
 # Helper function for creating dimension expressions
@@ -154,49 +155,48 @@ end module
 
         # Check simple array with modern syntax
         self.assertEqual(parameters["arr1"]["type"], "integer")
-        self.assertEqual(parameters["arr1"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, parameters["arr1"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(parameters["arr1"]["value"], "1, 2, 3, 4, 5")
 
         # Check array with old syntax
         self.assertEqual(parameters["arr2"]["type"], "integer")
-        self.assertEqual(parameters["arr2"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, parameters["arr2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(parameters["arr2"]["value"], "1, 2, 3")
 
         # Check array with repeat syntax
         self.assertEqual(parameters["arr3"]["type"], "real")
-        self.assertEqual(parameters["arr3"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, parameters["arr3"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         self.assertEqual(parameters["arr3"]["value"], "1.0, 2.0, 2.0, 1.0")
 
         # Check multi-dimensional array
         self.assertEqual(parameters["matrix"]["type"], "real")
-        self.assertEqual(parameters["matrix"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 2))
-        self.assertEqual(parameters["matrix"]["dimension"]
-                         ["dimensions"][1], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, parameters["matrix"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 2))
         self.assertEqual(parameters["matrix"]["value"],
                          "reshape([1.0, 2.0, 3.0, 4.0], [2,2])")
 
         # Check explicit bounds
         self.assertEqual(parameters["explicit"]["type"], "integer")
-        self.assertEqual(parameters["explicit"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(-1, 1))
+        dimension = cast(Dimension, parameters["explicit"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-1, 1))
         self.assertEqual(parameters["explicit"]["value"], "-1, 0, 1")
 
         # Check array with operations
         self.assertEqual(parameters["computed"]["type"], "real")
-        self.assertEqual(parameters["computed"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, parameters["computed"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(parameters["computed"]
                          ["value"], "[1.0, 1.5, 2.0] * 2.0")
 
         # Check character array
         self.assertEqual(parameters["str_arr"]["type"], "character")
         self.assertEqual(parameters["str_arr"]["length"], "5")
-        self.assertEqual(parameters["str_arr"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 2))
+        dimension = cast(Dimension, parameters["str_arr"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
         self.assertEqual(parameters["str_arr"]["value"], '"Hello", "World"')
 
     def test_derived_type_declarations(self):
@@ -295,7 +295,8 @@ end module test_mod
         
         # Check array parameter
         self.assertEqual(parameters["corners"]["type"], "point")
-        self.assertEqual(parameters["corners"]["dimension"]["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, parameters["corners"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         self.assertEqual(parameters["corners"]["value"], 
                         "point(-1.0, -1.0), point( 1.0, -1.0), point( 1.0,  1.0), point(-1.0,  1.0)")
         
@@ -337,28 +338,27 @@ end module test_mod
 
         # Check array constructor function initializations
         self.assertEqual(parameters["seq"]["type"], "real")
-        self.assertEqual(parameters["seq"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, parameters["seq"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(parameters["seq"]["value"], "(real(i), i=1,5)")
 
         self.assertEqual(parameters["seq2"]["type"], "real")
-        self.assertEqual(parameters["seq2"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = cast(Dimension, parameters["seq2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
         self.assertEqual(parameters["seq2"]["value"], "(2.0*i, i=1,5)")
 
         # Check intrinsic function initializations
         self.assertEqual(parameters["zeros"]["type"], "real")
-        self.assertEqual(parameters["zeros"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, parameters["zeros"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
         self.assertEqual(parameters["zeros"]["value"],
                          "spread(0.0, dim=1, ncopies=3)")
 
         self.assertEqual(parameters["ones"]["type"], "real")
-        self.assertEqual(len(parameters["ones"]["dimension"]["dimensions"]), 2)
-        self.assertEqual(parameters["ones"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(parameters["ones"]["dimension"]
-                         ["dimensions"][1], create_dimension_expr(1, 3))
+        dimension = cast(Dimension, parameters["ones"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
         self.assertEqual(parameters["ones"]["value"],
                          "reshape([9*1.0], [3,3])")
 
@@ -408,8 +408,8 @@ end module test_mod
 
         # Check array with mixed operations
         self.assertEqual(parameters["mixed"]["type"], "real")
-        self.assertEqual(parameters["mixed"]["dimension"]
-                         ["dimensions"][0], create_dimension_expr(1, 4))
+        dimension = cast(Dimension, parameters["mixed"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
         self.assertEqual(parameters["mixed"]["value"],
                          "1.0, factor*2.0, 3.0**2, sqrt(16.0)")
 
