@@ -106,7 +106,7 @@ def generate_module_pages(modules: List[ModuleDescription],
     create_modules_directory(output_dir)
     env: Environment = Environment(loader=FileSystemLoader(template_dir))
     template: Template = env.get_template(module_template)
-    module_names: List[str] = [module['module_name'] for module in modules]
+    module_names: List[str] = [module["module_name"] for module in modules]
     
     # Generate index page
     output: str = template.render(

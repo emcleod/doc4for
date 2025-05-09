@@ -1,11 +1,16 @@
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from fparser.one.block_statements import (
     Comment,
     Function,
     Subroutine,
     Interface,
-    ModuleProcedure
+    ModuleProcedure,
+    EndInterface,
+    SpecificBinding,
+    Use,
+    Import,
+    External
 )
 from doc4for.models.procedure_models import (
     FunctionDescription, 
@@ -19,119 +24,109 @@ from doc4for.models.common import (
 from doc4for.parse.procedure_argument_parser import (
     update_arguments_with_comment_data,
     update_arguments_with_parsed_data,
+    handle_specific_binding
 )
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
-def parse_function(
-    function: Function, comment_stack: List[Comment]
-) -> FunctionDescription:
+def parse_function(function: Function, comment_stack: List[Comment]) -> FunctionDescription:
+    return parse_procedure(function, comment_stack, True)
+
+def parse_subroutine(subroutine: Subroutine, comment_stack: List[Comment]) -> SubroutineDescription:
+    return parse_procedure(subroutine, comment_stack, False)
+
+def parse_procedure(
+    procedure: Union[Function, Subroutine], 
+    comment_stack: List[Comment],
+    is_function: bool
+) -> Union[FunctionDescription, SubroutineDescription]:
+    """Generic procedure parser for both functions and subroutines."""
     attributes: List[str] = [
-        attr.strip().lower() for attr in function.prefix.split() if attr.strip()
-    ]
-    function_description: FunctionDescription = {
-        "attributes": attributes,
-        "description": "",
-        "arguments": function.args,
-        "in": {},
-        "out": {},
-        "return": {},
-        "argument_interfaces": {},
-        'binding_type': None
-    }
-    update_arguments_with_parsed_data(function, function_description)
-    # Get list of procedure-type arguments 
-    function_args = [
-        arg_name for arg_name, arg_info in function_description["in"].items()
-        if arg_info["type"] == "procedure"
+        attr.strip().lower() for attr in procedure.prefix.split() if attr.strip()
     ]
     
-    # Process interfaces in function content
-    interface_comment_stack = []
-    function_arg_index = 0
-    
-    # Get any bindings
-    function_description["binding_type"] = extract_binding_type(function.bind)
-
-    for item in function.content:
-        match item:
-            case Comment():
-                if item.content:
-                    interface_comment_stack.append(item)
-            case Interface():
-                if function_arg_index < len(function_args):
-                    interface_description = parse_interface(item, interface_comment_stack)
-                    argument_name = function_args[function_arg_index]
-                    
-                    # Store the full interface description
-                    function_description["argument_interfaces"][argument_name] = interface_description
-                    
-                    # Add reference to the interface in the argument
-                    function_description["in"][argument_name]["interface_name"] = argument_name                    
-                    function_arg_index += 1
-                    
-                interface_comment_stack.clear()
-            case _:
-                pass
-
-    if is_doc4for_comment(comment_stack):
-        update_arguments_with_comment_data(comment_stack, function_description)
-                
-    return function_description 
-
-def parse_subroutine(
-    subroutine: Subroutine, comment_stack: List[Comment]
-) -> SubroutineDescription:
-    attributes: List[str] = [
-        attr.strip().lower() for attr in subroutine.prefix.split() if attr.strip()
-    ]
-    subroutine_description: SubroutineDescription = {
+    # Initialize the description dictionary
+    procedure_description = {
         "attributes": attributes,
         "description": "",
-        "arguments": subroutine.args,
+        "arguments": procedure.args,
         "in": {},
         "out": {},
         "argument_interfaces": {},
         "binding_type": None
     }
-    update_arguments_with_parsed_data(subroutine, subroutine_description)
+    
+    # Add return field if this is a function
+    if is_function:
+        procedure_description["return"] = {}
+    
+    update_arguments_with_parsed_data(procedure, procedure_description)
+    
     # Get list of procedure-type arguments 
-    subroutine_args = [
-        arg_name for arg_name, arg_info in subroutine_description["in"].items()
+    procedure_args = [
+        arg_name for arg_name, arg_info in procedure_description["in"].items()
         if arg_info["type"] == "procedure"
     ]
-
-    # Get any bindings
-    subroutine_description["binding_type"] = extract_binding_type(subroutine.bind)
-
-    # Process interfaces in subroutine content
-    interface_comment_stack = []
-    subroutine_arg_index = 0
     
-    for item in subroutine.content:
+    # Get any bindings
+    procedure_description["binding_type"] = extract_binding_type(procedure.bind)
+    
+    # Process interfaces in procedure content
+    interface_comment_stack = []
+    interface_descriptions = {}  
+    proc_arg_index = 0
+
+    for item in procedure.content:
         match item:
             case Comment():
                 if item.content:
                     interface_comment_stack.append(item)
             case Interface():
-                if subroutine_arg_index < len(subroutine_args):
-                    interface_description = parse_interface(item, interface_comment_stack)
-                    argument_name = subroutine_args[subroutine_arg_index]
+                interface_description = parse_interface(item, interface_comment_stack)
+                
+                # Check if this is an unnamed interface
+                if interface_description["procedures"]:
+                    # Use the first procedure name as the key
+                    proc_name = next(iter(interface_description["procedures"]))
+                    interface_descriptions[proc_name] = interface_description
                     
-                    # Store the full interface description
-                    subroutine_description["argument_interfaces"][argument_name] = interface_description
-                    
-                    # Add reference to the interface in the argument
-                    subroutine_description["in"][argument_name]["interface_name"] = argument_name                    
-                    subroutine_arg_index += 1
-                    
+                    # If we have procedure arguments that haven't been processed yet
+                    if proc_arg_index < len(procedure_args):
+                        # For unnamed interfaces, we need to associate them with an argument
+                        argument_name = procedure_args[proc_arg_index]
+                        
+                        # Set interface_name for the argument if not already set
+                        if not procedure_description["in"][argument_name].get("interface_name"):
+                            procedure_description["in"][argument_name]["interface_name"] = proc_name
+                        
+                        proc_arg_index += 1
+                
                 interface_comment_stack.clear()
+            case SpecificBinding():
+                handle_specific_binding(item, procedure_description, procedure_args)
+            case Use():
+                pass
+            case Import():
+                pass
+            case External():
+                pass
             case _:
                 pass
 
+    # Connect arguments to interfaces
+    for arg_name, arg_info in procedure_description["in"].items():
+        if arg_info.get("type") == "procedure" and arg_info.get("interface_name"):
+            interface_name = arg_info["interface_name"]
+            if interface_name in interface_descriptions:
+                procedure_description["argument_interfaces"][arg_name] = interface_descriptions[interface_name]
+            else:
+                # Special case: if the interface name is the same as the argument name
+                if interface_name == arg_name and arg_name in interface_descriptions:
+                    procedure_description["argument_interfaces"][arg_name] = interface_descriptions[arg_name]   
+
     if is_doc4for_comment(comment_stack):
-        update_arguments_with_comment_data(comment_stack, subroutine_description)
+        update_arguments_with_comment_data(comment_stack, procedure_description)
                 
-    return subroutine_description 
+    return procedure_description
 
 def extract_binding_type(bind: Optional[List[str]]) -> Optional[BindingType]:
     """
@@ -175,9 +170,15 @@ def parse_interface(
     name, operator = parse_interface_type(interface.name)
     procedures = {}
     procedure_comment_stack = []
-
     module_procedures = {}
+    
     for item in interface.content:
+        # Check if we hit another Interface - this would indicate a parsing error where
+        # fparser has incorrectly nested two separate interfaces
+        if isinstance(item, Interface):
+            # We've reached the start of the next interface that was incorrectly nested
+            break
+        
         match item:
             case Comment():
                 if item.content:
@@ -208,6 +209,7 @@ def parse_interface(
     if operator:
         interface_description["operator_symbol"] = operator
     return interface_description
+
 
 def parse_interface_type(name: str) -> Tuple[Optional[str], Optional[str]]:
     """

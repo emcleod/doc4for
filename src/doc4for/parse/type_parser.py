@@ -19,10 +19,10 @@ from doc4for.parse.base_parser import FortranHandler, handle_module_procedure
 from doc4for.parse.variable_parser import extract_variable_binding
 
 # Compile regex patterns
-NAME_VALUE_PATTERN = re.compile(r'(\w+)\s*(?:=\s*(.+))?$')
-DIMENSION_PATTERN = re.compile(r'\((.*?)\)$')
-KIND_PATTERN = re.compile(r'\(kind\s*=\s*(\w+)\)')
-LEN_PATTERN = re.compile(r'\blen\s*=\s*(\d+|:)')
+NAME_VALUE_PATTERN = re.compile(r"(\w+)\s*(?:=\s*(.+))?$")
+DIMENSION_PATTERN = re.compile(r"\((.*?)\)$")
+KIND_PATTERN = re.compile(r"\(kind\s*=\s*(\w+)\)")
+LEN_PATTERN = re.compile(r"\blen\s*=\s*(\d+|:)")
 
 # Type aliases
 HandlerType = Callable[[Any, TypeDescription, str], None]
@@ -60,7 +60,7 @@ def parse_type_content(fortran_type: Any, type_info: TypeDescription, comment_st
         type_info: The dictionary to update with parsed information.
     """
     handlers = _get_type_handler()
-    type_info['type_name'] = fortran_type.name
+    type_info["type_name"] = fortran_type.name
     for item in fortran_type.content:
         if isinstance(item, Comment) and item.content:
             comment_stack.append(item)
@@ -80,24 +80,24 @@ def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription,
         description: The description of this procedure.
     """
     procedure_description: ProcedureDescription = {
-        'name': item.name,
-        'description': get_formatted_description(comment_stack),
-        'attributes': [
+        "name": item.name,
+        "description": get_formatted_description(comment_stack),
+        "attributes": [
             normalize_attribute(attr) for attr in item.attrs
-            if not normalize_attribute(attr).startswith('bind')
+            if not normalize_attribute(attr).startswith("bind")
         ],
-        #        'attributes': [attr.lower() for attr in item.attrs],
-        'is_final': False,
-        'bound_to': item.bname,
-        'binding_type': extract_variable_binding(item.attrs)
+        #        "attributes": [attr.lower() for attr in item.attrs],
+        "is_final": False,
+        "bound_to": item.bname,
+        "binding_type": extract_variable_binding(item.attrs)
     }
-    type_info['procedures'][item.name] = procedure_description
+    type_info["procedures"][item.name] = procedure_description
 
 
 def normalize_attribute(attr_str):
     """Normalize attribute strings by removing internal spaces."""
     # Remove spaces inside parentheses
-    normalized = re.sub(r'\s*\(\s*([^)]*)\s*\)', r'(\1)', attr_str.lower())
+    normalized = re.sub(r"\s*\(\s*([^)]*)\s*\)", r"(\1)", attr_str.lower())
     return normalized
 
 
@@ -111,13 +111,13 @@ def handle_generic_binding(item: GenericBinding, type_info: TypeDescription,
         description: The description of this procedure.
     """
     generic_description: GenericInterface = {
-        'generic_spec': item.spec,
-        'attributes': [item.aspec.lower()],
-        'specific_procedures': item.items,
-        'description': get_formatted_description(comment_stack),
-        'binding_type': None # can have binding types, but fparser doesn't handle the declaration properly. Need to revisit
+        "generic_spec": item.spec,
+        "attributes": [item.aspec.lower()],
+        "specific_procedures": item.items,
+        "description": get_formatted_description(comment_stack),
+        "binding_type": None # can have binding types, but fparser doesn"t handle the declaration properly. Need to revisit
     }
-    type_info['generic_interfaces'][item.spec] = generic_description
+    type_info["generic_interfaces"][item.spec] = generic_description
 
 
 def handle_final_binding(item: FinalBinding, type_info: TypeDescription,
@@ -131,13 +131,13 @@ def handle_final_binding(item: FinalBinding, type_info: TypeDescription,
     """
     for final_name in item.items:
         procedure_description: ProcedureDescription = {
-            'name': final_name,
-            'description': get_formatted_description(comment_stack),
-            'attributes': ['final'],
-            'is_final': True,
-            'bound_to': None,
+            "name": final_name,
+            "description": get_formatted_description(comment_stack),
+            "attributes": ["final"],
+            "is_final": True,
+            "bound_to": None,
         }
-        type_info['procedures'][final_name] = procedure_description
+        type_info["procedures"][final_name] = procedure_description
 
 
 def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info: TypeDescription,
@@ -151,7 +151,7 @@ def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info:
     """
     for entity_decl in item.entity_decls:
         component = create_data_component(item, entity_decl, comment_stack)
-        type_info['data_components'][component['name']] = component
+        type_info["data_components"][component["name"]] = component
 
 
 def create_data_component(item: TypeDeclarationStatement, entity_decl: str,
@@ -168,14 +168,14 @@ def create_data_component(item: TypeDeclarationStatement, entity_decl: str,
     """
     name, initial_value = get_name_and_initial_value(entity_decl)
     return {
-        'name': name,
-        'type': item.name,
-        'kind': extract_kind(item.raw_selector),
-        'len': extract_len(item.raw_selector),
-        'description': get_formatted_description(comment_stack),
-        'dimension': extract_dimension(entity_decl, item.attrspec),
-        'initial_value': initial_value,
-        'attributes': [attr.lower() for attr in item.attrspec if 'dimension' not in attr]
+        "name": name,
+        "type": item.name,
+        "kind": extract_kind(item.raw_selector),
+        "len": extract_len(item.raw_selector),
+        "description": get_formatted_description(comment_stack),
+        "dimension": extract_dimension(entity_decl, item.attrspec),
+        "initial_value": initial_value,
+        "attributes": [attr.lower() for attr in item.attrspec if "dimension" not in attr]
     }
 
 
@@ -196,8 +196,8 @@ def get_name_and_initial_value(entity_decl: str) -> Tuple[str, Optional[str]]:
         value: Optional[str] = match.group(2)
         return name.strip(), value.strip() if value else None
     words: List[str] = entity_decl.split()
-    if ':' in words[-1]:
-        return re.sub(r'\s*\(\s*(:(?:\s*,\s*:)*)\s*\)\s*$', '', words[-1]), None
+    if ":" in words[-1]:
+        return re.sub(r"\s*\(\s*(:(?:\s*,\s*:)*)\s*\)\s*$", "", words[-1]), None
     return words[-1].strip(), None
 
 
@@ -213,14 +213,14 @@ def extract_dimension(entity_decl: str, attributes: List[str]) -> Optional[Dimen
 
     """
 #    TODO: Error handling - Handle malformed dimension specifications
-    if ':' in entity_decl:
+    if ":" in entity_decl:
         return dimension_from_declaration(entity_decl)
     for attr in attributes:
-        if attr.startswith('dimension(') and attr.endswith(')'):
-            dim_str = attr[len('dimension('):-1]
+        if attr.startswith("dimension(") and attr.endswith(")"):
+            dim_str = attr[len("dimension("):-1]
             dimensions = parse_dimension_string(dim_str)
             if dimensions is not None:
-                return {'dimensions': dimensions}
+                return {"dimensions": dimensions}
     return None
 
 
@@ -237,15 +237,15 @@ def dimension_from_declaration(s: str) -> Optional[Dimension_TEMP]:
 #   TODO: Error handling - Handle malformed declaration strings
     match = DIMENSION_PATTERN.search(s)
     if match:
-        dimensions: List[str] = match.group(1).split(',')
-        return {'dimensions': [d.strip() if d.strip() != ':' else ':' for d in dimensions]}
+        dimensions: List[str] = match.group(1).split(",")
+        return {"dimensions": [d.strip() if d.strip() != ":" else ":" for d in dimensions]}
     return None
 
 
 def parse_dimension_string(dim_str: str) -> Optional[List[Union[int, str]]]:
     """Parse a dimension string into a list of dimensions.
 
-    The string can be numbers or allocatable (':'). 
+    The string can be numbers or allocatable (":"). 
 
     Args:
         dim_str: The dimension string to parse.
@@ -256,11 +256,11 @@ def parse_dimension_string(dim_str: str) -> Optional[List[Union[int, str]]]:
     """
 #    TODO: Error handling - Handle malformed dimension strings
     dimensions: List[Union[int, str]] = []
-    for dim in dim_str.split(','):
+    for dim in dim_str.split(","):
         dim = dim.strip()
         if dim.isdigit():
             dimensions.append(int(dim))
-        elif dim == ':':
+        elif dim == ":":
             dimensions.append(dim)
         else:
             return None
@@ -270,7 +270,7 @@ def parse_dimension_string(dim_str: str) -> Optional[List[Union[int, str]]]:
 #    TODO: Replace with implementation in populate_data_models
 #    TODO: Error handling - Handle malformed kind specifications
 def extract_kind(type_spec: str) -> Optional[str]:
-    """Extract the 'kind' value from a declaration.
+    """Extract the "kind" value from a declaration.
 
     For example, integer(kind=int64), public :: big_int has a kind of int64.
 
@@ -278,7 +278,7 @@ def extract_kind(type_spec: str) -> Optional[str]:
         type_spec: The type specification string.
 
     Returns:
-        The extracted 'kind' value or None if not found.
+        The extracted "kind" value or None if not found.
 
     """
     match = KIND_PATTERN.search(type_spec)
@@ -288,17 +288,17 @@ def extract_kind(type_spec: str) -> Optional[str]:
 
 
 def extract_len(type_spec: str) -> Optional[str]:
-    """Extract the 'len' value from a declaration.
+    """Extract the "len" value from a declaration.
 
-    'len' is used to declare the length of a Character array e.g. 
+    "len" is used to declare the length of a Character array e.g. 
     character(len=20), public :: string_name
-    'len' can be a number or ':' (allocatable).
+    "len" can be a number or ":" (allocatable).
 
     Args:
         type_spec: The type specification string.
 
     Returns:
-        The extracted 'len' value or None if not found.
+        The extracted "len" value or None if not found.
 
     """
 #    TODO: Error handling - Handle malformed len specifications

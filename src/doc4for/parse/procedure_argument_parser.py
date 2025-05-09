@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import defaultdict
-from typing import List, Any, Tuple, Optional, Union
+from typing import List, Any, Tuple, Optional, Union, Dict
 from fparser.one.block_statements import (
     Comment,
     Interface,
@@ -29,7 +29,7 @@ def extract_argument_type(item: Any) -> str:
     Returns:
         str: The name of the argument type if available, or an empty string if not.
     """
-    return item.name if item.name else ''
+    return item.name if item.name else ""
 
 
 def determine_argument_intent(item: Any) -> Tuple[bool, bool]:
@@ -63,12 +63,12 @@ def determine_argument_intent(item: Any) -> Tuple[bool, bool]:
         >>> determine_argument_intent(obj_without_intent)
         (True, True)
     """
-    if hasattr(item, 'attrspec'):
-        if 'intent(inout)' in item.attrspec:
+    if hasattr(item, "attrspec"):
+        if "intent(inout)" in item.attrspec:
             intentin, intentout = True, True
         else:
-            intentin = 'intent(in)' in item.attrspec
-            intentout = 'intent(out)' in item.attrspec
+            intentin = "intent(in)" in item.attrspec
+            intentout = "intent(out)" in item.attrspec
     else:
         intentin, intentout = True, True
     return intentin, intentout
@@ -79,23 +79,23 @@ def extract_return_type(function: Any) -> str:
 
     This function extracts the return type of a function from its type
     declaration (`typedecl` attribute). If the function does not have a
-    type declaration, the string 'Unknown' is returned.
+    type declaration, the string "Unknown" is returned.
 
     Args:
         function: An object representing a function, which should have a
             `typedecl` attribute containing information about its return type.
 
     Returns:
-        str: The name of the function's return type, or 'Unknown' if the
+        str: The name of the function"s return type, or "Unknown" if the
             function does not have a type declaration.
 
     Example:
         >>> extract_return_type(my_function_with_type_decl)
-        'integer'
+        "integer"
         >>> extract_return_type(my_function_without_type_decl)
-        'Unknown'
+        "Unknown"
     """
-    return function.typedecl.name if function.typedecl else 'Unknown'
+    return function.typedecl.name if function.typedecl else "Unknown"
 
 
 def format_dimension_string(dims: List[int]) -> str:
@@ -103,7 +103,7 @@ def format_dimension_string(dims: List[int]) -> str:
 
     This function takes a list of integers representing the dimensions of an
     array and generates a string that can be used to display or describe the
-    array's shape.
+    array"s shape.
 
     Args:
         dims (List[int]): A list of integers representing the dimensions of the
@@ -112,23 +112,23 @@ def format_dimension_string(dims: List[int]) -> str:
 
     Returns:
         str: A string representing the dimensions of the array, with allocatable
-            dimensions represented by the string 'allocatable' and fixed
+            dimensions represented by the string "allocatable" and fixed
             dimensions represented by their integer values. The dimensions are
-            separated by the string ' &times; ' (space, ampersand, times,
+            separated by the string " &times; " (space, ampersand, times,
             semicolon, space).
 
     Examples:
         >>> format_dimension_string([])
-        ''
+        ""
         >>> format_dimension_string([3])
-        '3'
-        >>> format_dimension_string([''])
-        'allocatable'
+        "3"
+        >>> format_dimension_string([""])
+        "allocatable"
         >>> format_dimension_string([2, 3, 5])
-        '2 &times; 3 &times; 5'
+        "2 &times; 3 &times; 5"
     """
     if not dims:
-        return ''
+        return ""
     return format_dimension(dims)
 
 def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: bool,
@@ -140,14 +140,14 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     Args:
         decl (str): The name of the argument as found by the parser.
         arg_type (str): The type of the argument as found by the parser, e.g.,
-            'real', 'integer'.
+            "real", "integer".
         intentin (bool): True if the argument is an input to the function
             (`intent(in)` or `intent(inout)`).
         intentout (bool): True if the argument is an output of the function
             (`intent(out)` or `intent(inout)`), excluding the return type.
         dummy_arg_info (Union[FunctionDescription, SubroutineDescription]): A dictionary 
-            containing information about a function or subroutines's arguments, 
-            The 'in' and 'out' keys will be populated in this function.
+            containing information about a function or subroutines"s arguments, 
+            The "in" and "out" keys will be populated in this function.
         dims (Optional[List[int]]): An optional list of integers representing the
             dimensions of the argument. An empty list or string are
             interpreted as allocatable dimensions. Defaults to an empty list if
@@ -155,13 +155,13 @@ def update_single_argument(decl: str, arg_type: str, intentin: bool, intentout: 
     """
     if dims is None:
         dims = []
-    arg_info: Argument = {'type': arg_type,
-                          'description': '',
-                          'dimension': format_dimension_string(dims)}
+    arg_info: Argument = {"type": arg_type,
+                          "description": "",
+                          "dimension": format_dimension_string(dims)}
     if intentin or not intentout:
-        dummy_arg_info['in'][decl] = arg_info
+        dummy_arg_info["in"][decl] = arg_info
     if intentout or not intentin:
-        dummy_arg_info['out'][decl] = arg_info
+        dummy_arg_info["out"][decl] = arg_info
 
 def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     args: List[str] = procedure.args.copy()  # Copy of all argument names
@@ -169,21 +169,21 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
     result: str = procedure.result
 
     # Handle return type for functions first (if not using result variable)
-    if is_function_description(arg_info) and hasattr(procedure, 'typedecl') and procedure.typedecl:
+    if is_function_description(arg_info) and hasattr(procedure, "typedecl") and procedure.typedecl:
         variables = parse_type_declaration_statement(procedure.typedecl, "")
         # There should be only one variable - the function name
-        if variables and variables[0]['name'] == procedure.name:
-            arg_info['return'][procedure.name] = {
-                'type': variables[0]['type'],
-                'description': '',
-                'dimension': format_dimension_string(variables[0]['dimension'])
+        if variables and variables[0]["name"] == procedure.name:
+            arg_info["return"][procedure.name] = {
+                "type": variables[0]["type"],
+                "description": "",
+                "dimension": format_dimension_string(variables[0]["dimension"])
             }
     else:
         if procedure.name == procedure.result:
-            arg_info['return'][procedure.name] = {
-                'type': 'Unknown', #TODO
-                'description': '',
-                'dimension': '' #TODO
+            arg_info["return"][procedure.name] = {
+                "type": "Unknown", #TODO
+                "description": "",
+                "dimension": "" #TODO
             }
 
     # First pass: handle regular type declarations
@@ -194,37 +194,26 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
                 intentin, intentout = determine_argument_intent(item)
 
                 for var in variables:
-                    if var['name'] in args:
+                    if var["name"] in args:
                         update_single_argument(
-                            var['name'],
-                            var['type'],
+                            var["name"],
+                            var["type"],
                             intentin,
                             intentout,
                             arg_info,
-                            var['dimension']
+                            var["dimension"]
                         )
-                        # Remove from remaining_args as we've handled it
-                        if var['name'] in remaining_args:
-                            remaining_args.remove(var['name'])
-                    elif is_function_description(arg_info) and var['name'] == result:
-                        arg_info['return'][var['name']] = {
-                            'type': var['type'],
-                            'description': '',
-                            'dimension': format_dimension_string(var['dimension'])
+                        # Remove from remaining_args as we"ve handled it
+                        if var["name"] in remaining_args:
+                            remaining_args.remove(var["name"])
+                    elif is_function_description(arg_info) and var["name"] == result:
+                        arg_info["return"][var["name"]] = {
+                            "type": var["type"],
+                            "description": "",
+                            "dimension": format_dimension_string(var["dimension"])
                         }
             case SpecificBinding():
-                if item.name in args:
-                    update_single_argument(
-                        item.name,
-                        'procedure',
-                        True,  # assume intent(in) for procedure arguments
-                        False,
-                        arg_info,
-                        None
-                    )
-                    arg_info['in'][item.name]["interface_name"] = item.iname
-                    if item.name in remaining_args:
-                        remaining_args.remove(item.name)
+                remaining_args = handle_specific_binding(item, arg_info, remaining_args)                
             case _:
                 pass
 
@@ -237,7 +226,7 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
                 arg_name = remaining_args[interface_index]
                 update_single_argument(
                     arg_name,
-                    'procedure',
+                    "procedure",
                     True,  # assume intent(in) for function arguments
                     False,
                     arg_info,
@@ -257,17 +246,53 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
                 None 
             )
 
+def handle_specific_binding(
+    binding: SpecificBinding,
+    arg_info: Union[FunctionDescription, SubroutineDescription],
+    args: List[str]
+) -> List[str]:
+    """
+    Process a SpecificBinding declaration and update the argument info.
+    
+    Args:
+        binding: The SpecificBinding object from fparser
+        arg_info: The function or subroutine description to update
+        args: List of remaining unprocessed arguments
+        
+    Returns:
+        Updated list of remaining unprocessed arguments
+    """
+    # Handle multiple procedure declarations on a single line
+    declared_names = [name.strip() for name in binding.name.split(",")]
+    remaining_args = args.copy()
+    
+    for declared_name in declared_names:
+        if declared_name in args:
+            update_single_argument(
+                declared_name,
+                "procedure",
+                True,  # assume intent(in) for procedure arguments
+                False,
+                arg_info,
+                None
+            )
+            arg_info["in"][declared_name]["interface_name"] = binding.iname
+            if declared_name in remaining_args:
+                remaining_args.remove(declared_name)
+    
+    return remaining_args
+
 def extract_content_without_annotation(content: str) -> str:
-    return ' '.join(content.split()[1:])
+    return " ".join(content.split()[1:])
 
 def extract_type_and_description(content: str) -> Tuple[str, str]:
-    match = re.match(r'(\w+(?:\s*\([^)]+\))?(?:\s*\[[^\]]+\])?)\s*(.*)', content)
+    match = re.match(r"(\w+(?:\s*\([^)]+\))?(?:\s*\[[^\]]+\])?)\s*(.*)", content)
     if match:
         return match.group(1), match.group(2).strip()
-    return '', content
+    return "", content
 
 def get_base_type(type_str: str) -> str:
-    return type_str.split('(')[0].split('[')[0].strip().lower()
+    return type_str.split("(")[0].split("[")[0].strip().lower()
 
 def extract_and_validate_type(description: str, expected_type: str) -> Tuple[Optional[str], str]:
     potential_type, new_description = extract_type_and_description(description)
@@ -284,40 +309,41 @@ def update_with_argument_description(content: str,
     argument_regex = re.compile(ARGUMENT_PATTERN, re.VERBOSE)
     match = argument_regex.match(content_without_annotation)
     if not match:
-        logger.warning('Warning: Unexpected annotation format: %s', content)
+        #TODO need to distinguish between having no description e.g. '@in x' and the format being completely wrong
+        logger.warning("Warning: Unexpected annotation format: %s", content)
         return
 
-    var_name = match.group('var_name')
-    description = match.group('description')
+    var_name = match.group("var_name")
+    description = match.group("description")
 
     # Check if the variable exists in any of the specified argument types
     if not any(var_name in arg_info[at] for at in annotation_types):
-        logger.warning('Warning: "%s" annotation "%s" not found in arguments %s',
+        logger.warning("Warning: '%s' annotation '%s' not found in arguments %s",
                       annotation_type, var_name, [list(arg_info[at].keys()) for at in annotation_types])
     else:
         # Update description for the variable in all relevant argument types
         for at in annotation_types:
             if var_name in arg_info[at]:
-                arg_info[at][var_name]['description'] = description
+                arg_info[at][var_name]["description"] = description
 
 def update_with_return_description(content: str, 
                                  arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     if "return" not in arg_info:
-        logger.warning('Warning: @return annotation found in a subroutine comment: %s', content)
+        logger.warning("Warning: @return annotation found in a subroutine comment: %s", content)
         return
     
     content_without_annotation = extract_content_without_annotation(content)
     if not content_without_annotation:
-        logger.warning('Warning: Not enough content in return annotation: %s', content)
+        logger.warning("Warning: Not enough content in return annotation: %s", content)
         return
 
     # Just get the description (everything after @return)
     description = content_without_annotation.strip()
     
     # Update the description for the return value
-    # (we know there's only one return value in Fortran)
+    # (we know there"s only one return value in Fortran)
     return_name = next(iter(arg_info["return"]))
-    arg_info["return"][return_name]['description'] = description
+    arg_info["return"][return_name]["description"] = description
 
 def collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[List[str], int]:
     full_content = [comments[start_index].content.strip()]
@@ -335,10 +361,10 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     annotation_processors = defaultdict(
         lambda: lambda content, _: logging.warning("Unknown annotation type: %s", content.split()[0]), 
         {
-        '@in': lambda content, info: update_with_argument_description(content, info, ['in']),
-        '@out': lambda content, info: update_with_argument_description(content, info, ['out']),
-        '@inout': lambda content, info: update_with_argument_description(content, info, ['in', 'out']),
-        '@return': update_with_return_description
+        "@in": lambda content, info: update_with_argument_description(content, info, ["in"]),
+        "@out": lambda content, info: update_with_argument_description(content, info, ["out"]),
+        "@inout": lambda content, info: update_with_argument_description(content, info, ["in", "out"]),
+        "@return": update_with_return_description
     })
 
     procedure_comment_stack = []
@@ -347,14 +373,14 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
 
         if content.startswith(ANNOTATION_PREFIX):
             if procedure_comment_stack:
-                arg_info['description'] += format_comments(procedure_comment_stack)
+                arg_info["description"] += format_comments(procedure_comment_stack)
                 procedure_comment_stack.clear()
 
             full_content, i = collect_continuation_lines(comments, i)
-            content = ' '.join(full_content)
-            annotation_type = content.split(maxsplit=1)[0].split(':')[0]
+            content = " ".join(full_content)
+            annotation_type = content.split(maxsplit=1)[0].split(":")[0]
             annotation_processors[annotation_type](content, arg_info)
         else:
             procedure_comment_stack.append(comment)
     if procedure_comment_stack:
-        arg_info['description'] += format_comments(procedure_comment_stack)
+        arg_info["description"] += format_comments(procedure_comment_stack)
