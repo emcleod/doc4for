@@ -14,8 +14,8 @@ class TestSubroutineAnnotations(TestCase):
     contains
     !!*
     ! A subroutine with @in annotation
-    ! @in x
-    ! @in y
+    ! @in x  
+    ! @in y  
     !*!
     subroutine test_subroutine_in_annotation(x, y)
         real, intent(in) :: x, y

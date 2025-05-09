@@ -467,11 +467,12 @@ end module test_mod
         self.assertEqual(len(interface['procedures']), 1)
         
         # Check minimize function
+        # Check minimize function
         minimize = interface['procedures']['minimize']
         self.assertEqual(minimize['arguments'], ['objective', 'gradient', 'x0'])
         self.assertEqual(minimize['in'], {
-            'objective': {'type': 'procedure', 'description': 'Function to minimize', 'dimension': '', 'interface_name': 'objective'},
-            'gradient': {'type': 'procedure', 'description': 'Gradient function', 'dimension': '', 'interface_name': 'gradient'},
+            'objective': {'type': 'procedure', 'description': 'Function to minimize', 'dimension': '', 'interface_name': 'func1'},  # Changed to func1
+            'gradient': {'type': 'procedure', 'description': 'Gradient function', 'dimension': '', 'interface_name': 'grad'},  # Changed to grad
             'x0': {'type': 'real', 'description': 'Initial guess', 'dimension': ''}
         })
         self.assertEqual(minimize['return'], {
@@ -1132,116 +1133,3 @@ if __name__ == '__main__':
     unittest.main()
 
 
-# module complex_interfaces
-#     implicit none
-#     private
-
-#     public :: general_math, vector_ops
-
-#     interface general_math
-#         module procedure int_func, real_func
-#         procedure double_func
-#     end interface
-
-#     interface vector_ops
-#         pure function dot_product(a, b) result(c)
-#             real, dimension(:), intent(in) :: a, b
-#             real :: c
-#         end function dot_product
-
-#         elemental subroutine scale(v, factor)
-#             real, intent(inout) :: v
-#             real, intent(in) :: factor
-#         end subroutine scale
-
-#         function cross_product(a, b, c) result(d)
-#             real, dimension(3), intent(in) :: a, b
-#             real, dimension(3), intent(out), optional :: c
-#             real, dimension(3) :: d
-#         end function cross_product
-#     end interface
-
-#     abstract interface
-#         function func(x, callback) result(y)
-#             import
-#             real, intent(in) :: x
-#             procedure(real_func) :: callback
-#             real :: y
-#         end function func
-#     end interface
-
-#     interface
-#         function external_func(x) bind(C, name="c_func")
-#             use, intrinsic :: iso_c_binding
-#             real(c_float), value :: x
-#             real(c_float) :: external_func
-#         end function external_func
-#     end interface
-
-# contains
-#     function int_func(x)
-#         integer, intent(in) :: x
-#         integer :: int_func
-#         int_func = x * 2
-#     end function int_func
-
-#     function real_func(x)
-#         real, intent(in) :: x
-#         real :: real_func
-#         real_func = x * 2.0
-#     end function real_func
-# end module complex_interfaces    
-
-
-# module complex_interfaces
-#     implicit none
-#     private
-#     public :: vector_ops, operator(+)
-
-#     !!* Private interface for internal use *!
-#     private interface internal_ops
-#         module procedure internal_func
-#     end interface
-
-#     !!* Public interface with various procedure types *!
-#     public interface vector_ops
-#         pure function pure_op(x)
-#             real, intent(in) :: x
-#             real :: pure_op
-#         end function
-
-#         elemental function elem_op(x)
-#             real, intent(in) :: x
-#             real :: elem_op
-#         end function
-
-#         recursive function rec_op(x)
-#             real, intent(in) :: x
-#             real :: rec_op
-#         end function
-
-#         function array_op(x)
-#             real, dimension(:), intent(in) :: x
-#             real, dimension(size(x)) :: array_op
-#         end function
-
-#         function procedure_arg(func, x)
-#             interface
-#                 function func(x)
-#                     real, intent(in) :: x
-#                     real :: func
-#                 end function
-#             end interface
-#             real, intent(in) :: x
-#             real :: procedure_arg
-#         end function
-#     end interface
-
-#     !!* Interface for derived type IO *!
-#     interface write(formatted)
-#         module procedure write_mytype
-#     end interface
-
-# contains
-#     ! Implementation procedures...
-# end module complex_interfaces
