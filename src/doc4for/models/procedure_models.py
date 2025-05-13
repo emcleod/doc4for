@@ -1,5 +1,6 @@
-from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any
+from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any, Tuple
 from doc4for.models.common import BindingType
+from doc4for.models.dimension_models import Dimension
 from enum import Enum, auto
 
 #TODO add coarray details
@@ -8,7 +9,7 @@ Argument = TypedDict(
     {
         "type": str,
         "description": str,
-        "dimension": Optional[str],  # TODO replace with Dimension
+        "dimension": Dimension,
         "interface_name": Optional[str],
         "enum_type": Optional[str],  # Reference to enum if this is an enum type
     },
@@ -42,7 +43,7 @@ FunctionDescription = TypedDict(
         "arguments": List[str],
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
-        "return": Dict[str, Argument],
+        "return": Argument, 
         "argument_interfaces": Dict[str, InterfaceDescription],
         "binding_type": BindingType
     },

@@ -19,7 +19,7 @@ class ExpressionType(Enum):
     LITERAL = "literal"
     VARIABLE = "variable"
     FUNCTION_CALL = "function_call"
-
+    
 @dataclass
 class Expression:
     expr_type: ExpressionType

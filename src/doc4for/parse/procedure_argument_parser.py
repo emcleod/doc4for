@@ -384,3 +384,5 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
             procedure_comment_stack.append(comment)
     if procedure_comment_stack:
         arg_info["description"] += format_comments(procedure_comment_stack)
+
+        

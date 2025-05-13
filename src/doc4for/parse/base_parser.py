@@ -25,15 +25,18 @@ from fparser.one.block_statements import (
 )
 from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
-    Derived_Type_Def
+    Derived_Type_Def,
+    Function_Stmt,
+    Name
 )
+from fparser.two.utils import walk
 from doc4for.models.common import BindingType, BindingTypeEnum
 from doc4for.models.file_models import FileDescription
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter
-from doc4for.parse.procedure_parser import parse_subroutine, parse_function, parse_interface
+from doc4for.parse.procedure_parser import parse_function
 from doc4for.parse.enum_parser import parse_enum
 from doc4for.parse.shared_data_parser import parse_block_data, parse_common_block
 from doc4for.parse.type_parser import handle_type_definition
@@ -54,6 +57,7 @@ class VisibilityState:
     explicit_private: List[str] = field(default_factory=list)
 
 def handle_derived_type(item: Derived_Type_Def, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    # TODO is this just over-cautious?
     if "types" not in data:
         data["types"] = {}
     type_desc: TypeDescription = handle_type_definition(item, comment_stack)
@@ -73,11 +77,12 @@ def handle_type_declaration(item: Type_Declaration_Stmt, data: ModuleDescription
             data["variables"][var["name"]] = var                
 
 
-def handle_function(item: Function, data: T, comment_stack: List[Comment]) -> None:
-    data["functions"][item.name] = parse_function(item, comment_stack)
+def handle_function(item: Function_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    function_name, function_description = parse_function(item, comment_stack)
+    data["functions"][function_name] = function_description
 
-def handle_subroutine(item: Subroutine, data: T, comment_stack: List[Comment]) -> None:
-    data["subroutines"][item.name] = parse_subroutine(item, comment_stack)
+# def handle_subroutine(item: Subroutine, data: T, comment_stack: List[Comment]) -> None:
+#     data["subroutines"][item.name] = parse_subroutine(item, comment_stack)
 
 def handle_module(item: Module, file_data: FileDescription,
                    comment_stack: List[Comment]):
@@ -143,9 +148,9 @@ def handle_use(item: Use, data: T, comment_stack: List[Comment]) -> None:
 
 
 
-def handle_interface(item: Interface, data: ModuleDescription,
-                     comment_stack: List[Comment]) -> None:
-    data["interfaces"].append(parse_interface(item, comment_stack))    
+# def handle_interface(item: Interface, data: ModuleDescription,
+#                      comment_stack: List[Comment]) -> None:
+#     data["interfaces"].append(parse_interface(item, comment_stack))    
 
 def handle_common_block(item: Common, data: ModuleDescription,
                         comment_stack: List[Comment]) -> None:

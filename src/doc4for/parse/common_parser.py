@@ -117,6 +117,10 @@ def _extract_kind(declaration) -> str:
     # e.g. real(kind=8) or real(kind=c_int)
     kind_selector = walk(declaration, Kind_Selector)
     if kind_selector:
+        # real(kind=selected_real_kind(15))
+        kind = walk(kind_selector, Intrinsic_Function_Reference)
+        if kind:
+            return kind[0].string
         # real*8 or real(kind=8)
         kind = walk(kind_selector, Int_Literal_Constant)
         if kind:
@@ -243,7 +247,7 @@ def _extract_dimension_info(shape_spec_list):
     for declared_dimension in declared_dimensions:
         # we have an assumed shape
         if isinstance(declared_dimension, Assumed_Shape_Spec):
-            dimensions.append(ArrayBound(BoundType.ALLOCATABLE))
+            dimensions.append(ArrayBound(BoundType.ASSUMED_SHAPE))
         else:
             lower_expr: Expression = None
             upper_expr: Expression = None
