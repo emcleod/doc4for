@@ -17,7 +17,6 @@ class ArrayBound:
     bound_type: BoundType
     lower: Optional[Expression] = None  # Expression for the lower bound
     upper: Optional[Expression] = None  # Expression for the upper bound
-    stride: Optional[Expression] = None  # Expression for the stride
 
     def __str__(self):
         if self.bound_type == BoundType.ASSUMED:

@@ -33,7 +33,7 @@ def initialise_module_description(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:
     module_data: ModuleDescription = {
-        "module_name": module.name,
+        "module_name": module.content[0].items[1].string,
         "parameters": {},
         "variables": {},
         "functions": {},

@@ -1,6 +1,6 @@
 from typing import TypedDict, Optional, List
-from doc4for.models.dimension_models import Dimension, Dimension_TEMP
-from doc4for.models.common import BindingType, BindingTypeEnum
+from doc4for.models.dimension_models import Dimension
+from doc4for.models.common import BindingType
 from enum import Enum, auto
 
 #TODO add this information
@@ -12,6 +12,15 @@ class ArrayType(Enum):
     ASSUMED_SIZE = auto()       # Arrays as dummy arguments (*)
     ASSUMED_RANK = auto()       # F2008+ (..)
 
+class PolymorphismType(Enum):
+    NONE = "none"        # Not polymorphic (covers both intrinsic and TYPE)
+    LIMITED = "limited"  # CLASS(type_name)
+    UNLIMITED = "unlimited"  # CLASS(*)
+
+#TODO add coarray information
+#TODO polymorphic information should contain information about the allowed types
+# e.g. class(shape) where shape is a type, need to indicate that the variable can
+# be of any type that extends shape. Maybe it could go in PolymorphismType
 VariableDescription = TypedDict(
     "VariableDescription",
     {
@@ -19,11 +28,12 @@ VariableDescription = TypedDict(
         "type": str,
         "name": str,
         "dimension": Optional[Dimension],
+        "polymorphism_type": Optional[PolymorphismType], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
         "attributes": List[str],  # For public/private, etc.
-        "kind": Optional[str],
+        "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
         "initial_value": Optional[str],
-        "length": Optional[str],  # for character lengths,
-        "binding_type": BindingType
+        "length": Optional[str],  # for character lengths
+        "binding_type": Optional[BindingType]
     },
 )
 
@@ -35,22 +45,26 @@ ParameterDescription = TypedDict(
         "name": "str",
         "value": "str",
         "dimension": Optional[str],
+        "polymorphism_type": Optional[str], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
         "attributes": List[str],  # For public/private, etc.
+        "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
+        "initial_value": Optional[str],
         "length": Optional[str],   # for character lengths
-        "binding_type": BindingType
+        "binding_type": Optional[BindingType]
     },
 )
 
 DataComponent = TypedDict(
     "DataComponent",
     {
-        "name": str,
-        "type": str,
-        "kind": Optional[str],
         "description": str,
-        "dimension": Optional[Dimension_TEMP],
-        "len": Optional[str],
+        "type": str,
+        "name": str,
         "initial_value": Optional[str],
+        "dimension": Optional[Dimension],
+        "polymorphism_type": Optional[str], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
+        "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
+        "len": Optional[str],
         "attributes": List[str],
     },
 )

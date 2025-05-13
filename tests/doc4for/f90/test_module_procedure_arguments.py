@@ -18,7 +18,7 @@ class TestInterfaces(TestCase):
     module optimization_mod
         implicit none
 
-        ! First, define abstract interfaces
+        !!* First, define abstract interfaces *!
         abstract interface
             function objective_func(x)
                 real, intent(in) :: x
@@ -31,7 +31,7 @@ class TestInterfaces(TestCase):
             end function gradient_func
         end interface
 
-        ! The optimization interface
+        !!* The optimization interface *!
         interface minimization_interface
             function minimize(obj, grad, x0) result(xmin)
                 import :: objective_func, gradient_func

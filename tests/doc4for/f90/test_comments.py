@@ -1,5 +1,5 @@
 import unittest
-from fparser.one.block_statements import Comment
+from fparser.two.Fortran2003 import Comment
 from unittest import TestCase
 from unittest.mock import Mock
 from doc4for.utils.comment_utils import format_comment_for_html, is_doc4for_comment, format_comments
@@ -7,104 +7,153 @@ from doc4for.utils.comment_utils import format_comment_for_html, is_doc4for_comm
 class TestComments(TestCase):
 
     def test_comment_wrong_start(self):
-        item1 = Mock(comment='! Start of comment\n')
-        item2 = Mock(comment='! End of comment *!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2)
-        ]
+        # Create mocks with the correct structure
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '! Start of comment\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '! End of comment *!\n'
+        
+        comments = [comment1, comment2]
         self.assertFalse(is_doc4for_comment(comments))
 
     def test_comment_wrong_end(self):
-        item1 = Mock(comment='!!* Start of comment\n')
-        item2 = Mock(comment='! End of comment *\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2)
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!* Start of comment\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '! End of comment *\n'
+        
+        comments = [comment1, comment2]
         self.assertFalse(is_doc4for_comment(comments))
 
     def test_single_line_comment(self):
-        item1 = Mock(comment='!!* One line comment *!\n')
-        comments = [
-            Comment(None, item1),
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!* One line comment *!\n'
+        
+        comments = [comment1]
         self.assertTrue(is_doc4for_comment(comments))
 
     def test_multi_line_comment(self):
-        item1 = Mock(comment='!!*\n')
-        item2 = Mock(comment='!First comment\n')
-        item3 = Mock(comment='!Second comment\n')
-        item4 = Mock(comment='!Third comment\n')
-        item5 = Mock(comment='!*!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2),
-            Comment(None, item3),
-            Comment(None, item4),
-            Comment(None, item5),
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!*\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '!First comment\n'
+        
+        comment3 = Mock(spec=Comment)
+        comment3.item = Mock()
+        comment3.item.comment = '!Second comment\n'
+        
+        comment4 = Mock(spec=Comment)
+        comment4.item = Mock()
+        comment4.item.comment = '!Third comment\n'
+        
+        comment5 = Mock(spec=Comment)
+        comment5.item = Mock()
+        comment5.item.comment = '!*!\n'
+        
+        comments = [comment1, comment2, comment3, comment4, comment5]
         self.assertTrue(is_doc4for_comment(comments))
 
     def test_empty_comment_stack(self):
         self.assertEqual(format_comments([]), '\n')
 
     def test_single_comment(self):
-        item1 = Mock(comment='!!*\n')
-        item2 = Mock(comment='!Content\n')
-        item3 = Mock(comment='!*!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2),
-            Comment(None, item3)
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!*\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '!Content\n'
+        
+        comment3 = Mock(spec=Comment)
+        comment3.item = Mock()
+        comment3.item.comment = '!*!\n'
+        
+        comments = [comment1, comment2, comment3]
         self.assertEqual(format_comments(comments), '\nContent\n\n')
 
     def test_multiple_comments(self):
-        item1 = Mock(comment='!!* Start\n')
-        item2 = Mock(comment='! Line 1\n')
-        item3 = Mock(comment='! Line 2\n')
-        item4 = Mock(comment='! Line 3\n')
-        item5 = Mock(comment='! End *!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2),
-            Comment(None, item3),
-            Comment(None, item4),
-            Comment(None, item5)
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!* Start\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '! Line 1\n'
+        
+        comment3 = Mock(spec=Comment)
+        comment3.item = Mock()
+        comment3.item.comment = '! Line 2\n'
+        
+        comment4 = Mock(spec=Comment)
+        comment4.item = Mock()
+        comment4.item.comment = '! Line 3\n'
+        
+        comment5 = Mock(spec=Comment)
+        comment5.item = Mock()
+        comment5.item.comment = '! End *!\n'
+        
+        comments = [comment1, comment2, comment3, comment4, comment5]
         expected = 'Start\nLine 1\nLine 2\nLine 3\nEnd\n'
         self.assertEqual(format_comments(comments), expected)
 
     def test_comments_with_empty_lines(self):
-        item1 = Mock(comment='!!* Start\n')
-        item2 = Mock(comment='! Line 1\n')
-        item3 = Mock(comment='! \n')
-        item4 = Mock(comment='! \n')
-        item5 = Mock(comment='! End *!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2),
-            Comment(None, item3),
-            Comment(None, item4),
-            Comment(None, item5)
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!* Start\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '! Line 1\n'
+        
+        comment3 = Mock(spec=Comment)
+        comment3.item = Mock()
+        comment3.item.comment = '! \n'
+        
+        comment4 = Mock(spec=Comment)
+        comment4.item = Mock()
+        comment4.item.comment = '! \n'
+        
+        comment5 = Mock(spec=Comment)
+        comment5.item = Mock()
+        comment5.item.comment = '! End *!\n'
+        
+        comments = [comment1, comment2, comment3, comment4, comment5]
         expected = 'Start\nLine 1\n\n\nEnd\n'
         self.assertEqual(format_comments(comments), expected)
 
     def test_all_empty_comments(self):
-        item1 = Mock(comment='!!*\n')
-        item2 = Mock(comment='!\n')
-        item3 = Mock(comment='!\n')
-        item4 = Mock(comment='!\n')
-        item5 = Mock(comment='!*!\n')
-        comments = [
-            Comment(None, item1),
-            Comment(None, item2),
-            Comment(None, item3),
-            Comment(None, item4),
-            Comment(None, item5)
-        ]
+        comment1 = Mock(spec=Comment)
+        comment1.item = Mock()
+        comment1.item.comment = '!!*\n'
+        
+        comment2 = Mock(spec=Comment)
+        comment2.item = Mock()
+        comment2.item.comment = '!\n'
+        
+        comment3 = Mock(spec=Comment)
+        comment3.item = Mock()
+        comment3.item.comment = '!\n'
+        
+        comment4 = Mock(spec=Comment)
+        comment4.item = Mock()
+        comment4.item.comment = '!\n'
+        
+        comment5 = Mock(spec=Comment)
+        comment5.item = Mock()
+        comment5.item.comment = '!*!\n'
+        
+        comments = [comment1, comment2, comment3, comment4, comment5]
         self.assertEqual(format_comments(comments), '\n\n\n\n\n')
 
     def test_comments_with_html_formatting(self):
@@ -116,18 +165,27 @@ class TestComments(TestCase):
         format_comment_for_html = mock_format_comment_for_html
 
         try:
-            item1 = Mock(comment='!!*\n')
-            item2 = Mock(comment='! <pre>\n')
-            item3 = Mock(comment='! Formatted\n')
-            item4 = Mock(comment='! </pre>\n')
-            item5 = Mock(comment='!*!\n')
-            comments = [
-                Comment(None, item1),
-                Comment(None, item2),
-                Comment(None, item3),
-                Comment(None, item4),
-                Comment(None, item5)
-            ]
+            comment1 = Mock(spec=Comment)
+            comment1.item = Mock()
+            comment1.item.comment = '!!*\n'
+            
+            comment2 = Mock(spec=Comment)
+            comment2.item = Mock()
+            comment2.item.comment = '! <pre>\n'
+            
+            comment3 = Mock(spec=Comment)
+            comment3.item = Mock()
+            comment3.item.comment = '! Formatted\n'
+            
+            comment4 = Mock(spec=Comment)
+            comment4.item = Mock()
+            comment4.item.comment = '! </pre>\n'
+            
+            comment5 = Mock(spec=Comment)
+            comment5.item = Mock()
+            comment5.item.comment = '!*!\n'
+            
+            comments = [comment1, comment2, comment3, comment4, comment5]
             expected = '\n&lt;pre&gt;\nFormatted\n&lt;/pre&gt;\n\n'
             self.assertEqual(format_comments(comments), expected)
         finally:
@@ -135,3 +193,4 @@ class TestComments(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

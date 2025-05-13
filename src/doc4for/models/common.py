@@ -39,7 +39,6 @@ ARGUMENT_PATTERN = r'''
 
 
 class BindingTypeEnum(Enum):
-    DEFAULT = auto()
     BIND_C = auto()
 
 BindingType = TypedDict(

@@ -1,339 +1,229 @@
-import re
 import logging
-from typing import Any, List, Optional, Union, Tuple, Dict, Callable, Type
-
-from fparser.one.block_statements import (
+from typing import Any, List, Dict, TypeVar, Tuple
+from fparser.two.Fortran2003 import (
+    Derived_Type_Def,
+    Type_Name,
+    Component_Part,
+    Data_Component_Def_Stmt,
+    Component_Decl,
+    Name,
     Comment,
-    SpecificBinding,
-    FinalBinding,
-    GenericBinding,
-    ModuleProcedure
+    Type_Bound_Procedure_Part,
+    Attr_Spec,
+    Access_Spec,
+    Specific_Binding,
+    Type_Attr_Spec,
+    Binding_Attr,
+    Binding_PASS_Arg_Name,
+    Final_Binding,
+    Generic_Binding,
+    Generic_Spec,
+    Dtio_Generic_Spec
 )
-from fparser.one.typedecl_statements import TypeDeclarationStatement
-from doc4for.models.dimension_models import Dimension_TEMP
+from fparser.two.utils import walk
 from doc4for.models.variable_models import DataComponent
 from doc4for.models.type_models import TypeDescription, GenericInterface
-from doc4for.models.procedure_models import ProcedureDescription
-from doc4for.utils.comment_utils import get_formatted_description, format_comments
-from doc4for.parse.base_parser import FortranHandler, handle_module_procedure
-from doc4for.parse.variable_parser import extract_variable_binding
-
-# Compile regex patterns
-NAME_VALUE_PATTERN = re.compile(r"(\w+)\s*(?:=\s*(.+))?$")
-DIMENSION_PATTERN = re.compile(r"\((.*?)\)$")
-KIND_PATTERN = re.compile(r"\(kind\s*=\s*(\w+)\)")
-LEN_PATTERN = re.compile(r"\blen\s*=\s*(\d+|:)")
-
-# Type aliases
-HandlerType = Callable[[Any, TypeDescription, str], None]
-
-
-TypeHandler = FortranHandler[TypeDescription]
-
-_type_handler_instance: Optional[TypeHandler] = None
-
-
-def _get_type_handler() -> TypeHandler:
-    """Get an instance of TypeHandler and initialize if necessary.
-
-    Returns:
-        The singleton instance of TypeHandler.
-    """
-    global _type_handler_instance
-    if _type_handler_instance is None:
-        handler = TypeHandler()
-        handler.register_handler(ModuleProcedure, handle_module_procedure)
-        handler.register_handler(SpecificBinding, handle_specific_binding)
-        handler.register_handler(GenericBinding, handle_generic_binding)
-        handler.register_handler(FinalBinding, handle_final_binding)
-        handler.register_handler(
-            TypeDeclarationStatement, handle_type_declaration_statement)
-        _type_handler_instance = handler
-    return _type_handler_instance
-
-
-def parse_type_content(fortran_type: Any, type_info: TypeDescription, comment_stack: List[Comment]) -> None:
-    """Update the type_info dictionary with parsed data from the Fortran type.
-
-    Args:
-        fortran_type: The Fortran type object to parse.
-        type_info: The dictionary to update with parsed information.
-    """
-    handlers = _get_type_handler()
-    type_info["type_name"] = fortran_type.name
-    for item in fortran_type.content:
-        if isinstance(item, Comment) and item.content:
-            comment_stack.append(item)
-        else:
-            handler = handlers.get_handler(type(item))
-            handler(item, type_info, comment_stack)
-            comment_stack.clear()
-
-
-def handle_specific_binding(item: SpecificBinding, type_info: TypeDescription,
-                            comment_stack: List[Comment]) -> None:
-    """Handle a SpecificBinding.
-
-    Args:
-        item: The specific binding item to handle.
-        type_info: The type description dictionary to update.
-        description: The description of this procedure.
-    """
-    procedure_description: ProcedureDescription = {
-        "name": item.name,
-        "description": get_formatted_description(comment_stack),
-        "attributes": [
-            normalize_attribute(attr) for attr in item.attrs
-            if not normalize_attribute(attr).startswith("bind")
-        ],
-        #        "attributes": [attr.lower() for attr in item.attrs],
-        "is_final": False,
-        "bound_to": item.bname,
-        "binding_type": extract_variable_binding(item.attrs)
-    }
-    type_info["procedures"][item.name] = procedure_description
-
-
-def normalize_attribute(attr_str):
-    """Normalize attribute strings by removing internal spaces."""
-    # Remove spaces inside parentheses
-    normalized = re.sub(r"\s*\(\s*([^)]*)\s*\)", r"(\1)", attr_str.lower())
-    return normalized
-
-
-def handle_generic_binding(item: GenericBinding, type_info: TypeDescription,
-                           comment_stack: List[Comment]) -> None:
-    """Handle a GenericBinding.
-
-    Args:
-        item: The generic binding item to handle.
-        type_info: The type description dictionary to update.
-        description: The description of this procedure.
-    """
-    generic_description: GenericInterface = {
-        "generic_spec": item.spec,
-        "attributes": [item.aspec.lower()],
-        "specific_procedures": item.items,
-        "description": get_formatted_description(comment_stack),
-        "binding_type": None # can have binding types, but fparser doesn"t handle the declaration properly. Need to revisit
-    }
-    type_info["generic_interfaces"][item.spec] = generic_description
-
-
-def handle_final_binding(item: FinalBinding, type_info: TypeDescription,
-                         comment_stack: List[Comment]) -> None:
-    """Handle a FinalBinding.
-
-    Args:
-        item: The final binding item to handle.
-        type_info: The type description dictionary to update.
-        description: The description of this procedure.
-    """
-    for final_name in item.items:
-        procedure_description: ProcedureDescription = {
-            "name": final_name,
-            "description": get_formatted_description(comment_stack),
-            "attributes": ["final"],
-            "is_final": True,
-            "bound_to": None,
-        }
-        type_info["procedures"][final_name] = procedure_description
-
-
-def handle_type_declaration_statement(item: TypeDeclarationStatement, type_info: TypeDescription,
-                                      comment_stack: List[Comment]) -> None:
-    """Handle a TypeDeclarationStatement (e.g. Real, Integer, Character).
-
-    Args:
-        item: The type declaration statement to handle.
-        type_info: The type description dictionary to update.
-        description: The description of this procedure.
-    """
-    for entity_decl in item.entity_decls:
-        component = create_data_component(item, entity_decl, comment_stack)
-        type_info["data_components"][component["name"]] = component
-
-
-def create_data_component(item: TypeDeclarationStatement, entity_decl: str,
-                          comment_stack: List[Comment]) -> DataComponent:
-    """Create a data component description from a type declaration and entity.
-
-    Args:
-        item: The type declaration statement.
-        entity_decl: The entity declaration string.
-        description: The description of this component.
-
-    Returns:
-        A dictionary containing the data component description.
-    """
-    name, initial_value = get_name_and_initial_value(entity_decl)
-    return {
-        "name": name,
-        "type": item.name,
-        "kind": extract_kind(item.raw_selector),
-        "len": extract_len(item.raw_selector),
-        "description": get_formatted_description(comment_stack),
-        "dimension": extract_dimension(entity_decl, item.attrspec),
-        "initial_value": initial_value,
-        "attributes": [attr.lower() for attr in item.attrspec if "dimension" not in attr]
-    }
-
-
-def get_name_and_initial_value(entity_decl: str) -> Tuple[str, Optional[str]]:
-    """Extract the name and initial value from an entity declaration.
-
-    Args:
-        entity_decl: The entity declaration string.
-
-    Returns:
-        A tuple containing the name and initial value (if any).
-
-    """
-#    TODO: Error handling - Handle regex match failures
-    match = NAME_VALUE_PATTERN.search(entity_decl)
-    if match:
-        name: str = match.group(1)
-        value: Optional[str] = match.group(2)
-        return name.strip(), value.strip() if value else None
-    words: List[str] = entity_decl.split()
-    if ":" in words[-1]:
-        return re.sub(r"\s*\(\s*(:(?:\s*,\s*:)*)\s*\)\s*$", "", words[-1]), None
-    return words[-1].strip(), None
-
-
-def extract_dimension(entity_decl: str, attributes: List[str]) -> Optional[Dimension_TEMP]:
-    """Extract dimension information from an entity declaration and attributes.
-
-    Args:
-        entity_decl: The entity declaration string.
-        attributes: The list of attributes.
-
-    Returns:
-        The extracted dimension information or None if not found.
-
-    """
-#    TODO: Error handling - Handle malformed dimension specifications
-    if ":" in entity_decl:
-        return dimension_from_declaration(entity_decl)
-    for attr in attributes:
-        if attr.startswith("dimension(") and attr.endswith(")"):
-            dim_str = attr[len("dimension("):-1]
-            dimensions = parse_dimension_string(dim_str)
-            if dimensions is not None:
-                return {"dimensions": dimensions}
-    return None
-
-
-def dimension_from_declaration(s: str) -> Optional[Dimension_TEMP]:
-    """Extract dimension information from a declaration string.
-
-    Args:
-        s: The declaration string.
-
-    Returns:
-        The extracted dimension information or None if not found.
-
-    """
-#   TODO: Error handling - Handle malformed declaration strings
-    match = DIMENSION_PATTERN.search(s)
-    if match:
-        dimensions: List[str] = match.group(1).split(",")
-        return {"dimensions": [d.strip() if d.strip() != ":" else ":" for d in dimensions]}
-    return None
-
-
-def parse_dimension_string(dim_str: str) -> Optional[List[Union[int, str]]]:
-    """Parse a dimension string into a list of dimensions.
-
-    The string can be numbers or allocatable (":"). 
-
-    Args:
-        dim_str: The dimension string to parse.
-
-    Returns:
-        A list of parsed dimensions or None if invalid.
-
-    """
-#    TODO: Error handling - Handle malformed dimension strings
-    dimensions: List[Union[int, str]] = []
-    for dim in dim_str.split(","):
-        dim = dim.strip()
-        if dim.isdigit():
-            dimensions.append(int(dim))
-        elif dim == ":":
-            dimensions.append(dim)
-        else:
-            return None
-    return dimensions
-
-
-#    TODO: Replace with implementation in populate_data_models
-#    TODO: Error handling - Handle malformed kind specifications
-def extract_kind(type_spec: str) -> Optional[str]:
-    """Extract the "kind" value from a declaration.
-
-    For example, integer(kind=int64), public :: big_int has a kind of int64.
-
-    Args:
-        type_spec: The type specification string.
-
-    Returns:
-        The extracted "kind" value or None if not found.
-
-    """
-    match = KIND_PATTERN.search(type_spec)
-    if match:
-        return match.group(1)
-    return None
-
-
-def extract_len(type_spec: str) -> Optional[str]:
-    """Extract the "len" value from a declaration.
-
-    "len" is used to declare the length of a Character array e.g. 
-    character(len=20), public :: string_name
-    "len" can be a number or ":" (allocatable).
-
-    Args:
-        type_spec: The type specification string.
-
-    Returns:
-        The extracted "len" value or None if not found.
-
-    """
-#    TODO: Error handling - Handle malformed len specifications
-    match = LEN_PATTERN.search(type_spec)
-    if match:
-        return match.group(1)
-    return None
-
-
-def parse_type(
-    type: Type, comment_stack: List[Comment]
-) -> TypeDescription:
-    type_name: str = type.name
-    type_description: TypeDescription = {
+from doc4for.models.procedure_models import ProcedureDescription, PassType
+from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
+from doc4for.parse.common_parser import (FortranHandler, _extract_kind, _extract_char_length,
+                                         _extract_literal_value, _extract_type,
+                                         _extract_dimension_info)
+from doc4for.models.dimension_models import Dimension
+
+logger: logging.Logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comment]) -> TypeDescription:
+    # Extract type name
+    type_name = walk(type_def, Type_Name)[0].string
+    type_description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""    
+    attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
+    # if there's an extends attribute, find the parent type    
+    parent_name: str = None
+    if any("EXTENDS" in attribute for attribute in attributes):
+        attr_spec = [spec for spec in walk(type_def, Type_Attr_Spec) if spec.children[0] == "EXTENDS"] 
+        if attr_spec:
+            parent_name = attr_spec[0].children[1].string
+            attributes = [attribute for attribute in attributes if "EXTENDS" not in attribute]
+
+    type_info: TypeDescription = {
         "type_name": type_name,
-        "attributes": [],
-        "description": "",
+        "attributes": attributes,  
+        "description": type_description,
         "data_components": {},
+        "enums": {},
         "procedures": {},
         "generic_interfaces": {},
-        "extends": None,
+        "extends": parent_name
     }
-    if comment_stack:
-        type_description["description"] = format_comments(comment_stack)
-        comment_stack.clear()
 
-    if any(spec.startswith("extends") for spec in type.specs):
-        extends_spec = next(
-            spec for spec in type.specs if spec.startswith("extends"))
-        match = re.search(r"extends\s*\(\s*(\w+)\s*\)", extends_spec)
-        if match:
-            base_type = match.group(1)
-            type_description["extends"] = base_type
-    else:
-        type_description["attributes"].extend(type.specs)
-    type_description["attributes"].append("public")
-    parse_type_content(type, type_description, comment_stack)
-    return type_description
+    # Process the nodes inside the type
+    type_comment_stack = []    
+    for node in type_def.children:
+        if isinstance(node, Comment):
+            type_comment_stack.append(node)
+        elif isinstance(node, Component_Part):
+            type_info["data_components"].update(handle_data_component(node, type_comment_stack))
+            type_comment_stack.clear()
+        elif isinstance(node, Type_Bound_Procedure_Part): 
+            # is it a generic binding
+            if walk(node, Generic_Binding):
+                type_info["generic_interfaces"].update(handle_generic_interface(node))
+            # still need to handle all specific bindings even if there's a generic binding in there
+            type_info["procedures"].update(handle_type_bound_procedure(node))
+        else:
+            pass
+
+    return type_info
+
+def handle_data_component(data_component: Component_Part, 
+                          comment_stack: List[Comment]) -> Dict[str, DataComponent]:  
+    components: Dict[str, DataComponent] = {}
+    for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
+        #TODO not sure this is handling comments correctly 
+        data_type, polymorphism_type = _extract_type(def_stmt)
+        kind: str = _extract_kind(def_stmt)
+        description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+        dimension: Dimension = _extract_dimension_info(def_stmt)
+        length: str = _extract_char_length(def_stmt)
+        attributes: List[str] = []
+        declarations = walk(def_stmt, Component_Decl)
+        for declaration in declarations:
+            name: str = walk(declaration, Name)[0].string
+            initial_value: str = _extract_literal_value(def_stmt)
+            component: DataComponent = {
+                "name": name,
+                "type": data_type,
+                "kind": kind,
+                "description": description,
+                "dimension": dimension,
+                "polymorphism_type": polymorphism_type,
+                "len": length,
+                "initial_value": initial_value,
+                "attributes": attributes
+            }
+            components[name] = component
+    return components
+
+def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part) -> Dict[str, ProcedureDescription]:
+    procedures = {}
+    comment_stack: List[Comment] = []
+    for node in type_bound_statement.children:
+        if isinstance(node, Comment):
+            comment_stack.append(node)
+        elif isinstance(node, Specific_Binding):  
+            name, bound_to, implementation = extract_procedure_info(node)
+            description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+            attributes = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec))]
+            binding_types = [attr.string.upper() for attr in walk(node, Binding_Attr)]            
+            binding_args = walk(node, Binding_PASS_Arg_Name)            
+            if "DEFERRED" in binding_types:
+                binding_types.remove("DEFERRED")
+                attributes.append("DEFERRED")         
+            pass_name = (walk(binding_args, Name)[0].string if binding_args 
+                         else None)
+            pass_type = (PassType.NONE if "NOPASS" in binding_types 
+                         else PassType.NAMED if pass_name 
+                         else PassType.DEFAULT)
+            procedure_description: ProcedureDescription = {
+                "name": name,
+                "description": description,
+                "attributes": attributes,
+                "is_final": False,
+                "bound_to": bound_to,
+                "pass_type": pass_type,
+                "pass_name": pass_name,
+                "implementation": implementation
+            }
+            procedures[name] = procedure_description
+            comment_stack.clear()
+        elif isinstance(node, Final_Binding):
+            description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""            
+            for name in walk(node, Name):
+                procedure_description: ProcedureDescription = {
+                    "name": name.string,
+                    "description": description,
+                    "attributes": [],
+                    "is_final": True,
+                    "bound_to": None,
+                    "pass_type": None,
+                    "pass_name": None,
+                    "implementation": None
+                }
+                procedures[name.string] = procedure_description
+            comment_stack.clear()
+        else:
+            #ignoring everything else including generic interfaces
+            comment_stack.clear()
+    return procedures
+
+def handle_generic_interface(generic_binding: Generic_Binding) -> Dict[str, GenericInterface]:
+    generic_interfaces = {}
+    comment_stack: List[Comment] = []
+    
+    for node in generic_binding.children:
+        if isinstance(node, Comment):
+            comment_stack.append(node)
+        elif isinstance(node, Generic_Binding):
+            generic_specs = walk(node, (Generic_Spec, Dtio_Generic_Spec))
+            generic_spec, specific_procedures = None, []
+            if generic_specs:
+                # have an operator, assignment or I/O overload
+                generic_spec = generic_specs[0].string
+                specific_procedures = [name.string for name in walk(node, Name)]            
+            else:
+                names = walk(node, Name)
+                # first name is generic name, rest are the specific procedures
+                generic_spec = names[0].string
+                specific_procedures = [name.string for name in names[1:]]
+            description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""        
+            attributes = [attr.string.upper() for attr in walk(node, (Access_Spec,))]            
+            generic_interface = {
+                "generic_spec": generic_spec,
+                "description": description,
+                "attributes": attributes,
+                "specific_procedures": specific_procedures
+            }            
+            # If this generic spec already exists, merge the specific procedures
+            if generic_spec in generic_interfaces:
+                existing = generic_interfaces[generic_spec]
+                existing["specific_procedures"].extend(specific_procedures)
+                if description:
+                    if existing["description"]:
+                        existing["description"] += description
+                    else:
+                        existing["description"] = description            
+            else:
+                generic_interfaces[generic_spec] = generic_interface            
+            comment_stack.clear()
+        else:
+            # ignore specific bindings and clear any accumulated comments from them
+            comment_stack.clear()
+            
+    return generic_interfaces
+
+def extract_procedure_info(specific_binding: Specific_Binding) -> Tuple[str, str, str]:
+    names = [child for child in specific_binding.children if isinstance(child, Name)]
+    has_arrow = "=>" in specific_binding.string
+    
+    # Default values
+    procedure_name = None
+    bound_to = None
+    implementation = None
+    
+    if len(names) == 1:
+        # Simple case: procedure :: name
+        procedure_name = names[0].string
+    elif len(names) == 2:
+        if has_arrow:
+            # Case: procedure :: name => implementation
+            procedure_name = names[0].string
+            implementation = names[1].string
+        else:
+            # Case: procedure(interface) :: name
+            bound_to = names[0].string
+            procedure_name = names[1].string
+    
+    return procedure_name, bound_to, implementation
+    

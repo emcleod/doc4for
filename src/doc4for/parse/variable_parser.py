@@ -1,123 +1,68 @@
 import re
-from typing import List
-from fparser.one.typedecl_statements import TypeDeclarationStatement
-from fparser.one.block_statements import Comment
+from typing import List, Optional
+from fparser.two.Fortran2003 import (
+    Type_Declaration_Stmt,
+    Comment,
+    Entity_Decl,
+    Access_Spec,
+    Attr_Spec,
+    Dimension_Attr_Spec,
+    Dimension_Stmt
+)
+from fparser.two.utils import walk
 from doc4for.models.variable_models import VariableDescription
 from doc4for.models.common import BindingTypeEnum, BindingType
 from doc4for.parse.dimension_parser import extract_dimension_from_attributes, extract_coarray_dimensions, extract_variable_dimension
 from doc4for.parse.array_utils import parse_initialization_value
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 from doc4for.parse.parsing_utils import get_attributes, extract_kind, get_character_length
+from doc4for.parse.common_parser import _extract_type_info, _extract_entity_info, _extract_dimension_info
 
 # TODO with defined type arrays, link to their type when generating
 # the documents
 def parse_variable(
-    declaration: TypeDeclarationStatement,
-    comment_stack: List[Comment]
+    declaration: Type_Declaration_Stmt,
+    comment_stack: List[Comment],
+    dimension_stack: Optional[List[Dimension_Stmt]]=None
 ) -> List[VariableDescription]:
-    """Parse variable declarations into variable descriptions.
 
-    Args:
-        declaration: The type declaration statement to parse
-        comment_stack: Stack of comments preceding the declaration
-
-    Returns:
-        List of variable descriptions for both array and scalar variables
-    """
     description = format_comments(
         comment_stack) if is_doc4for_comment(comment_stack) else ""
+    
+    type_info = _extract_type_info(declaration)
 
-    try:
-        return parse_type_declaration_statement(declaration, description)
-    except Exception as e:
-        # TODO log this and continue
-        raise ValueError(
-            f"Error parsing variable declaration: {str(e)}") from e
+    # Get attributes
+    attributes = [attr.string for attr in walk(declaration, Attr_Spec)]
+    attributes.extend([attr.string for attr in walk(declaration, Access_Spec)])
     
-def parse_type_declaration_statement(
-    declaration: TypeDeclarationStatement,
-    description: str
-) -> List[VariableDescription]:
-    
-    shared_attributes = get_attributes(declaration)
+    # might have a dimension in the attributes e.g. real, dimension(10, 10) :: variable_name
+    dimension = _extract_dimension_info(walk(declaration, Dimension_Attr_Spec))
 
-    # Extract dimension from attributes
-    dimension_from_attr = extract_dimension_from_attributes(shared_attributes)
-    
-    # Get binding type from attributes
-    binding_type = extract_variable_binding(shared_attributes)
-
-    # Remove 'dimension' from shared_attributes if present
-    shared_attributes = [
-        attr for attr in shared_attributes 
-        if not attr.startswith("dimension(")
-    ]
-    
     variable_descriptions: List[VariableDescription] = []
 
-    base_type = str(declaration.name).lower()    
-    for entity in declaration.entity_decls:
-        kind = extract_kind(declaration)
-
-        full_name, initial_value = parse_initialization_value(entity)
-
-        # # Try to get dimensions from name first
-        dimension = extract_variable_dimension(full_name)
-                
-        # Extract array and coarray specs before cleaning name
-        is_array = re.search(r"\((.*?)\)", full_name)
-        is_coarray = re.search(r"\[(.*?)\]", full_name)
-
-        # Clean the name (remove both () and [] parts)
-        name = re.split(r'[\(\[]', full_name)[0].strip()
-
-        # Handle regular array dimensions
-        if is_array:
-            dimension = extract_variable_dimension(full_name)
-
-        # Handle coarray dimensions
-        if is_coarray:
-            coarray_dims = extract_coarray_dimensions(is_coarray.group(0))
-            if coarray_dims:
-                if dimension:
-                    dimension["dimensions"].extend(coarray_dims["dimensions"])
-                else:
-                    dimension = coarray_dims
-
-        # Use dimension from attributes if still none found
-        if not dimension and dimension_from_attr:
-            dimension = dimension_from_attr
+    for entity_decl in walk(declaration, Entity_Decl):
+        variable_info = _extract_entity_info(entity_decl)
+        if dimension_stack:
+            # for F77-style declarations like
+            # DIMENSION X(10)
+            # REAL x
+            dimension_specs = next((specs for dim_stmt in dimension_stack 
+                            for name, specs in dim_stmt.items[0]
+                            if name.string == variable_info["name"]), None)
+            dimension = _extract_dimension_info(dimension_specs)
         
-        # Initialize character-specific attributes
-        length = None
-        working_attributes = shared_attributes
-        if base_type == "character":
-            # Filter out length-related attributes
-            working_attributes = [
-                attr for attr in shared_attributes 
-                if not attr.startswith("len=") 
-                and not (attr.isdigit() or (attr[0] == '-' and attr[1:].isdigit()))
-            ]
-            length = get_character_length(
-                base_type,
-                declaration,
-                shared_attributes, 
-                declaration.selector,
-                initial_value
-            )
-
         variable_description: VariableDescription = {
             "description": description,
-            "type": base_type,
-            "name": name,
-            "dimension": dimension,
-            "attributes": working_attributes,
-            "kind": kind,
-            "initial_value": initial_value,
-            "length": length,
-            "binding_type": binding_type
-        }
-
+            "type": type_info.get("base_type"),
+            "name": variable_info.get("name"),
+            "dimension": dimension if dimension else variable_info.get("dimension"),
+            "polymorphism_type": type_info.get("polymorphism_type"),
+            "attributes": attributes,
+            "kind": type_info.get("kind"),
+            "initial_value": variable_info.get("value"),
+            "length": type_info.get("length"),
+            "binding_type": type_info.get("binding_type")
+        }        
         variable_descriptions.append(variable_description)
 
     return variable_descriptions

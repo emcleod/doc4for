@@ -1,6 +1,8 @@
 from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any
 from doc4for.models.common import BindingType
+from enum import Enum, auto
 
+#TODO add coarray details
 Argument = TypedDict(
     "Argument",
     {
@@ -59,15 +61,22 @@ SubroutineDescription = TypedDict(
     },
 )
 
+class PassType(Enum):
+    NONE = auto()
+    DEFAULT = auto()
+    NAMED = auto()
+
 ProcedureDescription = TypedDict(
     "ProcedureDescription",
     {
         "name": str,
         "description": Optional[str],
         "attributes": List[str],
-        "is_final": bool,
-        "bound_to": Optional[Union[str, List[str]]],
-        "binding_type": Optional[BindingType]
+        "is_final": bool, 
+        "bound_to": Optional[str], # e.g. procedure(iname) :: proc would give bound_to=iname
+        "pass_type": Optional[PassType], # pass, nopass
+        "pass_name": Optional[str],
+        "implementation": Optional[str] # e.g. add => add_implementation
     },
 )
 

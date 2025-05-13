@@ -6,6 +6,7 @@ from doc4for.f90.generate_module_tree import extract_module_data
 class TestFunctionArguments(TestCase):
     maxDiff=None
 
+#TODO assumed size and assumed rank arrays
     def setUp(self):
         self.setUpPyfakefs()
 

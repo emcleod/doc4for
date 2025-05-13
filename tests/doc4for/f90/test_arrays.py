@@ -1,1027 +1,1244 @@
 import unittest
-from unittest import TestCase
-from unittest.mock import Mock
-from typing import List, Dict, Any, Optional, Union, Tuple, cast
-
-from doc4for.parse.variable_parser import parse_variable
-from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
-from doc4for.models.variable_models import VariableDescription
+from pathlib import Path
+from typing import cast
+from pyfakefs.fake_filesystem_unittest import TestCase
+from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.variable_models import PolymorphismType
 from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
+from doc4for.f90.generate_module_tree import extract_module_data
 
+def create_dimension_expr(lower, upper):
+    """Helper function for creating dimension expressions"""
+    return ArrayBound(
+        bound_type=BoundType.FIXED if not (isinstance(lower, str) and "n" in lower.lower() or 
+                                         isinstance(upper, str) and "n" in upper.lower()) else BoundType.VARIABLE,
+        lower=Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
+        upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
+    )
 
-class TestArrays(TestCase):
-    maxDiff=None
-    
+class TestArrayDimensions(TestCase):
+    maxDiff = None
+
     def setUp(self):
-        self.base_expected = {
-            "description": "",
-            "attributes": [],
-            "kind": None,
-            "initial_value": None,
-        }
-
-    def create_literal(self, value: str) -> Expression:
-        return Expression(ExpressionType.LITERAL, value)
-
-    def create_variable(self, name: str) -> Expression:
-        return Expression(ExpressionType.VARIABLE, name)
-
-    def create_function_call(self, name: str, args: List[Union[str, Expression]]) -> Expression:
-        processed_args = [
-            arg if isinstance(arg, Expression) else self.create_literal(arg)
-            for arg in args
-        ]
-        return Expression(
-            ExpressionType.FUNCTION_CALL,
-            f"{name}({','.join(arg.value for arg in processed_args)})",
-            name,
-            processed_args
-        )
-
-    def create_dimension(self,
-                        lower: Optional[Union[str, Expression]] = None,
-                        upper: Optional[Union[str, Expression]] = None,
-                        stride: Optional[Union[str, Expression]] = None
-                        ) -> ArrayBound:
-        def process_value(v: Optional[Union[str, Expression]]) -> Optional[Expression]:
-            if v is None:
-                return None
-            if isinstance(v, Expression):
-                return v            
-            if v.isdigit() or (v[0] in '+-' and v[1:].isdigit()):
-                return self.create_literal(v)
-            return self.create_variable(v)
-
-        processed_lower = process_value(lower)
-        processed_upper = process_value(upper)
-        processed_stride = process_value(stride)
-
-        # Determine if any bound is a variable
-        is_variable = any(
-            bound and (
-                isinstance(bound, Expression) and 
-                bound.expr_type in (ExpressionType.VARIABLE, ExpressionType.FUNCTION_CALL)
-            )
-            for bound in [processed_lower, processed_upper, processed_stride]
-        )
-
-        if lower is None and upper is None and stride is None:
-            bound_type = BoundType.ALLOCATABLE
-        elif lower == "*" or upper == "*":
-            bound_type = BoundType.ASSUMED
-        else:
-            bound_type = BoundType.VARIABLE if is_variable else BoundType.FIXED
-
-        return ArrayBound(
-            bound_type=bound_type,
-            lower=processed_lower,
-            upper=processed_upper,
-            stride=processed_stride
-        )
-
-    def create_declaration(self,
-                           name: str,
-                           type_name: str = "real",
-                           dims: List[ArrayBound] = [],
-                           attributes: List[str] = [],
-                           initial_value: Optional[str] = None,
-                           length: Optional[str] = None) -> VariableDescription:
-        result = {**self.base_expected, "type": type_name, "name": name}
-        if dims:
-            result["dimension"] = {"dimensions": dims}
-        if attributes:
-            result["attributes"] = attributes
-        if initial_value is not None:
-            result["initial_value"] = initial_value
-        result["length"] = length
-        result["binding_type"] = { "type": BindingTypeEnum.DEFAULT, "name": None}
-        return cast(VariableDescription, result)
-
-    def create_mock_declaration(self,
-                                line: str,
-                                decls: List[str],
-                                type_name: str = "real",
-                                attrspec: List[str] = [],
-                                selector: Optional[Tuple[str, str]] = None) -> Mock:
-        declaration = Mock()
-        declaration.name = type_name
-        declaration.item.line = line
-        declaration.attrspec = attrspec or []
-        declaration.entity_decls = decls
-        declaration.selector = selector
-        return declaration
+        self.setUpPyfakefs()
 
     def test_simple_array_declarations(self):
-        test_cases = [
-            ("real x(10)", ['x(10)']),
-            ("real :: x(10)", ['x(10)']),
-            ("real x(10, 20)", ['x(10, 20)']),
-            ("real :: x(10,20)", ['x(10,20)']),
-        ]
-
-        for line, decls in test_cases:
-            declaration = self.create_mock_declaration(line, decls)
-            result = parse_variable(declaration, [])
-
-            dims = 2 if ',' in decls[0] else 1
-            expected_dims = [self.create_dimension(lower="1", upper="10")]
-            if dims == 2:
-                expected_dims.append(
-                    self.create_dimension(lower="1", upper="20"))
-            expected = [self.create_declaration(
-                decls[0].split('(')[0], dims=expected_dims)]
-            self.assertEqual(result, expected)
+        """Test basic array declarations with simple dimensions."""
+        self.fs.create_file(
+            "/fake/path/simple_arrays.f90",
+            contents="""
+module simple_arrays
+    implicit none
+    
+    ! Simple 1D arrays with different syntaxes
+    real x(10)
+    real :: y(10)
+    
+    ! Simple 2D arrays
+    real z(10, 20)
+    real :: w(10,20)
+    
+end module simple_arrays
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/simple_arrays.f90")])
+        
+        # Check basic structure
+        self.assertEqual(len(result), 1)
+        module_data = result[0]
+        self.assertEqual(module_data["module_name"], "simple_arrays")
+        
+        # Check variables
+        variables = module_data["variables"]
+        self.assertEqual(len(variables), 4)
+        
+        # Check 1D arrays
+        for var_name in ["x", "y"]:
+            self.assertEqual(variables[var_name]["type"], "REAL")
+            dimension = cast(Dimension, variables[var_name]["dimension"])
+            self.assertEqual(len(dimension["dimensions"]), 1)
+            self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+            self.assertEqual(variables[var_name]["polymorphism_type"], PolymorphismType.NONE)
+            
+        # Check 2D arrays
+        for var_name in ["z", "w"]:
+            self.assertEqual(variables[var_name]["type"], "REAL")
+            dimension = cast(Dimension, variables[var_name]["dimension"])
+            self.assertEqual(len(dimension["dimensions"]), 2)
+            self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+            self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 20))
+            self.assertEqual(variables[var_name]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_explicit_bounds(self):
-        test_cases = [
-            ("real x(0:9)", ['x(0:9)']),
-            ("real :: x(-5 : 5)", ['x(-5:5)']),
-            ("real :: x(2:n)", ['x(2:n)']),
-        ]
+        """Test array declarations with explicit bounds."""
+        self.fs.create_file(
+            "/fake/path/explicit_bounds.f90",
+            contents="""
+module explicit_bounds
+    implicit none
+    
+    ! Arrays with explicit bounds
+    real x(0:9)
+    real :: y(-5:5)
+    
+    ! Arrays with variable upper bounds
+    integer :: n = 10
+    real :: z(2:n)
+    
+end module explicit_bounds
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/explicit_bounds.f90")])
+        
+        # Check basic structure
+        module_data = result[0]
+        
+        # Check variables
+        variables = module_data["variables"]
+        
+        # Check array with 0-based indexing
+        self.assertEqual(variables["x"]["type"], "REAL")
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(0, 9))
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
 
-        expected_bounds = [
-            [self.create_dimension(lower="0", upper="9")],
-            [self.create_dimension(lower="-5", upper="5")],
-            [self.create_dimension(lower="2", upper="n")],
-        ]
-
-        for i, (line, decls) in enumerate(test_cases):
-            declaration = self.create_mock_declaration(line, decls)
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0].split('(')[0], dims=expected_bounds[i])]
-            self.assertEqual(result, expected)
+        # Check array with negative lower bound
+        self.assertEqual(variables["y"]["type"], "REAL")
+        dimension = cast(Dimension, variables["y"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-5, 5))
+        self.assertEqual(variables["y"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check array with variable upper bound
+        self.assertEqual(variables["z"]["type"], "REAL")
+        dimension = cast(Dimension, variables["z"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.VARIABLE)
+        self.assertEqual(dimension["dimensions"][0].lower.value, "2")
+        self.assertEqual(dimension["dimensions"][0].upper.value, "n")
+        self.assertEqual(variables["z"]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_variable_dimensions(self):
-        test_cases = [
-            ("real :: x(n)", ['x(n)']),
-            ("real :: x(f(1,2), 10)", ['x(f(1,2), 10)']),
-            ("real :: x(2*5, n+1)", ['x(2*5, n+1)']),
-            ("real :: x(n:m, 1:10)", ['x(n:m, 1:10)']),
-        ]
-
-        expected_bounds = [
-            [self.create_dimension(lower="1", upper="n")],
-            [
-                self.create_dimension(
-                    lower="1", upper=self.create_function_call("f", ["1", "2"])),
-                self.create_dimension(lower="1", upper="10")
-            ],
-            [
-                self.create_dimension(lower="1", upper="2*5"),
-                self.create_dimension(lower="1", upper="n+1")
-            ],
-            [
-                self.create_dimension(lower="n", upper="m"),
-                self.create_dimension(lower="1", upper="10")
-            ],
-        ]
-
-        for i, (line, decls) in enumerate(test_cases):
-            declaration = self.create_mock_declaration(line, decls)
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0].split('(')[0], dims=expected_bounds[i])]
-            self.assertEqual(result, expected)
+        """Test array declarations with variable dimensions."""
+        self.fs.create_file(
+            "/fake/path/variable_dims.f90",
+            contents="""
+module variable_dims
+    implicit none
+    
+    integer :: n = 10, m = 20
+    
+    ! Simple variable dimension
+    real :: x(n)
+    
+    ! Function call in dimension
+    real :: y(max(n,m), 10)
+    
+    ! Expression in dimension
+    real :: z(2*5, n+1)
+    
+    ! Variable bounds
+    real :: w(n:m, 1:10)
+    
+    ! Function to be used in test
+    contains
+    
+    function max(a, b)
+        integer, intent(in) :: a, b
+        integer :: max
+        if (a > b) then
+            max = a
+        else
+            max = b
+        end if
+    end function max
+    
+end module variable_dims
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/variable_dims.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check simple variable dimension
+        self.assertEqual(variables["x"]["type"], "REAL")
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.VARIABLE)
+        self.assertEqual(dimension["dimensions"][0].lower.value, "1")
+        self.assertEqual(dimension["dimensions"][0].upper.value, "n")
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check function call in dimension
+        self.assertEqual(variables["y"]["type"], "REAL")
+        dimension = cast(Dimension, variables["y"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.VARIABLE)
+        self.assertEqual(dimension["dimensions"][0].lower.value, "1")
+        self.assertTrue("MAX" in dimension["dimensions"][0].upper.value.upper())
+        self.assertEqual(variables["y"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check expression in dimension
+        self.assertEqual(variables["z"]["type"], "REAL")
+        dimension = cast(Dimension, variables["z"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].lower.value, "1")
+        self.assertEqual(dimension["dimensions"][0].upper.value, "2 * 5")
+        self.assertEqual(dimension["dimensions"][1].upper.value, "n + 1")
+        self.assertEqual(variables["z"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check variable bounds
+        self.assertEqual(variables["w"]["type"], "REAL")
+        dimension = cast(Dimension, variables["w"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.VARIABLE)
+        self.assertEqual(dimension["dimensions"][0].lower.value, "n")
+        self.assertEqual(dimension["dimensions"][0].upper.value, "m")
+        self.assertEqual(variables["w"]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_dimension_attribute_style(self):
-        test_cases = [
-            ("real dimension(10):: x", ["dimension(10)"], ['x']),
-            ("real dimension(10, 20):: x", ["dimension(10, 20)"], ['x']),
-            ("real dimension(-5:5):: x", ["dimension(-5:5)"], ['x']),
-            ("real dimension(-5:5,10,n:20+n):: x",
-             ["dimension(-5:5,10,n:20+n)"], ['x']),
-        ]
-
-        expected_bounds = [
-            [self.create_dimension(lower="1", upper="10")],
-            [
-                self.create_dimension(lower="1", upper="10"),
-                self.create_dimension(lower="1", upper="20")
-            ],
-            [self.create_dimension(lower="-5", upper="5")],
-            [
-                self.create_dimension(lower="-5", upper="5"),
-                self.create_dimension(lower="1", upper="10"),
-                self.create_dimension(lower="n", upper="20+n")
-            ],
-        ]
-
-        for i, (line, attr, decls) in enumerate(test_cases):
-            declaration = self.create_mock_declaration(
-                line, decls, attrspec=attr)
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0], dims=expected_bounds[i])]
-            self.assertEqual(result, expected)
+        """Test arrays declared using dimension attribute syntax."""
+        self.fs.create_file(
+            "/fake/path/dimension_attr.f90",
+            contents="""
+    module dimension_attr
+        implicit none
+        
+        ! Simple dimension attribute
+        real, dimension(10) :: x
+        
+        ! 2D dimension attribute
+        real, dimension(10, 20) :: y
+        
+        ! Dimension with explicit bounds
+        real, dimension(-5:5) :: z
+        
+        ! Complex dimension specifications
+        integer :: n = 10
+        real, dimension(-5:5,10,n:20+n) :: w
+        
+    end module dimension_attr
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/dimension_attr.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check simple dimension attribute
+        self.assertEqual(variables["x"]["type"], "REAL")
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check 2D dimension attribute
+        self.assertEqual(variables["y"]["type"], "REAL")
+        dimension = cast(Dimension, variables["y"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 20))
+        self.assertEqual(variables["y"]["polymorphism_type"], PolymorphismType.NONE)
+       
+        # Check dimension with explicit bounds
+        self.assertEqual(variables["z"]["type"], "REAL")
+        dimension = cast(Dimension, variables["z"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-5, 5))
+        self.assertEqual(variables["z"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check complex dimension specifications
+        self.assertEqual(variables["w"]["type"], "REAL")
+        dimension = cast(Dimension, variables["w"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-5, 5))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][2].bound_type, BoundType.VARIABLE)
+        self.assertEqual(dimension["dimensions"][2].lower.value, "n")
+        self.assertEqual(dimension["dimensions"][2].upper.value, "20 + n")
+        self.assertEqual(variables["w"]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_array_initialization(self):
-        test_cases = [
-            ("real x(2,2) = reshape((/1,2,3,4/), (/2,2/))",
-             ['x(2,2) = reshape((/1,2,3,4/), (/2,2/))'],
-             "reshape((/1,2,3,4/), (/2,2/))"),
-            ("real y(2,2) = ((1,2),(3,4))",
-             ['y(2,2) = ((1,2),(3,4))'],
-             "((1,2),(3,4))"),
-            ("integer, parameter, dimension(3) :: arr = [1, 2, 3]",
-             ['arr = [1, 2, 3]'],
-             "[1, 2, 3]"),
-        ]
+        """Test arrays with initialization values."""
+        self.fs.create_file(
+            "/fake/path/array_init.f90",
+            contents="""
+    module array_init
+        implicit none
+        
+        ! Reshape initialization
+        real :: x(2,2) = reshape((/1.0, 2.0, 3.0, 4.0/), (/2, 2/))
+        
+        ! Direct 2D initialization (non-standard, might not work with all compilers)
+        real :: y(2,2) = reshape((/1.0, 2.0, 3.0, 4.0/), shape(y))
+        
+        ! Parameter array with modern syntax
+        integer, parameter, dimension(3) :: arr = [1, 2, 3]
+        
+        ! Alternative array initialization
+        real, parameter :: matrix(2,2) = reshape([1.0, 2.0, 3.0, 4.0], [2, 2])
+        
+    end module array_init
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/array_init.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        parameters = module_data["parameters"]
+        
+        # Check reshape initialization
+        self.assertEqual(variables["x"]["type"], "REAL")
+        self.assertEqual(variables["x"]["type"], "REAL")
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)  # 2D array
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 2))
+        self.assertTrue("RESHAPE" in variables["x"]["initial_value"].upper())        
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check reshape initialization
+        self.assertEqual(variables["y"]["type"], "REAL")
+        self.assertEqual(variables["y"]["type"], "REAL")
+        dimension = cast(Dimension, variables["y"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)  # 2D array
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 2))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 2))
+        self.assertTrue("RESHAPE" in variables["y"]["initial_value"].upper())        
+        self.assertEqual(variables["y"]["polymorphism_type"], PolymorphismType.NONE)
 
-        for line, decls, init_value in test_cases:
-            type_name = "real" if "real" in line else "integer"
-            attrspec = ["parameter",
-                        "dimension(3)"] if "parameter" in line else []
-            declaration = self.create_mock_declaration(
-                line, decls, type_name=type_name, attrspec=attrspec)
-            result = parse_variable(declaration, [])
-            self.assertEqual(result[0]["initial_value"], init_value)
+        # Check parameter array
+        self.assertEqual(parameters["arr"]["type"], "INTEGER")
+        self.assertEqual(parameters["arr"]["type"], "INTEGER")
+        dimension = cast(Dimension, parameters["arr"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 1)  # 1D array
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(parameters["arr"]["value"], "[1, 2, 3]")
+        self.assertEqual(parameters["arr"]["polymorphism_type"], PolymorphismType.NONE)
+
+        # Check matrix parameter
+        self.assertEqual(parameters["matrix"]["type"], "REAL")
+        self.assertTrue("RESHAPE" in parameters["matrix"]["value"].upper())
+        self.assertEqual(parameters["matrix"]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_multiple_array_declarations(self):
-        declaration = self.create_mock_declaration(
-            "real x(10, 20), y, z(5)",
-            ['x(10, 20)', 'y', 'z(5)']
+        """Test multiple array declarations on same line."""
+        self.fs.create_file(
+            "/fake/path/multiple_arrays.f90",
+            contents="""
+    module multiple_arrays
+        implicit none
+        
+        ! Multiple declarations with mixed dimensions
+        real :: x(10, 20), y, z(5)
+        
+        ! Multiple arrays with same dimensions
+        integer :: a(5,5), b(5,5), c(5,5)
+        
+        ! Mixed scalar and array declarations
+        real :: scalar1, array1(3), scalar2, array2(2,2)
+        
+    end module multiple_arrays
+            """
         )
+        
+        result = extract_module_data([Path("/fake/path/multiple_arrays.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check mixed dimensions declaration
+        self.assertEqual(variables["x"]["type"], "REAL")
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 20))
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        self.assertEqual(variables["y"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        self.assertEqual(variables["z"]["type"], "REAL")
+        dimension = cast(Dimension, variables["z"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(variables["z"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check same dimensions
+        for var in ["a", "b", "c"]:
+            self.assertEqual(variables[var]["type"], "INTEGER")
+            dimension = cast(Dimension, variables[var]["dimension"])
+            self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+            self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 5))
+            self.assertEqual(variables[var]["polymorphism_type"], PolymorphismType.NONE)
 
-        result = parse_variable(declaration, [])
-        expected = [
-            self.create_declaration("x", dims=[
-                self.create_dimension(lower="1", upper="10"),
-                self.create_dimension(lower="1", upper="20")
-            ]),
-            self.create_declaration("y"),
-            self.create_declaration("z", dims=[
-                self.create_dimension(lower="1", upper="5")
-            ]),
-        ]
-
-        self.assertEqual(len(result), len(expected))
-
-        for r, e in zip(result, expected):
-            # Check name and type
-            self.assertEqual(r["name"], e["name"])
-            self.assertEqual(r["type"], e["type"])
-
-            # Check dimensions if they exist
-            if "dimension" in e:
-                self.assertIn("dimension", r)
-                self.assertIn("dimension", e)
-                r_dim = cast(Dimension, r["dimension"])
-                e_dim = cast(Dimension, e["dimension"])
-                self.assertEqual(r_dim["dimensions"], e_dim["dimensions"]
-                )
+        # Check mixed scalar and array
+        self.assertEqual(variables["scalar1"]["type"], "REAL")
+        self.assertIsNone(variables["scalar1"].get("dimension"))
+        self.assertEqual(variables["scalar1"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        self.assertEqual(variables["array1"]["type"], "REAL")
+        dimension = cast(Dimension, variables["array1"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 1)
+        self.assertEqual(variables["array1"]["polymorphism_type"], PolymorphismType.NONE)
 
     def test_multiple_arrays_same_attributes(self):
-        declaration = self.create_mock_declaration(
-            "real, dimension(10,10) :: x, y, z",
-            ['x', 'y', 'z'],
-            attrspec=["dimension(10,10)"]
+        """Test multiple arrays sharing dimension attribute."""
+        self.fs.create_file(
+            "/fake/path/shared_dimensions.f90",
+            contents="""
+    module shared_dimensions
+        implicit none
+        
+        ! Multiple arrays with shared dimension attribute
+        real, dimension(10,10) :: x, y, z
+        
+        ! Multiple arrays with different shared attributes
+        integer, dimension(5), parameter :: arr1 = 1, arr2 = 2, arr3 = 3
+        
+        ! Complex shared attributes
+        real, dimension(:,:), allocatable :: matrix1, matrix2, matrix3
+        
+    end module shared_dimensions
+            """
         )
-
-        result = parse_variable(declaration, [])
+        
+        result = extract_module_data([Path("/fake/path/shared_dimensions.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        parameters = module_data["parameters"]
+        
+        # Check shared dimension attribute
         expected_dims = [
-            self.create_dimension(lower="1", upper="10"),
-            self.create_dimension(lower="1", upper="10")
-        ]
-        for var in result:
-            dimension = cast(Dimension, var["dimension"])
-            self.assertEqual(dimension["dimensions"], expected_dims)
-
-    def test_allocatable_arrays(self):
-        test_cases = [
-            ("real, allocatable :: x(:)", ["x"], 1),
-            ("real, allocatable :: matrix(:,:)", ["matrix"], 2),
-            ("real, allocatable :: cube(:,:,:)", ["cube"], 3),
-            ("real, allocatable :: x(:), y(:), z(:)", ["x", "y", "z"], 1),
-        ]
-
-        for line, names, dim_count in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                [f"{name}(:{',' * (dim_count-1)})" for name in names],
-                attrspec=["allocatable"]
-            )
-            result = parse_variable(declaration, [])
-
-            expected = [
-                self.create_declaration(
-                    name,
-                    dims=[self.create_dimension()] * dim_count,
-                    attributes=["allocatable"]
-                )
-                for name in names
-            ]
-
-            self.assertEqual(len(result), len(expected))
-            for r, e in zip(result, expected):
-                self.assertEqual(r["name"], e["name"])
-                self.assertEqual(r["type"], e["type"])
-                self.assertEqual(r["attributes"], e["attributes"])
-                r_dim = cast(Dimension, r["dimension"])
-                e_dim = cast(Dimension, e["dimension"])
-                self.assertEqual(r_dim["dimensions"], e_dim["dimensions"]
-                )
-
-    def test_assumed_size_arrays(self):
-        declaration = self.create_mock_declaration("real :: x(*)", ['x(*)'])
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration("x", dims=[
-            ArrayBound(bound_type=BoundType.ASSUMED)
-        ])]
-        self.assertEqual(result, expected)
-
-    def test_arrays_with_strides(self):
-        declaration = self.create_mock_declaration(
-            "integer :: arr(1:10:2)",
-            ['arr(1:10:2)'],
-            type_name="integer"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration("arr", type_name="integer", dims=[
-            self.create_dimension(lower="1", upper="10", stride="2")
-        ])]
-        self.assertEqual(result, expected)
-
-    def test_complex_strides(self):
-        test_cases = [
-            ("integer :: arr(1:10:n)", "arr", "integer", [
-                self.create_dimension(lower="1", upper="10", stride="n")
-            ]),
-            ("real :: x(0:100:2*k)", "x", "real", [
-                self.create_dimension(lower="0", upper="100", stride="2*k")
-            ]),
-            ("real :: z(1:10:get_stride())", "z", "real", [
-                self.create_dimension(
-                    lower="1",
-                    upper="10",
-                    stride=self.create_function_call("get_stride", [])
-                )
-            ]),
-            ("integer :: rev(10:1:-1)", "rev", "integer", [
-                self.create_dimension(lower="10", upper="1", stride="-1")
-            ]),
-            ("real :: matrix(1:10:2, 1:20:5)", "matrix", "real", [
-                self.create_dimension(lower="1", upper="10", stride="2"),
-                self.create_dimension(lower="1", upper="20", stride="5")
-            ]),
-        ]
-
-        for line, name, type_name, expected_dims in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                [line.split("::")[1].strip()],
-                type_name=type_name
-            )
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                name, type_name=type_name, dims=expected_dims)]
-            self.assertEqual(result, expected)
-
-    def test_function_calls_in_dimensions(self):
-        declaration = self.create_mock_declaration(
-            "real :: x(f(1,2), g(3,4))",
-            ['x(f(1,2), g(3,4))']
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration("x", dims=[
-            self.create_dimension(
-                lower="1", upper=self.create_function_call("f", ["1", "2"])),
-            self.create_dimension(
-                lower="1", upper=self.create_function_call("g", ["3", "4"]))
-        ])]
-        self.assertEqual(result, expected)
-
-    def test_complex_expressions_in_bounds(self):
-        declaration = self.create_mock_declaration(
-            "real :: x(2*f(1,2):g(3,4))",
-            ['x(2*f(1,2):g(3,4))']
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration("x", dims=[
-            self.create_dimension(
-                lower=self.create_function_call("2*f", ["1", "2"]),
-                upper=self.create_function_call("g", ["3", "4"])
-            )
-        ])]
-        self.assertEqual(result, expected)
-
-    def test_character_arrays(self):
-        test_cases = [
-            (
-                "character(len=10) :: names1(100)",
-                ['names1(100)'],
-                [],
-                ("10", "")
-            ),
-            (
-                "character(10) names2(5,10)",  # Alternative syntax
-                ['names2(5,10)'],
-                [],
-                ("10", "")
-            ),
-            (
-                "character(len=20), dimension(50) :: strings",
-                ['strings'],
-                ["dimension(50)"],
-                ("20", "")
-            ),
-        ]
-
-        expected_dims = [
-            [self.create_dimension(lower="1", upper="100")],
-            [
-                self.create_dimension(lower="1", upper="5"),
-                self.create_dimension(lower="1", upper="10")
-            ],
-            [self.create_dimension(lower="1", upper="50")]
-        ]
-
-        for i, (line, decls, attrs, sel) in enumerate(test_cases):
-            declaration = self.create_mock_declaration(
-                line,
-                decls,
-                type_name="character",
-                attrspec=attrs,
-                selector=sel
-            )
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0].split('(')[0],
-                type_name="character",
-                dims=expected_dims[i],
-                attributes=[],
-                length="20" if i == 2 else "10"  # or "20" for the third case
-            )]
-            self.assertEqual(result, expected)
-
-    def test_assumed_length_character_array(self):
-        declaration = self.create_mock_declaration(
-            "character(len=*) :: x(5)",
-            ['x(5)'],
-            type_name="character",
-            attrspec=[],
-            selector=("*", "")
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="character",
-            dims=[self.create_dimension(lower="1", upper="5")],
-            length="*"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_deferred_length_allocatable_character_array(self):
-        declaration = self.create_mock_declaration(
-            "character(len=:), allocatable :: x(:)",
-            ['x(:)'],
-            type_name="character",
-            attrspec=["allocatable"],
-            selector=(":", "")
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="character",
-            dims=[self.create_dimension()],
-            attributes=["allocatable"],
-            length=":"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_character_array_initialization(self):
-        declaration = self.create_mock_declaration(
-            "character(10) :: x(2) = (/'Hello', 'World'/)",
-            ['x(2) = (/"Hello", "World"/)'],
-            type_name="character",
-            attrspec=[],
-            selector=("10", "")
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="character",
-            dims=[self.create_dimension(lower="1", upper="2")],
-            initial_value='"Hello", "World"',  # Initial value as string
-            length="10"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_pointer_array(self):
-        declaration = self.create_mock_declaration(
-            "real, pointer :: x(:,:)",
-            ['x(:,:)'],
-            attrspec=["pointer"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            dims=[self.create_dimension(), self.create_dimension()],
-            attributes=["pointer"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_target_array(self):
-        declaration = self.create_mock_declaration(
-            "real, target :: x(10,20)",
-            ['x(10,20)'],
-            attrspec=["target"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            dims=[
-                self.create_dimension(lower="1", upper="10"),
-                self.create_dimension(lower="1", upper="20")
-            ],
-            attributes=["target"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_with_pointer_and_dimension_attributes(self):
-        declaration = self.create_mock_declaration(
-            "real, pointer, dimension(10,10) :: x",
-            ['x'],
-            attrspec=["pointer", "dimension(10,10)"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            dims=[
-                self.create_dimension(lower="1", upper="10"),
-                self.create_dimension(lower="1", upper="10")
-            ],
-            attributes=["pointer"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_f77_dimension_statement_style(self):
-        declaration = self.create_mock_declaration(
-            "DIMENSION X(10), Y(20)",
-            ['X(10)', 'Y(20)'],
-            type_name='none'
-        )
-        result = parse_variable(declaration, [])
-        expected = [
-            self.create_declaration(
-                "X",
-                type_name='none',
-                dims=[self.create_dimension(lower="1", upper="10")]
-            ),
-            self.create_declaration(
-                "Y",
-                type_name='none',
-                dims=[self.create_dimension(lower="1", upper="20")]
-            )
-        ]
-        self.assertEqual(result, expected)
-
-    def test_f77_character_length_array(self):
-        declaration = self.create_mock_declaration(
-            "character*10 names(100)",
-            ['names(100)'],
-            type_name="character",
-            attrspec=[],
-            selector=('10', '')
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "names",
-            type_name="character",
-            dims=[self.create_dimension(lower="1", upper="100")],
-            length="10"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_initialization_implied_do_loop(self):
-        declaration = self.create_mock_declaration(
-            "real :: x(10) = (i, i=1,10)",
-            ['x(10) = (i, i=1,10)'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="real",
-            dims=[self.create_dimension(lower="1", upper="10")],
-            initial_value="(i, i=1,10)"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_of_derived_type(self):
-        declaration = self.create_mock_declaration(
-            "type(point) :: points(100)",
-            ['points(100)'],
-            type_name="type(point)"  # Note the type is now a derived type
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "points",
-            type_name="type(point)",
-            dims=[self.create_dimension(lower="1", upper="100")]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_implied_shape_array(self):
-        declaration = self.create_mock_declaration(
-            "integer :: x(*) = [1, 2, 3, 4, 5]",
-            ['x(*) = [1, 2, 3, 4, 5]'],
-            type_name="integer",
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="integer",
-            dims=[ArrayBound(bound_type=BoundType.ASSUMED)],
-            initial_value="1, 2, 3, 4, 5"
-        )]
-        self.assertEqual(result, expected)
-
-    def test_allocatable_polymorphic_array(self):
-        declaration = self.create_mock_declaration(
-            "class(shape), allocatable :: shapes(:)",
-            ['shapes(:)'],
-            type_name="class(shape)",
-            attrspec=["allocatable"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "shapes",
-            type_name="class(shape)",
-            dims=[self.create_dimension()],
-            attributes=["allocatable"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_polymorphic_arrays(self):
-        test_cases = [
-            ("class(shape), allocatable :: x(:)", ['x(:)'], ["allocatable"]),
-            ("class(shape), pointer :: y(:)", ['y(:)'], ["pointer"])
-        ]
-
-        for line, decls, attrs in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                decls,
-                type_name="class(shape)",
-                attrspec=attrs
-            )
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0].split('(')[0],
-                type_name="class(shape)",
-                dims=[self.create_dimension()],
-                attributes=attrs
-            )]
-            self.assertEqual(result, expected)
-
-    def test_contiguous_array(self):
-        declaration = self.create_mock_declaration(
-            "real, contiguous :: x(:)",
-            ['x(:)'],
-            attrspec=["contiguous"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            dims=[self.create_dimension()],
-            attributes=["contiguous"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_arrays_in_derived_types(self):
-        # Simulate a variable declaration inside a derived type
-        declaration = self.create_mock_declaration(
-            "real :: coordinates(3)",
-            ['coordinates(3)'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "coordinates",
-            dims=[self.create_dimension(lower="1", upper="3")]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_simple_coarray(self):
-        """Test basic coarray with assumed size: integer :: x[*]"""
-        declaration = self.create_mock_declaration(
-            "integer :: x[*]",
-            ['x[*]'],
-            type_name="integer"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            "integer",
-            dims=[ArrayBound(bound_type=BoundType.ASSUMED)]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_with_coarray(self):
-        """Test regular array with coarray: real :: a(10)[3,*]"""
-        declaration = self.create_mock_declaration(
-            "real :: a(10)[3,*]",
-            ['a(10)[3,*]'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "a",
-            "real",
-            dims=[
-                # regular array dimension
-                self.create_dimension(lower="1", upper="10"),
-                # first coarray dimension
-                self.create_dimension(lower="1", upper="3"),
-                # assumed-size coarray dimension
-                ArrayBound(bound_type=BoundType.ASSUMED)
-            ]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_allocatable_coarray(self):
-        """Test allocatable coarray: integer, allocatable :: d[:,:,:]"""
-        declaration = self.create_mock_declaration(
-            "integer, allocatable :: d[:,:,:]",
-            ['d[:,:,:]'],
-            type_name="integer",
-            attrspec=["allocatable"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "d",
-            "integer",
-            dims=[self.create_dimension()] * 3,  # three allocatable dimensions
-            attributes=["allocatable"]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_simple_coarray_2(self):
-        """Test basic coarray: integer :: a[*]"""
-        declaration = self.create_mock_declaration(
-            "integer :: a[*]",
-            ['a[*]'],
-            type_name="integer"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "a",
-            type_name="integer",
-            dims=[ArrayBound(bound_type=BoundType.ASSUMED)]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_with_simple_coarray(self):
-        """Test array with simple coarray: real :: b(10)[*]"""
-        declaration = self.create_mock_declaration(
-            "real :: b(10)[*]",
-            ['b(10)[*]'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "b",
-            type_name="real",
-            dims=[
-                # regular array dimension
-                self.create_dimension(lower="1", upper="10"),
-                # coarray dimension
-                ArrayBound(bound_type=BoundType.ASSUMED)
-            ]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_array_with_multi_coarray(self):
-        """Test array with multiple coarray dimensions: real :: c(10)[10,*]"""
-        declaration = self.create_mock_declaration(
-            "real :: c(10)[10,*]",
-            ['c(10)[10,*]'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "c",
-            type_name="real",
-            dims=[
-                # regular array dimension
-                self.create_dimension(lower="1", upper="10"),
-                # fixed coarray dimension
-                self.create_dimension(lower="1", upper="10"),
-                # assumed-size coarray dimension
-                ArrayBound(bound_type=BoundType.ASSUMED)
-            ]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_assumed_shape_arrays(self):
-        """Test assumed-shape arrays (bounds specified with ':')"""
-        test_cases = [
-            ("subroutine sub(x)\nreal :: x(:)", ['x(:)']),  # 1D assumed-shape
-            ("subroutine sub(matrix)\nreal :: matrix(:,:)",
-             ['matrix(:,:)']),  # 2D assumed-shape
-        ]
-
-        for line, decls in test_cases:
-            declaration = self.create_mock_declaration(line, decls)
-            result = parse_variable(declaration, [])
-            dims = [self.create_dimension()] * len(decls[0].split(','))
-            expected = [self.create_declaration(
-                decls[0].split('(')[0],
-                dims=dims
-            )]
-            self.assertEqual(result, expected)
-
-    def test_assumed_rank_arrays(self):
-        """Test assumed-rank arrays (using '..' notation)"""
-        declaration = self.create_mock_declaration(
-            "real :: x(..)",
-            ['x(..)'],
-            type_name="real"
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "x",
-            type_name="real",
-            # You'll need to add this to BoundType
-            dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_deferred_shape_arrays(self):
-        """Test deferred-shape arrays in procedure interfaces"""
-        declaration = self.create_mock_declaration(
-            "interface\nsubroutine sub(arr)\nreal, dimension(:) :: arr\nend subroutine\nend interface",
-            ['arr'],
-            attrspec=["dimension(:)"]
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "arr",
-            dims=[self.create_dimension()]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_zero_sized_arrays(self):
-        """Test arrays with zero or negative size ranges"""
-        test_cases = [
-            ("real :: empty(1:0)", ['empty(1:0)']),  # Zero-sized array
-            # Negative size without stride
-            ("real :: backward(10:1)", ['backward(10:1)']),
-        ]
-
-        for line, decls in test_cases:
-            declaration = self.create_mock_declaration(line, decls)
-            result = parse_variable(declaration, [])
-            name = decls[0].split('(')[0]
-            bounds = decls[0].split('(')[1].rstrip(')').split(':')
-            expected = [self.create_declaration(
-                name,
-                dims=[self.create_dimension(lower=bounds[0], upper=bounds[1])]
-            )]
-            self.assertEqual(result, expected)
-
-    def test_negative_strides_multi_dim(self):
-        """Test arrays with negative strides in multiple dimensions"""
-        declaration = self.create_mock_declaration(
-            "real :: rev_matrix(10:1:-2, 20:2:-3)",
-            ['rev_matrix(10:1:-2, 20:2:-3)']
-        )
-        result = parse_variable(declaration, [])
-        expected = [self.create_declaration(
-            "rev_matrix",
-            dims=[
-                self.create_dimension(lower="10", upper="1", stride="-2"),
-                self.create_dimension(lower="20", upper="2", stride="-3")
-            ]
-        )]
-        self.assertEqual(result, expected)
-
-    def test_assumed_rank_arrays_1(self):
-        """Test assumed-rank arrays which can accept arrays of any rank"""
-        test_cases = [
-            # Basic assumed-rank array
-            (
-                "real :: x(..)",
-                ['x(..)'],
-                "real",
-                []
-            ),
-            # Assumed-rank with intent
-            (
-                "real, intent(in) :: matrix(..)",
-                ['matrix(..)'],
-                "real",
-                ["intent(in)"]
-            ),
-            # Assumed-rank with type and attributes
-            (
-                "class(numeric), allocatable :: tensor(..)",
-                ['tensor(..)'],
-                "class(numeric)",
-                ["allocatable"]
-            ),
-            # Assumed-rank pointer
-            (
-                "real, pointer :: p(..)",
-                ['p(..)'],
-                "real",
-                ["pointer"]
-            ),
-            # Contiguous assumed-rank array
-            (
-                "real, contiguous :: arr(..)",
-                ['arr(..)'],
-                "real",
-                ["contiguous"]
-            )
-        ]
-            
-        for line, decls, type_name, attrs in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                decls,
-                type_name=type_name,
-                attrspec=attrs
-            )
-            result = parse_variable(declaration, [])
-            
-            # Get the name from the original declaration line
-            var_name = line.split('::')[1].strip().split('(')[0].strip()
-            
-            expected = [self.create_declaration(
-                var_name,  # use the name from the declaration line
-                type_name=type_name,
-                dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)],
-                attributes=attrs
-            )]
-            
-            # Add specific assertion for the name
-            self.assertEqual(result[0]["name"], var_name, 
-                            f"Variable name mismatch. Expected {var_name}, got {result[0]['name']}")
-            # Then check the rest of the structure
-            self.assertEqual(result, expected)
-    def test_assumed_rank_arrays_2(self):
-        """Test assumed-rank arrays which can accept arrays of any rank"""
-        test_cases = [
-            # Basic assumed-rank array
-            ("real :: x(..)", ['x(..)'], "real", [], None),
-            
-            # Assumed-rank with attributes
-            ("real, intent(in) :: matrix(..)", ['matrix(..)'], "real", ["intent(in)"], None),
-            
-            # Character assumed-rank array with len
-            ("character(len=10) :: str_arr(..)", ['str_arr(..)'], "character", [], ("10", "")),
-            
-            # Assumed-rank with pointer attribute
-            ("real, pointer :: ptr_arr(..)", ['ptr_arr(..)'], "real", ["pointer"], None),
-            
-            # Type-bound assumed-rank array
-            ("type(mytype) :: derived_arr(..)", ['derived_arr(..)'], "type(mytype)", [], None)
+            create_dimension_expr(1, 10),
+            create_dimension_expr(1, 10)
         ]
         
-        for line, decls, type_name, attrs, sel in test_cases:
-            declaration = self.create_mock_declaration(
-                line,
-                decls,
-                type_name=type_name,
-                attrspec=attrs,
-                selector=sel
-            )
-            result = parse_variable(declaration, [])
-            expected = [self.create_declaration(
-                decls[0].split('(')[0],
-                type_name=type_name,
-                dims=[ArrayBound(bound_type=BoundType.ASSUMED_RANK)],
-                attributes=attrs,
-                length="10" if type_name == "character" else None
-            )]
-            self.assertEqual(result, expected)
+        for var_name in ["x", "y", "z"]:
+            self.assertEqual(variables[var_name]["type"], "REAL")
+            dimension = cast(Dimension, variables[var_name]["dimension"])
+            self.assertEqual(dimension["dimensions"], expected_dims)
+            self.assertEqual(variables[var_name]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check shared parameter arrays
+        for i, arr_name in enumerate(["arr1", "arr2", "arr3"], 1):
+            self.assertEqual(parameters[arr_name]["type"], "INTEGER")
+            dimension = cast(Dimension, parameters[arr_name]["dimension"])
+            self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+            self.assertEqual(parameters[arr_name]["value"], str(i))
+            self.assertEqual(parameters[arr_name]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check allocatable arrays
+        for var_name in ["matrix1", "matrix2", "matrix3"]:
+            self.assertEqual(variables[var_name]["type"], "REAL")
+            dimension = cast(Dimension, variables[var_name]["dimension"])
+            # Allocatable dimensions might need special handling
+            self.assertEqual(len(dimension["dimensions"]), 2)
+            self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables[var_name]["attributes"]])
+            self.assertEqual(variables[var_name]["polymorphism_type"], PolymorphismType.NONE)
 
-        def test_assumed_rank_vs_size(self):
-            """Test to demonstrate difference between assumed-rank and assumed-size"""
-            test_cases = [
-                # Assumed-rank can be any dimension
-                ("subroutine process(x)\nreal :: x(..)", ['x(..)'], 
-                [ArrayBound(bound_type=BoundType.ASSUMED_RANK)]),
-                
-                # Assumed-size must be 1D
-                ("subroutine process(y)\nreal :: y(*)", ['y(*)'],
-                [ArrayBound(bound_type=BoundType.ASSUMED)]),
-                
-                # Can't have assumed-size in middle dimensions
-                ("subroutine process(z)\nreal :: z(10,*)", ['z(10,*)'],
-                [self.create_dimension(lower="1", upper="10"),
-                ArrayBound(bound_type=BoundType.ASSUMED)]),
-            ]
+    def test_allocatable_arrays(self):
+        """Test allocatable array declarations."""
+        self.fs.create_file(
+            "/fake/path/allocatable.f90",
+            contents="""
+    module allocatable_arrays
+        implicit none
+        
+        ! 1D allocatable
+        real, allocatable :: x(:)
+        
+        ! 2D allocatable
+        real, allocatable :: matrix(:,:)
+        
+        ! 3D allocatable
+        real, allocatable :: cube(:,:,:)
+        
+        ! Multiple allocatable arrays
+        real, allocatable :: a(:), b(:), c(:)
+        
+    end module allocatable_arrays
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/allocatable.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check 1D allocatable
+        self.assertEqual(variables["x"]["type"], "REAL")
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["x"]["attributes"]])
+        dimension = cast(Dimension, variables["x"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 1)
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ALLOCATABLE)
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check 2D allocatable
+        dimension = cast(Dimension, variables["matrix"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        for i in range(2):
+            self.assertEqual(dimension["dimensions"][i].bound_type, BoundType.ALLOCATABLE)
+        self.assertEqual(variables["matrix"]["polymorphism_type"], PolymorphismType.NONE)
             
-            for line, decls, expected_dims in test_cases:
-                declaration = self.create_mock_declaration(line, decls)
-                result = parse_variable(declaration, [])
-                expected = [self.create_declaration(
-                    decls[0].split('(')[0],
-                    dims=expected_dims
-                )]
-                self.assertEqual(result, expected)
+        # Check 3D allocatable
+        dimension = cast(Dimension, variables["cube"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 3)
+        self.assertEqual(variables["cube"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check multiple allocatable arrays
+        for var_name in ["a", "b", "c"]:
+            self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables[var_name]["attributes"]])
+            dimension = cast(Dimension, variables[var_name]["dimension"])
+            self.assertEqual(len(dimension["dimensions"]), 1)
+            self.assertEqual(variables[var_name]["polymorphism_type"], PolymorphismType.NONE)
+
+
+    def test_complex_array_expressions(self):
+        """Test arrays with complex dimension expressions."""
+        self.fs.create_file(
+            "/fake/path/complex_dims.f90",
+            contents="""
+    module complex_dims
+        implicit none
+        
+        integer :: n = 10
+        integer :: k = 2
+        
+        ! Variable dimensions
+        integer :: arr1(n)
+        
+        ! Expression in dimension
+        real :: arr2(2*k)
+        
+        ! Function call in dimension
+        real :: arr3(max(n,k))
+        
+        ! Multiple complex dimensions
+        real :: matrix(n, 2*n)
+        
+        ! Expressions in bounds
+        real :: bounded(2:n+1)
+        
+        contains
+        
+        function get_size() result(size)
+            integer :: size
+            size = 20
+        end function get_size
+        
+    end module complex_dims
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/complex_dims.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check variable dimension
+        dimension = cast(Dimension, variables["arr1"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].upper.value, "n")
+        self.assertEqual(variables["arr1"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check expression in dimension
+        dimension = cast(Dimension, variables["arr2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].upper.value, "2 * k")
+        self.assertEqual(variables["arr2"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check function call in dimension
+        dimension = cast(Dimension, variables["arr3"]["dimension"])
+        self.assertTrue("MAX" in dimension["dimensions"][0].upper.value.upper())
+        self.assertEqual(variables["arr3"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check bounded array
+        dimension = cast(Dimension, variables["bounded"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].lower.value, "2")
+        self.assertEqual(dimension["dimensions"][0].upper.value, "n + 1")
+        self.assertEqual(variables["bounded"]["polymorphism_type"], PolymorphismType.NONE)
+
+    def test_character_arrays(self):
+        """Test character array declarations."""
+        self.fs.create_file(
+            "/fake/path/char_arrays.f90",
+            contents="""
+    module char_arrays
+        implicit none
+        
+        ! Character array with fixed length
+        character(len=10) :: names1(100)
+        
+        ! Alternative syntax
+        character(10) :: names2(5,10)
+        
+        ! Using dimension attribute
+        character(len=20), dimension(50) :: strings
+        
+        ! Assumed length character array (typically in dummy arguments)
+        character(len=*), parameter :: fixed_strings(3) = ["Hello", "World", "Test "]
+        
+        ! Deferred length allocatable character array
+        character(len=:), allocatable :: flex_string(:)
+        
+        ! Character array initialization
+        character(10) :: greetings(2) = (/'Hello     ', 'World     '/)
+        
+    end module char_arrays
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/char_arrays.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        parameters = module_data["parameters"]
+        
+        # Check fixed length character array
+        self.assertEqual(variables["names1"]["type"], "CHARACTER")
+        self.assertEqual(variables["names1"]["length"], "10")
+        dimension = cast(Dimension, variables["names1"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 100))
+        self.assertEqual(variables["names1"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check alternative syntax
+        self.assertEqual(variables["names2"]["type"], "CHARACTER")
+        self.assertEqual(variables["names2"]["length"], "10")
+        dimension = cast(Dimension, variables["names2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 10))
+        self.assertEqual(variables["names2"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check dimension attribute
+        self.assertEqual(variables["strings"]["type"], "CHARACTER")
+        self.assertEqual(variables["strings"]["length"], "20")
+        dimension = cast(Dimension, variables["strings"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 50))
+        self.assertEqual(variables["strings"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check assumed length parameter
+        self.assertEqual(parameters["fixed_strings"]["type"], "CHARACTER")
+        self.assertEqual(parameters["fixed_strings"]["length"], "*")
+        self.assertEqual(parameters["fixed_strings"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check deferred length allocatable
+        self.assertEqual(variables["flex_string"]["type"], "CHARACTER")
+        self.assertEqual(variables["flex_string"]["length"], ":")
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["flex_string"]["attributes"]])
+        self.assertEqual(variables["flex_string"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check initialization
+        self.assertEqual(variables["greetings"]["type"], "CHARACTER")
+        self.assertEqual(variables["greetings"]["initial_value"], "(/'Hello     ', 'World     '/)")
+        self.assertEqual(variables["greetings"]["polymorphism_type"], PolymorphismType.NONE)
+
+    def test_pointer_and_target_arrays(self):
+        """Test pointer and target array attributes."""
+        self.fs.create_file(
+            "/fake/path/pointer_target.f90",
+            contents="""
+    module pointer_target
+        implicit none
+        
+        ! Pointer array
+        real, pointer :: ptr_array(:,:)
+        
+        ! Target array
+        real, target :: target_array(10,20)
+        
+        ! Combined attributes
+        real, pointer, dimension(10,10) :: ptr_with_dims
+        
+        ! Multiple attributes
+        real, allocatable, target :: alloc_target(:)
+        
+    end module pointer_target
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/pointer_target.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check pointer array
+        self.assertIn("POINTER", [attr.upper() for attr in variables["ptr_array"]["attributes"]])
+        dimension = cast(Dimension, variables["ptr_array"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertEqual(variables["ptr_array"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check target array
+        self.assertIn("TARGET", [attr.upper() for attr in variables["target_array"]["attributes"]])
+        dimension = cast(Dimension, variables["target_array"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 20))
+        self.assertEqual(variables["target_array"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check combined attributes
+        self.assertIn("POINTER", [attr.upper() for attr in variables["ptr_with_dims"]["attributes"]])
+        dimension = cast(Dimension, variables["ptr_with_dims"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertEqual(variables["ptr_with_dims"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check multiple attributes
+        attrs = [attr.upper() for attr in variables["alloc_target"]["attributes"]]
+        self.assertIn("ALLOCATABLE", attrs)
+        self.assertIn("TARGET", attrs)
+        self.assertEqual(variables["alloc_target"]["polymorphism_type"], PolymorphismType.NONE)
+
+    def test_fortran77_style(self):
+        self.fs.create_file(
+            "/fake/path/fortran77.f77",
+            contents="""
+      MODULE FORTRAN77
+      IMPLICIT NONE
+
+C     Old-style dimension statement
+      DIMENSION X(10)
+      DIMENSION Y(20), Z(5,5)
+      REAL X, Y
+      INTEGER Z
+
+C     Old-style character declarations
+      CHARACTER*20 NAME
+      CHARACTER*10 TITLES(5)
+
+C     Real*8 syntax
+      REAL*8 DPVAL
+      REAL*4 SPVAL
+
+C     Integer*2 and Integer*4
+      INTEGER*2 SHORTINT
+      INTEGER*4 LONGINT
+
+C     Complex*16
+      COMPLEX*16 DCMPLX
+
+C     Logical*1
+      LOGICAL*1 FLAG
+
+C     Arrays with old-style declarations
+      REAL*8 MATRIX(10,10)
+      INTEGER*4 INDICES(100)
+
+C     Common blocks with arrays
+      COMMON /BLOCK1/ A(5), B(10), C
+      REAL A, B, C
+
+C     Fixed format array initialization
+      INTEGER IARRAY(5)
+      DATA IARRAY /1, 2, 3, 4, 5/
+
+C     Character array with dimension
+      DIMENSION NAMES(10)
+      CHARACTER*30 NAMES
+
+C     Equivalence statement (less common)
+      DIMENSION BUFFER(1000)
+      REAL BUFFER
+      REAL WORK(100)
+      EQUIVALENCE (BUFFER(1), WORK(1))
+
+      END MODULE FORTRAN77
+        """
+        )
+        
+        result = extract_module_data([Path("/fake/path/fortran77.f77")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check DIMENSION statement variables
+        self.assertEqual(variables["X"]["type"], "REAL")
+        dimension = cast(Dimension, variables["X"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        
+        self.assertEqual(variables["Y"]["type"], "REAL")
+        dimension = cast(Dimension, variables["Y"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 20))
+        
+        self.assertEqual(variables["Z"]["type"], "INTEGER")
+        dimension = cast(Dimension, variables["Z"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 5))
+        
+        # Check old-style character declarations
+        self.assertEqual(variables["NAME"]["type"], "CHARACTER")
+        self.assertEqual(variables["NAME"]["length"], "20")
+        
+        self.assertEqual(variables["TITLES"]["type"], "CHARACTER")
+        self.assertEqual(variables["TITLES"]["length"], "10")
+        dimension = cast(Dimension, variables["TITLES"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        
+        # Check REAL*8 and other * syntax
+        self.assertEqual(variables["DPVAL"]["type"], "REAL")
+        self.assertEqual(variables["DPVAL"]["kind"], "8")
+        
+        self.assertEqual(variables["SPVAL"]["type"], "REAL")
+        self.assertEqual(variables["SPVAL"]["kind"], "4")
+        
+        self.assertEqual(variables["SHORTINT"]["type"], "INTEGER")
+        self.assertEqual(variables["SHORTINT"]["kind"], "2")
+        
+        self.assertEqual(variables["LONGINT"]["type"], "INTEGER")
+        self.assertEqual(variables["LONGINT"]["kind"], "4")
+        
+        self.assertEqual(variables["DCMPLX"]["type"], "COMPLEX")
+        self.assertEqual(variables["DCMPLX"]["kind"], "16")
+        
+        self.assertEqual(variables["FLAG"]["type"], "LOGICAL")
+        self.assertEqual(variables["FLAG"]["kind"], "1")
+        
+        # Check arrays with old-style type declarations
+        self.assertEqual(variables["MATRIX"]["type"], "REAL")
+        self.assertEqual(variables["MATRIX"]["kind"], "8")
+        dimension = cast(Dimension, variables["MATRIX"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 10))
+        
+        # Check character array with separate DIMENSION
+        self.assertEqual(variables["NAMES"]["type"], "CHARACTER")
+        self.assertEqual(variables["NAMES"]["length"], "30")
+        dimension = cast(Dimension, variables["NAMES"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        
+        # Check DATA statement initialization
+        self.assertEqual(variables["IARRAY"]["type"], "INTEGER")
+        self.assertEqual(variables["IARRAY"]["initial_value"], "/1, 2, 3, 4, 5/")
+
+        # Check common block variables
+        #TODO 
+        self.assertIn("A", variables)
+        self.assertIn("B", variables)
+        self.assertIn("C", variables)
+
+    def test_fortran77_fixed_format(self):
+        """Test FORTRAN 77 fixed format with column restrictions."""
+        self.fs.create_file(
+            "/fake/path/fixed_format.f",  # Note: .f extension for fixed format
+            contents="""
+C23456789012345678901234567890123456789012345678901234567890123456789072
+      MODULE FIXEDFORM
+      IMPLICIT NONE
+C
+C     Comment in column 1
+C
+      REAL ARRAY(10,20)
+      INTEGER I,J,K
+      INTEGER NMAX
+      PARAMETER (NMAX=100)
+      REAL WORK(NMAX)
+C
+C     Continuation lines
+      REAL LONGNAMEDVARIABLE1, LONGNAMEDVARIABLE2,
+     &     LONGNAMEDVARIABLE3, LONGNAMEDVARIABLE4
+C
+      REAL PI, E
+C
+C     Character variables
+      CHARACTER*72 LINE
+      CHARACTER*8 WORD(10)
+C
+C     Old-style parameter statement with the type declared elsewhere
+      PARAMETER (PI=3.14159, E=2.71828)
+      END MODULE FIXEDFORM
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/fixed_format.f")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        parameters = module_data["parameters"]
+        
+        # Check array declaration
+        self.assertEqual(variables["ARRAY"]["type"], "REAL")
+        dimension = cast(Dimension, variables["ARRAY"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 20))
+        
+        # Check PARAMETER statement
+        self.assertEqual(parameters["NMAX"]["type"], "INTEGER")
+        self.assertEqual(parameters["NMAX"]["value"], "100")
+        
+        self.assertEqual(parameters["PI"]["type"], "REAL")
+        self.assertEqual(parameters["PI"]["value"], "3.14159")
+        
+        # Check continuation lines
+        for var in ["LONGNAMEDVARIABLE1", "LONGNAMEDVARIABLE2", 
+                    "LONGNAMEDVARIABLE3", "LONGNAMEDVARIABLE4"]:
+            self.assertIn(var, variables)
+            self.assertEqual(variables[var]["type"], "REAL")
+
+    def test_fortran77_character_arrays(self):
+        """Test FORTRAN 77 style character array declarations."""
+        self.fs.create_file(
+            "/fake/path/char77.f90",
+            contents="""
+    module char77
+        implicit none
+        
+        ! Old-style character array declaration
+        character*10 names(100)
+        
+        ! Alternative character array syntax
+        character*20 titles(5,10)
+        
+        ! Character with dimension attribute
+        character*30 descriptions(50)
+        
+        ! Mixed declaration
+        character*15 labels(25), tag
+        
+    end module char77
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/char77.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check old-style character array
+        self.assertEqual(variables["names"]["type"], "CHARACTER")
+        self.assertEqual(variables["names"]["length"], "10")
+        dimension = cast(Dimension, variables["names"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 100))
+        
+        # Check 2D character array
+        self.assertEqual(variables["titles"]["type"], "CHARACTER")
+        self.assertEqual(variables["titles"]["length"], "20")
+        dimension = cast(Dimension, variables["titles"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+
+    def test_array_initialization_patterns(self):
+        """Test various array initialization patterns."""
+        self.fs.create_file(
+            "/fake/path/array_init.f90",
+            contents="""
+    module array_init
+        implicit none
+        
+        ! Implied do loop initialization
+        real :: x(10) = (/ (real(i), i=1,10) /)
+        
+        ! Nested implied do loops
+        real :: matrix(3,3) = reshape((/ ((real(i+j), i=1,3), j=1,3) /), [3,3])
+        
+        ! Array constructor with expressions
+        integer, parameter :: arr(5) = [(i**2, i=1,5)]
+        
+        ! Character array initialization
+        character(10) :: words(3) = (/ 'Hello     ', 'World     ', 'Fortran   ' /)
+        
+        ! Complex initialization
+        complex :: c_arr(3) = [(cmplx(i, i+1), i=1,3)]
+        
+    end module array_init
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/array_init.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        parameters = module_data["parameters"]
+        
+        # Check implied do loop
+        self.assertEqual(variables["x"]["type"], "REAL")
+        self.assertIn("i = 1, 10", variables["x"]["initial_value"])
+        self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check nested implied do loops
+        self.assertEqual(variables["matrix"]["type"], "REAL")
+        self.assertIn("RESHAPE", variables["matrix"]["initial_value"].upper())
+        self.assertEqual(variables["matrix"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check array constructor
+        self.assertEqual(parameters["arr"]["type"], "INTEGER")
+        self.assertIn("i = 1, 5", parameters["arr"]["value"])
+        self.assertEqual(parameters["arr"]["polymorphism_type"], PolymorphismType.NONE)
+
+    def test_derived_type_arrays(self):
+        """Test arrays of derived types."""
+        self.fs.create_file(
+            "/fake/path/derived_arrays.f90",
+            contents="""
+    module derived_arrays
+        implicit none
+        
+        type :: point
+            real :: x, y
+        end type point
+        
+        type :: line
+            type(point) :: start_pt, end_pt
+        end type line
+        
+        ! Array of derived type
+        type(point) :: points(100)
+        
+        ! 2D array of derived type
+        type(point) :: grid(10,10)
+        
+        ! Allocatable array of derived type
+        type(line), allocatable :: lines(:)
+        
+        ! Derived type with array component
+        type :: vector
+            real :: components(3)
+        end type vector
+        
+        type(vector) :: basis(3)
+        
+    end module derived_arrays
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/derived_arrays.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check array of derived type
+        self.assertEqual(variables["points"]["type"], "point")
+        dimension = cast(Dimension, variables["points"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 100))
+        self.assertEqual(variables["points"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check 2D array of derived type
+        self.assertEqual(variables["grid"]["type"], "point")
+        dimension = cast(Dimension, variables["grid"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 2)
+        self.assertEqual(variables["grid"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        # Check allocatable array
+        self.assertEqual(variables["lines"]["type"], "line")
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["lines"]["attributes"]])
+        self.assertEqual(variables["lines"]["polymorphism_type"], PolymorphismType.NONE)
+
+    def test_polymorphic_arrays(self):
+        """Test polymorphic arrays with CLASS declarations."""
+        self.fs.create_file(
+            "/fake/path/polymorphic.f90",
+            contents="""
+    module polymorphic
+        implicit none
+        
+        type :: shape
+            real :: area
+        end type shape
+        
+        type, extends(shape) :: circle
+            real :: radius
+        end type circle
+        
+        type, extends(shape) :: rectangle
+            real :: length, width
+        end type rectangle
+        
+        ! Polymorphic arrays
+        class(shape), allocatable :: shapes(:)
+        class(shape), pointer :: shape_ptrs(:)
+        
+        ! Polymorphic array with dimension attribute
+        class(shape), allocatable, dimension(:,:) :: shape_grid
+        
+        ! Unlimited polymorphic
+        class(*), allocatable :: anything(:)
+        
+    end module polymorphic
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/polymorphic.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check polymorphic allocatable array
+        self.assertEqual(variables["shapes"]["type"], "shape")
+        self.assertEqual(variables["shapes"]["polymorphism_type"], PolymorphismType.LIMITED)
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["shapes"]["attributes"]])
+        
+        # Check polymorphic pointer array
+        self.assertEqual(variables["shape_ptrs"]["type"], "shape")
+        self.assertEqual(variables["shape_ptrs"]["polymorphism_type"], PolymorphismType.LIMITED)
+        self.assertIn("POINTER", [attr.upper() for attr in variables["shape_ptrs"]["attributes"]])
+        
+        # Check unlimited polymorphic
+        self.assertEqual(variables["anything"]["type"], "*")
+        self.assertEqual(variables["anything"]["polymorphism_type"], PolymorphismType.UNLIMITED)
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["anything"]["attributes"]])
+
+    def test_coarrays(self):
+        # coarrays aren't arrays, but I'm just putting this test in here for now
+        self.fs.create_file(
+            "/fake/path/coarrays.f90",
+            contents="""
+    module coarrays
+        implicit none
+
+        ! Note that only this form is parsed - integer :: scalar[*] doesn't work
+        ! Simple coarray
+        integer, codimension[*] :: scalar
+    
+        ! Array with coarray dimension
+        real, dimension(10), codimension[*] :: vector
+    
+        ! Multi-dimensional array with coarray
+        real, dimension(10,20), codimension[3,*] :: matrix
+    
+        ! Allocatable coarray
+        real, allocatable, codimension[:,:,:] :: dynamic
+    
+        ! Coarray with explicit bounds
+        integer, codimension[2:5,*] :: fixed_coarray
+    
+        ! Character coarray
+        character(len=10), dimension(5), codimension[*] :: names
+        
+    end module coarrays
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/coarrays.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        self.assertEqual(variables["scalar"]["type"], "INTEGER")
+        self.assertIsNone(variables["scalar"]["dimension"])
+        self.assertEqual(variables["scalar"]["polymorphism_type"], PolymorphismType.NONE)
+
+        self.assertEqual(variables["vector"]["type"], "REAL")
+        self.assertEqual(len(variables["vector"]["dimension"]["dimensions"]), 1)
+        self.assertEqual(variables["vector"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(variables["vector"]["polymorphism_type"], PolymorphismType.NONE)
+                
+        self.assertEqual(variables["matrix"]["type"], "REAL")
+        self.assertEqual(len(variables["matrix"]["dimension"]["dimensions"]), 2)
+        self.assertEqual(variables["matrix"]["dimension"]["dimensions"][0], create_dimension_expr(1, 10))
+        self.assertEqual(variables["matrix"]["dimension"]["dimensions"][1], create_dimension_expr(1, 20))
+        self.assertEqual(variables["matrix"]["polymorphism_type"], PolymorphismType.NONE)
+        
+        self.assertEqual(variables["dynamic"]["type"], "REAL")
+        self.assertIsNone(variables["dynamic"]["dimension"])
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["dynamic"]["attributes"]])
+        
+        self.assertEqual(variables["fixed_coarray"]["type"], "INTEGER")
+        self.assertIsNone(variables["fixed_coarray"]["dimension"])
+        
+        self.assertEqual(variables["names"]["type"], "CHARACTER")
+        self.assertEqual(len(variables["names"]["dimension"]["dimensions"]), 1)
+        self.assertEqual(variables["names"]["dimension"]["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(variables["names"]["length"], "10")
+                
+    def test_array_edge_cases(self):
+        """Test edge cases and unusual array declarations."""
+        self.fs.create_file(
+            "/fake/path/edge_cases.f90",
+            contents="""
+    module edge_cases
+        implicit none
+        
+        ! Very large dimensions
+        real :: huge_array(1000000)
+        
+        ! Negative indices
+        integer :: centered(-10:10)
+        real :: offset_matrix(-5:5, -3:3)
+        
+        ! Arrays with complex expressions
+        integer, parameter :: n = 10
+        real :: computed(2*n+1, n**2)
+        
+        ! Mixed array and scalar declarations
+        real :: a, b(10), c, d(5,5), e
+        
+        ! Array with many dimensions (up to 15 allowed in Fortran 2008)
+        real :: tensor_5d(2,2,2,2,2)
+        
+        ! Character arrays with variable length
+        character(len=:), allocatable :: var_strings(:)
+        
+        ! Arrays in common blocks
+        common /data/ arr1(100), arr2(50,50)
+        real :: arr1, arr2
+        
+    end module edge_cases
+            """
+        )
+        
+        result = extract_module_data([Path("/fake/path/edge_cases.f90")])
+        module_data = result[0]
+        variables = module_data["variables"]
+        
+        # Check very large dimensions
+        self.assertEqual(variables["huge_array"]["type"], "REAL")
+        self.assertEqual(variables["huge_array"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["huge_array"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 1000000))
+        
+        # Check negative indices
+        self.assertEqual(variables["centered"]["type"], "INTEGER")
+        self.assertEqual(variables["centered"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["centered"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-10, 10))
+        
+        # Check offset matrix with negative indices
+        self.assertEqual(variables["offset_matrix"]["type"], "REAL")
+        self.assertEqual(variables["offset_matrix"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["offset_matrix"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(-5, 5))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(-3, 3))
+        
+        # Check complex expressions
+        self.assertEqual(variables["computed"]["type"], "REAL")
+        self.assertEqual(variables["computed"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["computed"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0].upper.value, "2 * n + 1")
+        self.assertEqual(dimension["dimensions"][1].upper.value, "n ** 2")
+        
+        # Check mixed declarations
+        self.assertIn("a", variables)
+        self.assertEqual(variables["a"]["type"], "REAL")
+        self.assertEqual(variables["a"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIsNone(variables["a"].get("dimension"))
+        
+        self.assertIn("b", variables)
+        self.assertEqual(variables["b"]["type"], "REAL")
+        self.assertEqual(variables["b"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIsNotNone(variables["b"].get("dimension"))
+        dimension = cast(Dimension, variables["b"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
+        
+        self.assertIn("c", variables)
+        self.assertEqual(variables["c"]["type"], "REAL")
+        self.assertEqual(variables["c"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIsNone(variables["c"].get("dimension"))
+        
+        self.assertIn("d", variables)
+        self.assertEqual(variables["d"]["type"], "REAL")
+        self.assertEqual(variables["d"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIsNotNone(variables["d"].get("dimension"))
+        dimension = cast(Dimension, variables["d"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 5))
+        
+        self.assertIn("e", variables)
+        self.assertEqual(variables["e"]["type"], "REAL")
+        self.assertEqual(variables["e"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIsNone(variables["e"].get("dimension"))
+        
+        # Check 5D tensor
+        self.assertEqual(variables["tensor_5d"]["type"], "REAL")
+        self.assertEqual(variables["tensor_5d"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["tensor_5d"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 5)
+        for i in range(5):
+            self.assertEqual(dimension["dimensions"][i], create_dimension_expr(1, 2))
+        
+        # Check variable length character array
+        self.assertEqual(variables["var_strings"]["type"], "CHARACTER")
+        self.assertEqual(variables["var_strings"]["polymorphism_type"], PolymorphismType.NONE)
+        self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["var_strings"]["attributes"]])
+        dimension = cast(Dimension, variables["var_strings"]["dimension"])
+        self.assertEqual(len(dimension["dimensions"]), 1)
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ALLOCATABLE)
+        self.assertIsNone(dimension["dimensions"][0].lower)
+        self.assertIsNone(dimension["dimensions"][0].upper)
+        self.assertEqual(variables["var_strings"]["length"], ":")  # Variable length
+        
+        # Check arrays in common blocks
+        self.assertEqual(variables["arr1"]["type"], "REAL")
+        self.assertEqual(variables["arr1"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["arr1"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 100))
+        
+        self.assertEqual(variables["arr2"]["type"], "REAL")
+        self.assertEqual(variables["arr2"]["polymorphism_type"], PolymorphismType.NONE)
+        dimension = cast(Dimension, variables["arr2"]["dimension"])
+        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 50))
+        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 50))
+        
 if __name__ == "__main__":
     unittest.main()

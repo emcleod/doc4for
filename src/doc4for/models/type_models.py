@@ -1,7 +1,7 @@
 from typing import TypedDict, List, Dict, Optional
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.models.variable_models import DataComponent
-from doc4for.models.common import BindingType, EnumDescription
+from doc4for.models.common import EnumDescription
 
 GenericInterface = TypedDict(
     "GenericInterface",
@@ -9,8 +9,7 @@ GenericInterface = TypedDict(
         "generic_spec": str,
         "description": str,
         "attributes": List[str],
-        "specific_procedures": List[str],
-        "binding_type": Optional[BindingType]
+        "specific_procedures": List[str]
     },
 )
 
@@ -24,7 +23,25 @@ TypeDescription = TypedDict(
         "enums": Dict[str, EnumDescription],  
         "procedures": Dict[str, ProcedureDescription],
         "generic_interfaces": Dict[str, GenericInterface],
-        "extends": Optional[str],
-        "binding_type": Optional[BindingType]
+        "extends": Optional[str]
     },
 )
+# for parameterized derived types
+# TypeDescription = TypedDict(
+#     "TypeDescription",
+#     {
+#         # Existing fields...
+#         "type_parameters": Dict[str, TypeParameter],
+#     },
+# )
+
+# TypeParameter = TypedDict(
+#     "TypeParameter",
+#     {
+#         "name": str,
+#         "type": str,
+#         "parameter_type": str,  # "KIND" or "LEN"
+#         "default": Optional[str],
+#         "description": str,
+#     },
+# )

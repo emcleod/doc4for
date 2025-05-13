@@ -1,7 +1,8 @@
 import re
 from typing import List, Optional, Tuple
 from functools import wraps
-from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
+from fparser.two.Fortran2003 import Type_Declaration_Stmt
+#from fparser.one.typedecl_statements import TypeDeclarationStatement, Character
 from doc4for.models.common import Expression, ExpressionType, BindingType, BindingTypeEnum
 
 CHARACTER_KIND_FUNC = 'selected_char_kind'
@@ -62,7 +63,7 @@ def find_matching_parenthesis(s: str, start: int = 0) -> int:
                 return i
     return -1
 
-def get_attributes(declaration: TypeDeclarationStatement) -> List[str]:
+def get_attributes(declaration: Type_Declaration_Stmt) -> List[str]:
     return declaration.attrspec if declaration.attrspec else []
 
 def get_character_length(base_type: str, declaration, attributes: List[str], selector: Optional[Tuple] = None,
@@ -94,7 +95,7 @@ def get_character_length(base_type: str, declaration, attributes: List[str], sel
     # Default length is 1
     return "1"
 
-def extract_kind(declaration: TypeDeclarationStatement) -> Optional[str]:
+def extract_kind(declaration: Type_Declaration_Stmt) -> Optional[str]:
     if not hasattr(declaration, "selector"):
         return None
     

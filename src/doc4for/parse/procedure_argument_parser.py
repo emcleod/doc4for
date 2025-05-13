@@ -13,7 +13,7 @@ from fparser.one.typedecl_statements import TypeDeclarationStatement
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
 from doc4for.utils.comment_utils import format_comments
-from doc4for.parse.variable_parser import parse_type_declaration_statement
+from doc4for.parse.variable_parser import parse_variable
 from doc4for.models.dimension_models import Dimension, format_dimension
 from doc4for.models.common import UNKNOWN
 
@@ -170,7 +170,7 @@ def update_arguments_with_parsed_data(procedure: Any, arg_info: Union[FunctionDe
 
     # Handle return type for functions first (if not using result variable)
     if is_function_description(arg_info) and hasattr(procedure, "typedecl") and procedure.typedecl:
-        variables = parse_type_declaration_statement(procedure.typedecl, "")
+        variables = parse_variables(procedure.typedecl, "")
         # There should be only one variable - the function name
         if variables and variables[0]["name"] == procedure.name:
             arg_info["return"][procedure.name] = {

@@ -3,6 +3,8 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 
+#TODO assumed size and assumed rank arrays
+
 class TestSubroutineArguments(TestCase):
     def setUp(self):
         self.setUpPyfakefs()

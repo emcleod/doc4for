@@ -3,12 +3,16 @@ import shutil
 import errno
 import time
 import random
+import logging
+import sys
 from enum import Enum, auto
-from typing import List, Dict, Any, Tuple, Optional
-from fparser.api import parse as fortran_parser  # type: ignore
-from fparser.one.block_statements import (
-    Module,
+from typing import List
+from fparser.two.parser import ParserFactory
+from fparser.common.readfortran import FortranFileReader
+from fparser.two.Fortran2003 import (
+    Module, 
     Comment,
+    Dimension_Stmt
 )
 from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
@@ -17,29 +21,70 @@ from doc4for.models.module_models import ModuleDescription
 from doc4for.f90.populate_data_models import initialise_module_description
 from doc4for.parse.module_parser import parse_module_content
 
+logger: logging.Logger = logging.getLogger(__name__)
+
 class Visibility(Enum):
     PUBLIC = auto()
     PROTECTED = auto()
     PRIVATE = auto()
 
+#
+# TODO can't create the parser
+#
+# The issue is in ParserFactory.create() method
+# It tries to access Fortran2008.__name__ before the module is fully imported
+# The fix would be to use the string 'fparser.two.Fortran2008' directly instead of Fortran2008.__name__
+#
+# The error is in
+# f2008_cls_members = inspect.getmembers(
+#    sys.modules[Fortran2008.__name__], inspect.isclass  # Bug: should use 'fparser.two.Fortran2008'
+#)
+#
+# bug report:
+# The error: KeyError: 'fparser.two.Fortran2008' when calling ParserFactory().create(std="f2008")
+
+# The location: ParserFactory.create() method in /fparser/two/parser.py, line ~154
+
+# The cause: The code tries to access sys.modules[Fortran2008.__name__] before the module is properly loaded into sys.modules
+
+# The proposed fix: Change the line to use the string 'fparser.two.Fortran2008' directly instead of Fortran2008.__name__
+
+try:
+    from fparser.two import Fortran2008
+    sys.modules['fparser.two.Fortran2008'] = Fortran2008
+except ImportError:
+    pass
+
 def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
-    visibility: Dict[str, Visibility] = {}
     modules: List[ModuleDescription] = []
+    
+    # Create a parser
+    try:
+        parser = ParserFactory().create(std="f2008")
+    except:
+        parser = ParserFactory().create(std="f2003")
+    
     for f90_file in f90_files:
         comment_stack: List[Comment] = []
         f90_file_path: str = os.fspath(f90_file)
-        tree: Any = fortran_parser(f90_file_path, ignore_comments=False)
-        for child in tree.content:
-            if isinstance(child, Comment) and child.content:
+        
+        reader = FortranFileReader(f90_file_path, ignore_comments=False)
+        tree = parser(reader)
+        
+        # Walk through the parse tree  
+        for child in tree.content:     
+            # comments before the module
+            if isinstance(child, Comment) and child.item.comment:
                 comment_stack.append(child)
             elif isinstance(child, Module):
                 module_data: ModuleDescription = initialise_module_description(child, comment_stack, f90_file_path)
                 comment_stack.clear()
                 parse_module_content(child, module_data, comment_stack)
                 modules.append(module_data)
-                comment_stack.clear() 
+                comment_stack.clear()
+                    
+            
     return modules
-
 
 def create_modules_directory(output_dir: str, max_retries: int = 5, base_delay: float = 0.1) -> None:
     """

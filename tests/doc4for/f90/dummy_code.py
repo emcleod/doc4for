@@ -13,16 +13,27 @@ class DummyCode(TestCase):
         self.fs.create_file(
             '/fake/path/test.f90',
             contents='''\
-module enum_examples
-    use iso_fortran_env, other_module, another_module
-    implicit none
+module geometry_module
+  implicit none
+  private
+  
+  ! Public interface
+  public :: circle_area, rectangle_area
+  
+  ! Declare interfaces for procedures implemented in submodules
+  interface
+    module function circle_area(radius) result(area)
+      real, intent(in) :: radius
+      real :: area
+    end function circle_area
     
-end module enum_examples
-
-program test
-    write (5, *) "Hello, World!"
-end program test    
-
+    module function rectangle_area(length, width) result(area)
+      real, intent(in) :: length, width
+      real :: area
+    end function rectangle_area
+  end interface
+  
+end module geometry_module
         ''',
         )
 
