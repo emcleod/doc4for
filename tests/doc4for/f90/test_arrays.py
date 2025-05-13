@@ -1223,7 +1223,7 @@ C     Old-style parameter statement with the type declared elsewhere
         self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["var_strings"]["attributes"]])
         dimension = cast(Dimension, variables["var_strings"]["dimension"])
         self.assertEqual(len(dimension["dimensions"]), 1)
-        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ALLOCATABLE)
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ASSUMED_SHAPE)
         self.assertIsNone(dimension["dimensions"][0].lower)
         self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertEqual(variables["var_strings"]["length"], ":")  # Variable length

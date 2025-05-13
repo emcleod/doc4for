@@ -1,204 +1,258 @@
 import unittest
 from unittest import TestCase
-from unittest.mock import Mock
-from doc4for.parse.variable_parser import parse_variable
+from pathlib import Path
+from pyfakefs.fake_filesystem_unittest import TestCase
+from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.common import BindingTypeEnum
+from doc4for.models.variable_models import PolymorphismType
 
 class TestKindSpecifications(TestCase):
+    maxDiff = None
+
+    def setUp(self):
+        self.setUpPyfakefs()
 
     def test_old_style_kind_parentheses(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real(8) x"
-        declaration.attrspec = []
-        declaration.selector = ('8', '')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        real(8) x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "real",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
     def test_old_style_kind_asterisk(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real*8 x"
-        declaration.attrspec = []
-        declaration.selector = ('', '8')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        real*8 x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "real",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
     def test_f90_style_kind_keyword(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real(kind=8) x"
-        declaration.attrspec = []
-        declaration.selector = ('', '8')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        real(kind=8) :: x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "real",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
     def test_kind_with_named_constant(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real(kind=selected_real_kind) :: x"
-        declaration.attrspec = []
-        declaration.selector = ('selected_real_kind', '')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        integer, parameter :: dp = kind(1.0d0)
+        real(kind=dp) :: x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        parameters = module["parameters"]
+        variables = module["variables"]
+        expected_parameters = {
+            "dp": {
                 "description": "",
-                "type": "real",
+                "type": "INTEGER",
+                "name": "dp",
+                "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
+                "attributes": [],
+                "kind": None,
+                "value": "KIND(1.0D0)",
+                "length": None,
+                "binding_type": None
+            }
+        }
+        expected_variables = {
+            "x": {
+                "description": "",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
-                "kind": 'selected_real_kind',
+                "kind": 'dp',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(parameters, expected_parameters)
+        self.assertEqual(variables, expected_variables)
 
     def test_kind_with_function_call(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real(kind=selected_real_kind(15)) :: x"
-        declaration.attrspec = []
-        declaration.selector = ('selected_real_kind(15)', '')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        real(kind=selected_real_kind(15)) :: x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "real",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": 'selected_real_kind(15)',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
     def test_kind_with_multiple_variables(self):
-        declaration = Mock()
-        declaration.name = "integer"
-        declaration.item.line = "integer(kind=8) :: x, y, z"
-        declaration.attrspec = []
-        declaration.selector = ('', '8')
-        declaration.entity_decls = ['x', 'y', 'z']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        integer(kind=8) :: x, y, z
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            name: {
                 "description": "",
-                "type": "integer",
+                "type": "INTEGER",
                 "name": name,
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                "binding_type": None
             }
             for name in ['x', 'y', 'z']
-        ]
-        self.assertEqual(result, expected)
+        }
+        self.assertEqual(variables, expected)
 
     def test_kind_with_initialization(self):
-        declaration = Mock()
-        declaration.name = "real"
-        declaration.item.line = "real(kind=8) :: x = 1.0d0"
-        declaration.attrspec = []
-        declaration.selector = ('', '8')
-        declaration.entity_decls = ['x = 1.0d0']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        real(kind=8) :: x = 1.0d0
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "real",
+                "type": "REAL",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": '8',
-                "initial_value": "1.0d0",
+                "initial_value": "1.0D0",
                 "length": None,
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
     def test_character_kind(self):
-        declaration = Mock()
-        declaration.name = "character"
-        declaration.item.line = "character(kind=selected_char_kind('ASCII')) :: x"
-        declaration.attrspec = []
-        declaration.selector = ('selected_char_kind(\'ASCII\')', '')
-        declaration.entity_decls = ['x']
-
-        result = parse_variable(declaration, [])
-        expected = [
-            {
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        character(kind=selected_char_kind('ASCII')) :: x
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "x": {
                 "description": "",
-                "type": "character",
+                "type": "CHARACTER",
                 "name": "x",
                 "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
                 "attributes": [],
                 "kind": 'selected_char_kind(\'ASCII\')',
                 "initial_value": None,
-                "length": "1",
-                "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-            },
-        ]
-        self.assertEqual(result, expected)
-
+                "length": "1",  # Default character length is 1
+                "binding_type": None
+            }
+        }
+        self.assertEqual(variables, expected)
 
 if __name__ == "__main__":
     unittest.main()

@@ -471,8 +471,8 @@ end module test_mod
         minimize = interface['procedures']['minimize']
         self.assertEqual(minimize['arguments'], ['objective', 'gradient', 'x0'])
         self.assertEqual(minimize['in'], {
-            'objective': {'type': 'procedure', 'description': 'Function to minimize', 'dimension': '', 'interface_name': 'func1'},  # Changed to func1
-            'gradient': {'type': 'procedure', 'description': 'Gradient function', 'dimension': '', 'interface_name': 'grad'},  # Changed to grad
+            'objective': {'type': 'procedure', 'description': 'Function to minimize', 'dimension': '', 'interface_name': 'func1'},  
+            'gradient': {'type': 'procedure', 'description': 'Gradient function', 'dimension': '', 'interface_name': 'grad'},  
             'x0': {'type': 'real', 'description': 'Initial guess', 'dimension': ''}
         })
         self.assertEqual(minimize['return'], {
