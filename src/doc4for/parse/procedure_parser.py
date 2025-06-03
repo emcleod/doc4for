@@ -38,9 +38,8 @@ from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-
 def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) -> Tuple[str, FunctionDescription]:
-    common = _parse_procedure(function, Function_Stmt, comment_stack)
+    common = parse_procedure(function, Function_Stmt, comment_stack)
     if common is None:
         return None
     
@@ -93,7 +92,7 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
 
 
 def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comment]) -> Tuple[str, SubroutineDescription]:
-    common = _parse_procedure(subroutine, Subroutine_Stmt, comment_stack)
+    common = parse_procedure(subroutine, Subroutine_Stmt, comment_stack)
     if common is None:
         return None
     
@@ -113,11 +112,7 @@ def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comm
     _update_arguments_with_comment_data(comment_stack, subroutine_description)
     return common["procedure_name"], subroutine_description
 
-def _parse_procedure(procedure, stmt_type, comment_stack: List[Comment]) -> Dict:
-    """
-    Extract common parsing logic for functions and subroutines.
-    Returns a dictionary with all the common elements.
-    """
+def parse_procedure(procedure, stmt_type, comment_stack: List[Comment]) -> Dict:
     # accumulate comment stack before declaration
     for node in procedure.children:
         if isinstance(node, Comment):
@@ -296,71 +291,4 @@ def clean_comment_content(comment: Comment) -> str:
 def extract_content_without_annotation(content: str) -> str:
     return " ".join(content.split()[1:])
 
-
-# def parse_interface(
-#         interface: Interface,
-#         comment_stack: List[Comment]) -> InterfaceDescription:
-#     description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
-#     attributes = ["abstract"] if interface.isabstract else []
-#     name, operator = parse_interface_type(interface.name)
-#     procedures = {}
-#     procedure_comment_stack = []
-#     module_procedures = {}
-    
-#     for item in interface.content:
-#         # Check if we hit another Interface - this would indicate a parsing error where
-#         # fparser has incorrectly nested two separate interfaces
-#         if isinstance(item, Interface):
-#             # We've reached the start of the next interface that was incorrectly nested
-#             break
-        
-#         match item:
-#             case Comment():
-#                 if item.content:
-#                     procedure_comment_stack.append(item)
-#             case ModuleProcedure():
-#                 procedure_names = item.items
-#                 procedure_description = format_comments(procedure_comment_stack) if is_doc4for_comment(procedure_comment_stack) else ""
-#                 for procedure_name in procedure_names:
-#                     module_procedures[procedure_name] = { "name": procedure_name, "description": procedure_description}                
-#                 procedure_comment_stack.clear()
-#             case Function():
-#                 procedures[item.name] = parse_function(item, procedure_comment_stack)
-#                 procedure_comment_stack.clear()
-#             case Subroutine():
-#                 procedures[item.name] = parse_subroutine(item, procedure_comment_stack)
-#                 procedure_comment_stack.clear()
-#             case _:
-#                 pass
-
-#     interface_description: InterfaceDescription = {
-#         "description": description,
-#         "attributes": attributes,
-#         "procedures": procedures,
-#         "module_procedures": module_procedures
-#     }   
-#     if not interface.isabstract:
-#         interface_description["name"] = name
-#     if operator:
-#         interface_description["operator_symbol"] = operator
-#     return interface_description
-
-
-# def parse_interface_type(name: str) -> Tuple[Optional[str], Optional[str]]:
-#     """
-#     Parse the interface name to determine if it's abstract (no name) or an operator or assignment interface.
-    
-#     Returns a tuple of (interface_type, operator_symbol)
-#     where interface_type is 'operator', 'assignment', or None for regular interfaces,
-#     and operator_symbol is the symbol for operator/assignment or None for regular interfaces.
-#     """
-#     if not name:
-#         return None, None
-#     if name.startswith('operator'):
-#         match = re.match(r'operator\((.*?)\)', name)
-#         if match:
-#             return 'operator', match.group(1)
-#     elif name.startswith('assignment'):
-#         return 'assignment', '='
-#     return name, None
 

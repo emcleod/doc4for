@@ -3,11 +3,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TypeVar, Generic, Dict, Type, Callable, List, Any, Tuple, Optional, Protocol
 from fparser.one.block_statements import (
-    Comment,
+    #Comment,
     Module,
-    Function, 
-    Subroutine,
-    Interface,
     Program,
     BlockData,
     ModuleProcedure,
@@ -28,6 +25,8 @@ from fparser.two.Fortran2003 import (
     Derived_Type_Def,
     Function_Subprogram,
     Subroutine_Subprogram,
+    Interface_Block,
+    Comment,
     Name
 )
 from fparser.two.utils import walk
@@ -38,6 +37,7 @@ from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter
 from doc4for.parse.procedure_parser import parse_function, parse_subroutine
+from doc4for.parse.interface_parser import parse_interface
 from doc4for.parse.enum_parser import parse_enum
 from doc4for.parse.shared_data_parser import parse_block_data, parse_common_block
 from doc4for.parse.type_parser import handle_type_definition
@@ -86,6 +86,10 @@ def handle_subroutine(item: Subroutine_Subprogram, data: T, comment_stack: List[
     subroutine_name, subroutine_description = parse_subroutine(item, comment_stack)
     data["subroutines"][subroutine_name] = subroutine_description
 
+
+def handle_interface(item: Interface_Block, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    interface_name, interface_description = parse_interface(item, comment_stack)
+    data["interfaces"].append(interface_description)
 
 def handle_module(item: Module, file_data: FileDescription,
                    comment_stack: List[Comment]):
