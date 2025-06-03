@@ -14,12 +14,13 @@ from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_
 from doc4for.parse.base_parser import ( 
     FortranHandler,
     VisibilityState,
-    handle_function, 
-    handle_subroutine, 
-    handle_block_data, 
-    handle_module, 
-    handle_program,
-    handle_use)
+    # handle_function, 
+    # handle_subroutine, 
+    # handle_block_data, 
+    # handle_module, 
+    # handle_program,
+    # handle_use
+    )
 
 FileHandler = FortranHandler[FileDescription]
 
@@ -34,12 +35,12 @@ def _get_file_handler() -> FileHandler:
     global _file_handler_instance
     if _file_handler_instance is None:
         handler = FileHandler()
-        handler.register_handler(Module, handle_module)
-        handler.register_handler(Function, handle_function)
-        handler.register_handler(Subroutine, handle_subroutine)
-        handler.register_handler(Program, handle_program)
-        handler.register_handler(BlockData, handle_block_data)
-        handler.register_handler(Use, handle_use)
+        # handler.register_handler(Module, handle_module)
+        # handler.register_handler(Function, handle_function)
+        # handler.register_handler(Subroutine, handle_subroutine)
+        # handler.register_handler(Program, handle_program)
+        # handler.register_handler(BlockData, handle_block_data)
+        # handler.register_handler(Use, handle_use)
         _file_handler_instance = handler
     return _file_handler_instance
 

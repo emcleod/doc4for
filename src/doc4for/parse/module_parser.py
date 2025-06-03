@@ -96,7 +96,6 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                             name.string: access_value for name in walk(access_ids, Name)
                         })                                                
                 else:
-                    print(type(node))
                     handler = handlers.get_handler(type(node))
                     if handler:
                         handler(node, module_data, comment_stack, dimension_stack=dimension_stack)

@@ -26,7 +26,7 @@ from fparser.one.block_statements import (
 from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
     Derived_Type_Def,
-    Function_Stmt,
+    Function_Subprogram,
     Name
 )
 from fparser.two.utils import walk
@@ -77,7 +77,7 @@ def handle_type_declaration(item: Type_Declaration_Stmt, data: ModuleDescription
             data["variables"][var["name"]] = var                
 
 
-def handle_function(item: Function_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_function(item: Function_Subprogram, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
     function_name, function_description = parse_function(item, comment_stack)
     data["functions"][function_name] = function_description
 

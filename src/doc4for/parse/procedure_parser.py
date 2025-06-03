@@ -60,7 +60,7 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
     prefixes = walk(function_declaration, Prefix)
     if len(prefixes) > 1:
         logger.error(f"Have more than one Prefix in {prefixes}")
-        return
+        return #TODO what to return here
     if prefixes:
         for node in prefixes[0].children:
             if isinstance(node, Prefix_Spec):
@@ -137,22 +137,28 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     })
 
     procedure_comment_stack = []
+    has_return_annotation = False
     for i, comment in enumerate(comments):
         content = comment.item.comment.strip()
-
+        if content.startswith('!'):
+            content = content[1:].strip()
         if content.startswith(ANNOTATION_PREFIX):
             if procedure_comment_stack:
                 arg_info["description"] += format_comments(procedure_comment_stack)
                 procedure_comment_stack.clear()
-
-            full_content, i = collect_continuation_lines(comments, i)
-            content = " ".join(full_content)
+            # Track if we've seen a @return annotation
+            if content.startswith("@return"):
+                has_return_annotation = True
+            content, i = collect_continuation_lines(comments, i)
             annotation_type = content.split(maxsplit=1)[0].split(":")[0]
             annotation_processors[annotation_type](content, arg_info)
         else:
             procedure_comment_stack.append(comment)
     if procedure_comment_stack:
         arg_info["description"] += format_comments(procedure_comment_stack)
+    # Check if we have a function without @return annotation
+    if "return" in arg_info and not has_return_annotation:
+        logger.warning("Warning: no annotation for return in function")
 
 def update_with_argument_description(content: str,
                                    arg_info: Union[FunctionDescription, SubroutineDescription],
@@ -160,25 +166,40 @@ def update_with_argument_description(content: str,
     annotation_type = content.split()[0][1:]  # Remove the @ from @in/@out etc
     content_without_annotation = extract_content_without_annotation(content)
 
-    argument_regex = re.compile(ARGUMENT_PATTERN, re.VERBOSE)
-    match = argument_regex.match(content_without_annotation)
-    if not match:
-        #TODO need to distinguish between having no description e.g. '@in x' and the format being completely wrong
-        logger.warning("Warning: Unexpected annotation format: %s", content)
+    # Pattern for argument with description
+    argument_with_desc_regex = re.compile(r'(?P<var_name>\w+)\s+(?P<description>.+)', re.VERBOSE)
+    # Pattern for argument without description
+    argument_only_regex = re.compile(r'^(?P<var_name>\w+)$', re.VERBOSE)
+        
+    match_with_desc = argument_with_desc_regex.match(content_without_annotation)
+    match_only = argument_only_regex.match(content_without_annotation)
+
+    if match_with_desc:
+        var_name = match_with_desc.group("var_name")
+        description = match_with_desc.group("description")
+    elif match_only:
+        var_name = match_only.group("var_name")
+        description = ""
+        # Don't warn about missing description yet - check if argument exists first
+    else:
+        logger.warning("Warning: Invalid annotation format: %s", content)
         return
 
-    var_name = match.group("var_name")
-    description = match.group("description")
-
-    # Check if the variable exists in any of the specified argument types
+    # Check if the variable exists FIRST
     if not any(var_name in arg_info[at] for at in annotation_types):
         logger.warning("Warning: '%s' annotation '%s' not found in arguments %s",
-                      annotation_type, var_name, [list(arg_info[at].keys()) for at in annotation_types])
-    else:
-        # Update description for the variable in all relevant argument types
-        for at in annotation_types:
-            if var_name in arg_info[at]:
-                arg_info[at][var_name]["description"] = description
+                    annotation_type, var_name, [list(arg_info[at].keys()) for at in annotation_types])
+        return  # Don't continue processing if argument doesn't exist
+
+    # Now warn about missing description if applicable
+    if match_only:
+        logger.warning("Warning: No description provided for argument '%s' in annotation: %s", 
+                    var_name, content)
+
+    # Update description for the variable in all relevant argument types
+    for at in annotation_types:
+        if var_name in arg_info[at]:
+            arg_info[at][var_name]["description"] = description
 
 def update_with_return_description(content: str, 
                                  arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
@@ -188,28 +209,32 @@ def update_with_return_description(content: str,
     
     content_without_annotation = extract_content_without_annotation(content)
     if not content_without_annotation:
-        logger.warning("Warning: Not enough content in return annotation: %s", content)
+        logger.warning("Warning: No description provided for 'return' annotation")
         return
 
     # Just get the description (everything after @return)
     description = content_without_annotation.strip()
-    
-    # Update the description for the return value
-    # (we know there"s only one return value in Fortran)
-    return_name = next(iter(arg_info["return"]))
-    arg_info["return"][return_name]["description"] = description
+    arg_info["return"]["description"] = description
 
-def collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[List[str], int]:
-    full_content = [comments[start_index].content.strip()]
+def collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[str, int]:
+    full_content = [clean_comment_content(comments[start_index])]
     for i in range(start_index + 1, len(comments)):
-        next_content = comments[i].content.strip()
+        next_content = clean_comment_content(comments[i])
         if (not next_content.startswith(ANNOTATION_PREFIX) and
             not next_content.startswith(IGNORE_PREFIX) and
             not next_content.endswith(IGNORE_SUFFIX)):
             full_content.append(next_content)
         else:
-            return full_content, i
-    return full_content, len(comments)
+            return " ".join(full_content), i
+    return " ".join(full_content), len(comments)
+
+#TODO is this already in comment_utils - if not, move it
+def clean_comment_content(comment: Comment) -> str:
+    """Extract clean comment content, handling fparser2 format"""
+    content = comment.item.comment.strip()
+    if content.startswith('!'):
+        content = content[1:].strip()
+    return content
 
 def extract_content_without_annotation(content: str) -> str:
     return " ".join(content.split()[1:])
