@@ -1,26 +1,26 @@
 import re
 import logging
 from typing import List, Dict, Any, Tuple, TypeVar, Generic, Type, Protocol
-from fparser.one.block_statements import (
-    Module,
-    Function, 
-    Subroutine,
-    Interface,
-    Program,
-    BlockData,
-    ModuleProcedure,
-    Type as FortranType,
-    EndModule,
-    EndType,
-    Contains,
-    Implicit,
-    Private,
-    Public,
-    Enum,
-    Enumerator,
-    Use,
-    Common
-)
+# from fparser.one.block_statements import (
+#     Module,
+#     Function, 
+#     Subroutine,
+#     Interface,
+#     Program,
+#     BlockData,
+#     ModuleProcedure,
+#     Type as FortranType,
+#     EndModule,
+#     EndType,
+#     Contains,
+#     Implicit,
+#     Private,
+#     Public,
+#     Enum,
+#     Enumerator,
+#     Use,
+#     Common
+# )
 from fparser.two.Fortran2003 import (
     Comment, 
     Name, 
@@ -40,12 +40,13 @@ from fparser.two.Fortran2003 import (
     Char_Literal_Constant,
     Intrinsic_Function_Reference,
     Char_Selector,
-    Level_2_Expr
+    Level_2_Expr,
+    Suffix
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
-from doc4for.models.dimension_models import ArrayBound, BoundType, Expression, Dimension
-from doc4for.models.common import ExpressionType, BindingTypeEnum
+from doc4for.models.dimension_models import ArrayBound, BoundType, Expression
+from doc4for.models.common import ExpressionType, BindingType, BindingTypeEnum
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -57,13 +58,13 @@ class HandlerProtocol(Protocol):
 class FortranHandler(Generic[T]):
     TYPE_HANDLING = {
         #TODO these all need to be removed when the migration is complete
-        EndModule: None,
-        EndType: None,
-        Contains: None,
-        Implicit: None,
+        # EndModule: None,
+        # EndType: None,
+        # Contains: None,
+        # Implicit: None,
         Comment: None,  # Though we shouldn't get here
-        Private: "WARNING",
-        Public: "WARNING",
+        # Private: "WARNING",
+        # Public: "WARNING",
     }
 
     def __init__(self):
@@ -283,7 +284,13 @@ def _node_to_expression(node: Any) -> Expression:
                 expr_type=ExpressionType.LITERAL,
                 value=f'-{value}'  # Combine the minus with the literal value
             )
-    
+         # If it's a negative variable, combine the operator with the variable name
+        elif operator == '-' and isinstance(operand, Name):
+            return Expression(
+                expr_type=ExpressionType.VARIABLE,  
+                value=f'-{str(operand)}'
+            )
+
     # Check if it's a literal constant
     if isinstance(node, (Int_Literal_Constant, Real_Literal_Constant)):
         return Expression(
@@ -326,5 +333,21 @@ def _extract_array_constructor_value(array_constructor: Array_Constructor) -> st
 # The Array_Constructor handling likely needs improvements to handle cases like complex arrays
 # The _extract_type_info function doesn't handle kind parameters (e.g., integer(kind=8))
 # There's no handling for uppercase parameter names in tests vs lowercase in the code output
-# You'll need more specific handling for character literals with quotes
+# Need more specific handling for character literals with quotes
 # Character length extraction and handling might need refinement
+
+def _extract_binding_type(language_bindings: List[Language_Binding_Spec]) -> BindingType:
+    if not language_bindings:
+        return None
+    names = walk(language_bindings, Char_Literal_Constant)
+    if names:
+        name_with_quotes = names[0].string
+        # Remove surrounding quotes (handles both " and ')
+        if (name_with_quotes.startswith('"') and name_with_quotes.endswith('"')) or \
+           (name_with_quotes.startswith("'") and name_with_quotes.endswith("'")):
+            name = name_with_quotes[1:-1]
+        else:
+            name = name_with_quotes
+        return { "name": name, "type": BindingTypeEnum.BIND_C}
+    return { "name": None, "type": BindingTypeEnum.BIND_C }
+    

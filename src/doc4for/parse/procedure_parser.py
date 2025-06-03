@@ -17,7 +17,8 @@ from fparser.two.Fortran2003 import (
     Access_Spec,
     Attr_Spec,
     Entity_Decl,
-    Dummy_Arg_List
+    Dummy_Arg_List,
+    Language_Binding_Spec
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -36,7 +37,7 @@ from doc4for.parse.argument_parser import parse_arguments
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.models.dimension_models import Dimension, format_dimension
 from doc4for.models.common import UNKNOWN
-from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info
+from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info, _extract_binding_type
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
     function_declaration = walk(function, Function_Stmt)[0]
     # only one name
     function_name = walk(function_declaration, Name)[0].string
-    attributes, return_type, return_variable = [], None, None
+    attributes, return_type, return_variable, binding_type = [], None, None, None
     prefixes = walk(function_declaration, Prefix)
     if len(prefixes) > 1:
         logger.error(f"Have more than one Prefix in {prefixes}")
@@ -73,6 +74,8 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
                 return_type = node.string.upper() if isinstance(node, Intrinsic_Type_Spec) else node.string
     suffixes = walk(function_declaration, Suffix)
     if suffixes:
+        # is there a binding type
+        binding_type = _extract_binding_type(walk(suffixes, Language_Binding_Spec))
         # only have 1 in valid Fortran
         return_variable = walk(suffixes, Name)[0].string
     else:
@@ -120,7 +123,7 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
         "in": intent_in,
         "out": intent_out,
         "argument_interfaces": {},
-        "binding_type": None,
+        "binding_type": binding_type,
         "return": return_argument
     }
     update_arguments_with_comment_data(comment_stack, function_description)
