@@ -28,7 +28,6 @@ class ArrayBound:
         else:
             lower = str(self.lower.value) if self.lower else "1"
             upper = str(self.upper.value) if self.upper else ""
-            stride = f":{self.stride.value}" if self.stride else ""
 
             formatted = None
             if not upper:
@@ -37,7 +36,7 @@ class ArrayBound:
                 formatted = f"{lower}:{upper}"
             else:  # BoundType.FIXED
                 formatted = f"{lower}:{upper}"
-            return f"{formatted}:{stride}" if stride else formatted
+            return formatted
 
 #TODO doesn"t need to be a typed dict really
 Dimension = TypedDict("Dimension", {

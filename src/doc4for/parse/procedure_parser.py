@@ -5,6 +5,8 @@ from collections import defaultdict
 from fparser.two.Fortran2003 import (
     Function_Stmt,
     Function_Subprogram,
+    Subroutine_Subprogram,
+    Subroutine_Stmt,
     Name,
     Comment,
     Prefix_Spec,
@@ -26,76 +28,138 @@ from doc4for.models.procedure_models import (
     SubroutineDescription, 
     InterfaceDescription,
 )
-from doc4for.models.common import (
-    BindingType, 
-    BindingTypeEnum
-)
-from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX, ARGUMENT_PATTERN
-from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription, is_function_description, Argument
+from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
+from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.argument_parser import parse_arguments
-from doc4for.parse.variable_parser import parse_variable
-from doc4for.models.dimension_models import Dimension, format_dimension
 from doc4for.models.common import UNKNOWN
-from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info, _extract_binding_type
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.parse.common_parser import _extract_binding_type
+from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
 def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) -> Tuple[str, FunctionDescription]:
+    common = _parse_procedure(function, Function_Stmt, comment_stack)
+    if common is None:
+        return None
+    
+    # Function-specific: handle return type and return variable
+    return_type, return_variable = None, None
+    if common["prefixes"]:
+        for node in common["prefixes"][0].children:
+            if not isinstance(node, Prefix_Spec):
+                if return_type is not None:
+                    logger.error(f"Found more than one return type for {common['procedure_name']}")
+                    continue
+                return_type = node.string.upper() if isinstance(node, Intrinsic_Type_Spec) else node.string
+    
+    # Function-specific: handle suffixes
+    suffixes = walk(common["procedure_declaration"], Suffix)
+    binding_type = None
+    if suffixes:
+        binding_type = _extract_binding_type(walk(suffixes, Language_Binding_Spec))
+        return_variable = walk(suffixes, Name)[0].string
+    else:
+        return_variable = common["procedure_name"]
+    
+    # Function-specific: handle return argument
+    return_argument = None
+    if return_variable in common["all_parsed_arguments"]:
+        return_argument = common["all_parsed_arguments"][return_variable]
+    
+    if not return_argument:
+        return_argument = {
+            "description": "",
+            "dimension": None,
+            "enum_type": None,
+            "interface_name": None,
+            "type": return_type
+        }
+    
+    function_description = {
+        "attributes": common["attributes"],
+        "description": "",
+        "arguments": common["arguments"],
+        "in": common["intent_in"],
+        "out": common["intent_out"],
+        "argument_interfaces": {},
+        "binding_type": binding_type,
+        "return": return_argument
+    }
+    
+    _update_arguments_with_comment_data(comment_stack, function_description)
+    return common["procedure_name"], function_description
+
+
+def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comment]) -> Tuple[str, SubroutineDescription]:
+    common = _parse_procedure(subroutine, Subroutine_Stmt, comment_stack)
+    if common is None:
+        return None
+    
+    # Subroutine-specific: only need binding type, no return handling
+    binding_type = _extract_binding_type(walk(common["procedure_declaration"], Language_Binding_Spec))
+    
+    subroutine_description = {
+        "attributes": common["attributes"],
+        "description": "",
+        "arguments": common["arguments"],
+        "in": common["intent_in"],
+        "out": common["intent_out"],
+        "argument_interfaces": {},
+        "binding_type": binding_type
+    }
+    
+    _update_arguments_with_comment_data(comment_stack, subroutine_description)
+    return common["procedure_name"], subroutine_description
+
+def _parse_procedure(procedure, stmt_type, comment_stack: List[Comment]) -> Dict:
+    """
+    Extract common parsing logic for functions and subroutines.
+    Returns a dictionary with all the common elements.
+    """
     # accumulate comment stack before declaration
-    # don't use walk because there might be comments in the function body
-    # that should be ignored
-    for node in function.children:
+    for node in procedure.children:
         if isinstance(node, Comment):
             comment_stack.append(node)
         else:
-            # only want those comments before the declaration
             break
+    
     # only one declaration
-    function_declaration = walk(function, Function_Stmt)[0]
+    procedure_declaration = walk(procedure, stmt_type)[0]
     # only one name
-    function_name = walk(function_declaration, Name)[0].string
-    attributes, return_type, return_variable, binding_type = [], None, None, None
-    prefixes = walk(function_declaration, Prefix)
+    procedure_name = walk(procedure_declaration, Name)[0].string
+    
+    # process prefixes
+    attributes = []
+    prefixes = walk(procedure_declaration, Prefix)
     if len(prefixes) > 1:
         logger.error(f"Have more than one Prefix in {prefixes}")
-        return #TODO what to return here
+        return None
     if prefixes:
         for node in prefixes[0].children:
             if isinstance(node, Prefix_Spec):
                 attributes.append(node.string)
-            else:
-                if return_type is not None:
-                    logger.error(f"Found more than one return type for {function_name}")
-                    continue
-                # for consistency with the way parameters and variables are upper-case
-                return_type = node.string.upper() if isinstance(node, Intrinsic_Type_Spec) else node.string
-    suffixes = walk(function_declaration, Suffix)
-    if suffixes:
-        # is there a binding type
-        binding_type = _extract_binding_type(walk(suffixes, Language_Binding_Spec))
-        # only have 1 in valid Fortran
-        return_variable = walk(suffixes, Name)[0].string
-    else:
-        return_variable = function_name
-    dummy_args = walk(function_declaration, Dummy_Arg_List)
+    
+    # extract dummy argument names
+    dummy_args = walk(procedure_declaration, Dummy_Arg_List)
     dummy_arg_names = []
     if dummy_args:
         for dummy_arg in walk(dummy_args, Name):
             dummy_arg_names.append(dummy_arg.string)
-    declarations = walk(function, Type_Declaration_Stmt)
-
+    
+    # process declarations
+    declarations = walk(procedure, Type_Declaration_Stmt)
     arguments = []
     intent_in = {}
     intent_out = {}
-    return_argument = None
+    all_parsed_arguments = {}
+    
     for decl in declarations:
-        # this will grab everything that's declared, including things that aren't dummy arguments
         parsed_arguments, intent = parse_arguments(decl)
-        # filter to keep only the actual arguments as the parser can't know if it's an
-        # argument or an internal variable
+        all_parsed_arguments.update(parsed_arguments)
+        
+        # filter to keep only the actual arguments
         dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
         if intent == 'IN':
             intent_in.update(dummy_arguments)
@@ -103,43 +167,34 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
             intent_out.update(dummy_arguments)
         if intent == 'INOUT' or not intent:
             intent_in.update(dummy_arguments)
-            intent_out.update(dummy_arguments) 
+            intent_out.update(dummy_arguments)
         arguments.extend(dummy_arguments.keys())
-        if not return_argument and return_variable in parsed_arguments:
-            return_argument = parsed_arguments.pop(return_variable)
-
-    if not return_argument:
-        return_argument = {
-            "description": "",
-            "dimension": None, 
-            "enum_type": None,
-            "interface_name": None,
-            "type": return_type
-        }
-    function_description = {
+    
+    return {
+        "procedure_name": procedure_name,
+        "procedure_declaration": procedure_declaration,
         "attributes": attributes,
-        "description": "",
         "arguments": arguments,
-        "in": intent_in,
-        "out": intent_out,
-        "argument_interfaces": {},
-        "binding_type": binding_type,
-        "return": return_argument
+        "intent_in": intent_in,
+        "intent_out": intent_out,
+        "all_parsed_arguments": all_parsed_arguments,
+        "prefixes": prefixes
     }
-    update_arguments_with_comment_data(comment_stack, function_description)
-    return function_name, function_description    
 
-def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
+
+def _update_arguments_with_comment_data(comments: List[Comment], 
+                                       arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     annotation_processors = defaultdict(
         lambda: lambda content, _: logging.warning("Unknown annotation type: %s", content.split()[0]), 
         {
-        "@in": lambda content, info: update_with_argument_description(content, info, ["in"]),
-        "@out": lambda content, info: update_with_argument_description(content, info, ["out"]),
-        "@inout": lambda content, info: update_with_argument_description(content, info, ["in", "out"]),
-        "@return": update_with_return_description
+        "@in": lambda content, info: _update_with_argument_description(content, info, ["in"]),
+        "@out": lambda content, info: _update_with_argument_description(content, info, ["out"]),
+        "@inout": lambda content, info: _update_with_argument_description(content, info, ["in", "out"]),
+        "@return": _update_with_return_description
     })
 
     procedure_comment_stack = []
+    #TODO warning if there's a return annotation and it's a subroutine
     has_return_annotation = False
     for i, comment in enumerate(comments):
         content = comment.item.comment.strip()
@@ -152,7 +207,7 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
             # Track if we've seen a @return annotation
             if content.startswith("@return"):
                 has_return_annotation = True
-            content, i = collect_continuation_lines(comments, i)
+            content, i = _collect_continuation_lines(comments, i)
             annotation_type = content.split(maxsplit=1)[0].split(":")[0]
             annotation_processors[annotation_type](content, arg_info)
         else:
@@ -163,7 +218,7 @@ def update_arguments_with_comment_data(comments: List[Comment], arg_info: Union[
     if "return" in arg_info and not has_return_annotation:
         logger.warning("Warning: no annotation for return in function")
 
-def update_with_argument_description(content: str,
+def _update_with_argument_description(content: str,
                                    arg_info: Union[FunctionDescription, SubroutineDescription],
                                    annotation_types: List[str]) -> None:
     annotation_type = content.split()[0][1:]  # Remove the @ from @in/@out etc
@@ -204,7 +259,7 @@ def update_with_argument_description(content: str,
         if var_name in arg_info[at]:
             arg_info[at][var_name]["description"] = description
 
-def update_with_return_description(content: str, 
+def _update_with_return_description(content: str, 
                                  arg_info: Union[FunctionDescription, SubroutineDescription]) -> None:
     if "return" not in arg_info:
         logger.warning("Warning: @return annotation found in a subroutine comment: %s", content)
@@ -219,7 +274,7 @@ def update_with_return_description(content: str,
     description = content_without_annotation.strip()
     arg_info["return"]["description"] = description
 
-def collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[str, int]:
+def _collect_continuation_lines(comments: List[Comment], start_index: int) -> tuple[str, int]:
     full_content = [clean_comment_content(comments[start_index])]
     for i in range(start_index + 1, len(comments)):
         next_content = clean_comment_content(comments[i])
@@ -233,7 +288,6 @@ def collect_continuation_lines(comments: List[Comment], start_index: int) -> tup
 
 #TODO is this already in comment_utils - if not, move it
 def clean_comment_content(comment: Comment) -> str:
-    """Extract clean comment content, handling fparser2 format"""
     content = comment.item.comment.strip()
     if content.startswith('!'):
         content = content[1:].strip()
@@ -242,138 +296,6 @@ def clean_comment_content(comment: Comment) -> str:
 def extract_content_without_annotation(content: str) -> str:
     return " ".join(content.split()[1:])
 
-# def parse_subroutine(subroutine: Subroutine, comment_stack: List[Comment]) -> SubroutineDescription:
-#     return parse_procedure(subroutine, comment_stack, False)
-
-# def parse_procedure(
-#     procedure: Union[Function, Subroutine], 
-#     comment_stack: List[Comment],
-#     is_function: bool
-# ) -> Union[FunctionDescription, SubroutineDescription]:
-#     function_stmt = walk(procedure, Function_Stmt)
-
-#     attributes: List[str] = []
-#     # attributes: List[str] = [
-#     #     attr.strip().lower() for attr in procedure.prefix.split() if attr.strip()
-#     # ]
-    
-#     # Initialize the description dictionary
-#     procedure_description = {
-#         "attributes": attributes,
-#         "description": "",
-#         "arguments": procedure.args,
-#         "in": {},
-#         "out": {},
-#         "argument_interfaces": {},
-#         "binding_type": None
-#     }
-    
-#     # Add return field if this is a function
-#     if is_function:
-#         procedure_description["return"] = {}
-    
-#     update_arguments_with_parsed_data(procedure, procedure_description)
-    
-#     # Get list of procedure-type arguments 
-#     procedure_args = [
-#         arg_name for arg_name, arg_info in procedure_description["in"].items()
-#         if arg_info["type"] == "procedure"
-#     ]
-    
-#     # Get any bindings
-#     procedure_description["binding_type"] = extract_binding_type(procedure.bind)
-    
-#     # Process interfaces in procedure content
-#     interface_comment_stack = []
-#     interface_descriptions = {}  
-#     proc_arg_index = 0
-
-#     for item in procedure.content:
-#         match item:
-#             case Comment():
-#                 if item.content:
-#                     interface_comment_stack.append(item)
-#             case Interface():
-#                 interface_description = parse_interface(item, interface_comment_stack)
-                
-#                 # Check if this is an unnamed interface
-#                 if interface_description["procedures"]:
-#                     # Use the first procedure name as the key
-#                     proc_name = next(iter(interface_description["procedures"]))
-#                     interface_descriptions[proc_name] = interface_description
-                    
-#                     # If we have procedure arguments that haven't been processed yet
-#                     if proc_arg_index < len(procedure_args):
-#                         # For unnamed interfaces, we need to associate them with an argument
-#                         argument_name = procedure_args[proc_arg_index]
-                        
-#                         # Set interface_name for the argument if not already set
-#                         if not procedure_description["in"][argument_name].get("interface_name"):
-#                             procedure_description["in"][argument_name]["interface_name"] = proc_name
-                        
-#                         proc_arg_index += 1
-                
-#                 interface_comment_stack.clear()
-#             case SpecificBinding():
-#                 handle_specific_binding(item, procedure_description, procedure_args)
-#             case Use():
-#                 pass
-#             case Import():
-#                 pass
-#             case External():
-#                 pass
-#             case _:
-#                 pass
-
-#     # Connect arguments to interfaces
-#     for arg_name, arg_info in procedure_description["in"].items():
-#         if arg_info.get("type") == "procedure" and arg_info.get("interface_name"):
-#             interface_name = arg_info["interface_name"]
-#             if interface_name in interface_descriptions:
-#                 procedure_description["argument_interfaces"][arg_name] = interface_descriptions[interface_name]
-#             else:
-#                 # Special case: if the interface name is the same as the argument name
-#                 if interface_name == arg_name and arg_name in interface_descriptions:
-#                     procedure_description["argument_interfaces"][arg_name] = interface_descriptions[arg_name]   
-
-#     if is_doc4for_comment(comment_stack):
-#         update_arguments_with_comment_data(comment_stack, procedure_description)
-                
-#     return procedure_description
-
-# def extract_binding_type(bind: Optional[List[str]]) -> Optional[BindingType]:
-#     """
-#     Convert fparser's binding attribute to our BindingType structure.
-    
-#     Args:
-#         bind: The binding information from fparser, e.g., ['C', "NAME = 'c_square'"]
-        
-#     Returns:
-#         A BindingType dict or None if no binding is specified
-#     """        
-#     binding_type = {
-#         'type': BindingTypeEnum.DEFAULT,
-#         'name': None
-#     }
-    
-#     if not bind:
-#         return binding_type
-    
-#     # Check for 'C' binding in any position in the list (case-insensitive)
-#     has_c_binding = any(param.upper() == 'C' for param in bind)
-    
-#     if has_c_binding:
-#         binding_type['type'] = BindingTypeEnum.BIND_C
-        
-#         # Look for name parameter in any position
-#         for param in bind:
-#             if 'NAME' in param.upper():
-#                 # Extract the name string, handling different quote styles
-#                 match = re.search(r"NAME\s*=\s*['\"](.+?)['\"]", param, re.IGNORECASE)
-#                 if match:
-#                     binding_type['name'] = match.group(1)
-
-#     return binding_type
 
 # def parse_interface(
 #         interface: Interface,

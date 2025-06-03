@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-
+from doc4for.models.dimension_models import ArrayBound, BoundType
 #TODO assumed size and assumed rank arrays
 
 class TestSubroutineArguments(TestCase):
@@ -11,8 +11,8 @@ class TestSubroutineArguments(TestCase):
 
     def test_subroutine_with_scalar_args_1(self):
         self.fs.create_file(
-            '/fake/path/scalar_args.f90',
-            contents='''\
+            "/fake/path/scalar_args.f90",
+            contents="""\
     module scalar_args_subroutines
     contains
     !!*
@@ -24,28 +24,28 @@ class TestSubroutineArguments(TestCase):
         res = x + y
     end subroutine add_numbers
     end module scalar_args_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/scalar_args.f90')])
+        result = extract_module_data([Path("/fake/path/scalar_args.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'scalar_args_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('add_numbers', module['subroutines'])
-        subroutine = module['subroutines']['add_numbers']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
+        self.assertEqual(module["module_name"], "scalar_args_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("add_numbers", module["subroutines"])
+        subroutine = module["subroutines"]["add_numbers"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(outputs["res"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_with_scalar_args_2(self):
         self.fs.create_file(
-            '/fake/path/scalar_args.f90',
-            contents='''\
+            "/fake/path/scalar_args.f90",
+            contents="""\
     module scalar_args_subroutines
     contains
     !!*
@@ -58,28 +58,28 @@ class TestSubroutineArguments(TestCase):
         res = x + y
     end subroutine add_numbers
     end module scalar_args_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/scalar_args.f90')])
+        result = extract_module_data([Path("/fake/path/scalar_args.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'scalar_args_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('add_numbers', module['subroutines'])
-        subroutine = module['subroutines']['add_numbers']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
+        self.assertEqual(module["module_name"], "scalar_args_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("add_numbers", module["subroutines"])
+        subroutine = module["subroutines"]["add_numbers"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(outputs["res"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_with_array_args(self):
         self.fs.create_file(
-            '/fake/path/array_args.f90',
-            contents='''\
+            "/fake/path/array_args.f90",
+            contents="""\
     module array_args_subroutines
     contains
     !!*
@@ -91,30 +91,32 @@ class TestSubroutineArguments(TestCase):
         res = sum(arr)
     end subroutine sum_array
     end module array_args_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/array_args.f90')])
+        result = extract_module_data([Path("/fake/path/array_args.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'array_args_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('sum_array', module['subroutines'])
-        subroutine = module['subroutines']['sum_array']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
+        self.assertEqual(module["module_name"], "array_args_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("sum_array", module["subroutines"])
+        subroutine = module["subroutines"]["sum_array"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
         self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs['arr'], {
-            'type': 'real', 
-            'description': '', 
-            'dimension': ': (allocatable)'})
+        self.assertEqual(inputs["arr"], {
+            "type": "REAL", 
+            "description": "", 
+            "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+            "interface_name": None, 
+            "enum_type": None})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['res'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(outputs["res"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_with_mixed_args(self):
         self.fs.create_file(
-            '/fake/path/mixed_args.f90',
-            contents='''\
+            "/fake/path/mixed_args.f90",
+            contents="""\
     module mixed_args_subroutines
     contains
     !!*
@@ -127,34 +129,38 @@ class TestSubroutineArguments(TestCase):
         res = scalar * arr
     end subroutine multiply_scalar_array
     end module mixed_args_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/mixed_args.f90')])
+        result = extract_module_data([Path("/fake/path/mixed_args.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'mixed_args_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('multiply_scalar_array', module['subroutines'])
-        subroutine = module['subroutines']['multiply_scalar_array']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
+        self.assertEqual(module["module_name"], "mixed_args_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("multiply_scalar_array", module["subroutines"])
+        subroutine = module["subroutines"]["multiply_scalar_array"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs['scalar'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['arr'], {
-            'type': 'real', 
-            'description': '', 
-            'dimension': ': (allocatable)'})
+        self.assertEqual(inputs["scalar"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["arr"], {
+            "type": "REAL", 
+            "description": "", 
+            "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE, lower=None, upper=None)]},
+            "interface_name": None,
+            "enum_type": None})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['res'], {
-            'type': 'real', 
-            'description': '', 
-            'dimension': ': (allocatable)'})
+        self.assertEqual(outputs["res"], {
+            "type": "REAL", 
+            "description": "", 
+            "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE, lower=None, upper=None)]},
+            "interface_name": None,
+            "enum_type": None})
 
     def test_subroutine_with_inout_args(self):
         self.fs.create_file(
-            '/fake/path/inout_args.f90',
-            contents='''\
+            "/fake/path/inout_args.f90",
+            contents="""\
     module inout_args_subroutines
     contains
     !!*
@@ -165,22 +171,22 @@ class TestSubroutineArguments(TestCase):
         x = x + 1.0
     end subroutine increment
     end module inout_args_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/inout_args.f90')])
+        result = extract_module_data([Path("/fake/path/inout_args.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'inout_args_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('increment', module['subroutines'])
-        subroutine = module['subroutines']['increment']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
+        self.assertEqual(module["module_name"], "inout_args_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("increment", module["subroutines"])
+        subroutine = module["subroutines"]["increment"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
         self.assertEqual(len(inputs), 1)
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
         self.assertEqual(len(outputs), 1)
-        self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
+        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

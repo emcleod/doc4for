@@ -4,12 +4,14 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestSubroutineAnnotations(TestCase):
+
     def setUp(self):
         self.setUpPyfakefs()
+
     def test_subroutine_in_annotation_name_match(self):
         self.fs.create_file(
-            '/fake/path/subroutine_in_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_in_annotation.f90",
+            contents="""\
     module subroutine_in_annotation_module
     contains
     !!*
@@ -22,20 +24,21 @@ class TestSubroutineAnnotations(TestCase):
         print *, x + y
     end subroutine test_subroutine_in_annotation
     end module subroutine_in_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_in_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_in_annotation"]
+        self.assertEqual(subroutine["description"], "\nA subroutine with @in annotation\n\n")
+        inputs = subroutine["in"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_in_annotation_name_mismatch(self):
         self.fs.create_file(
-            '/fake/path/subroutine_in_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_in_annotation.f90",
+            contents="""\
     module subroutine_in_annotation_module
     contains
     !!*
@@ -47,21 +50,23 @@ class TestSubroutineAnnotations(TestCase):
         print *, x + y
     end subroutine test_subroutine_in_annotation
     end module subroutine_in_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
+        with self.assertLogs("doc4for.parse.procedure_parser", level="WARNING") as cm:
+            result = extract_module_data([Path("/fake/path/subroutine_in_annotation.f90")])
 
-        module = result[0]
-        subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(inputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertNotIn('z', inputs)
+            module = result[0]
+            subroutine = module["subroutines"]["test_subroutine_in_annotation"]
+            inputs = subroutine["in"]
+            self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+            self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+            self.assertNotIn("z", inputs)
+            self.assertIn("Warning: 'in' annotation 'z' not found in arguments [['x', 'y']]", cm.output[0])
 
     def test_subroutine_out_annotation_name_match(self):
         self.fs.create_file(
-            '/fake/path/subroutine_out_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_out_annotation.f90",
+            contents="""\
     module subroutine_out_annotation_module
     contains
     !!*
@@ -74,21 +79,21 @@ class TestSubroutineAnnotations(TestCase):
         y = x + 1.0
     end subroutine test_subroutine_out_annotation
     end module subroutine_out_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_out_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        outputs = subroutine['out']
-        self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_out_annotation"]
+        inputs = subroutine["in"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        outputs = subroutine["out"]
+        self.assertEqual(outputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_out_annotation_name_mismatch(self):
         self.fs.create_file(
-            '/fake/path/subroutine_out_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_out_annotation.f90",
+            contents="""\
     module subroutine_out_annotation_module
     contains
     !!*
@@ -101,22 +106,23 @@ class TestSubroutineAnnotations(TestCase):
         y = x + 1.0
     end subroutine test_subroutine_out_annotation
     end module subroutine_out_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_out_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        outputs = subroutine['out']
-        self.assertEqual(outputs['y'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertNotIn('z', outputs)
+        subroutine = module["subroutines"]["test_subroutine_out_annotation"]
+        self.assertEqual(subroutine["description"], "\nA subroutine with @out annotation\n\n")
+        inputs = subroutine["in"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        outputs = subroutine["out"]
+        self.assertEqual(outputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertNotIn("z", outputs)
 
     def test_subroutine_inout_annotation_name_match(self):
         self.fs.create_file(
-            '/fake/path/subroutine_inout_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_inout_annotation.f90",
+            contents="""\
     module subroutine_inout_annotation_module
     contains
     !!*
@@ -128,21 +134,21 @@ class TestSubroutineAnnotations(TestCase):
         x = x + 1.0
     end subroutine test_subroutine_inout_annotation
     end module subroutine_inout_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_inout_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_inout_annotation_name_mismatch(self):
         self.fs.create_file(
-            '/fake/path/subroutine_inout_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_inout_annotation.f90",
+            contents="""\
     module subroutine_inout_annotation_module
     contains
     !!*
@@ -154,23 +160,23 @@ class TestSubroutineAnnotations(TestCase):
         x = x + 1.0
     end subroutine test_subroutine_inout_annotation
     end module subroutine_inout_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_inout_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertEqual(outputs['x'], {'type': 'real', 'description': '', 'dimension': ''})
-        self.assertNotIn('z', inputs)
-        self.assertNotIn('z', outputs)
+        subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertNotIn("z", inputs)
+        self.assertNotIn("z", outputs)
 
     def test_subroutine_in_annotation_name_match_with_description(self):
         self.fs.create_file(
-            '/fake/path/subroutine_in_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_in_annotation.f90",
+            contents="""\
     module subroutine_in_annotation_module
     contains
     !!*
@@ -183,20 +189,20 @@ class TestSubroutineAnnotations(TestCase):
         print *, x + y
     end subroutine test_subroutine_in_annotation
     end module subroutine_in_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_in_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_in_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_in_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The first input', 'dimension': ''})
-        self.assertEqual(inputs['y'], {'type': 'real', 'description': 'The second input', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_in_annotation"]
+        inputs = subroutine["in"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The first input", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["y"], {"type": "REAL", "description": "The second input", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_out_annotation_name_match_with_description(self):
         self.fs.create_file(
-            '/fake/path/subroutine_out_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_out_annotation.f90",
+            contents="""\
     module subroutine_out_annotation_module
     contains
     !!*
@@ -210,21 +216,21 @@ class TestSubroutineAnnotations(TestCase):
         y = x + 1.0
     end subroutine test_subroutine_out_annotation
     end module subroutine_out_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_out_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_out_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_out_annotation']
-        inputs = subroutine['in']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The input', 'dimension': ''})
-        outputs = subroutine['out']
-        self.assertEqual(outputs['y'], {'type': 'real', 'description': 'The output', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_out_annotation"]
+        inputs = subroutine["in"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The input", "dimension": None, "interface_name": None, "enum_type": None})
+        outputs = subroutine["out"]
+        self.assertEqual(outputs["y"], {"type": "REAL", "description": "The output", "dimension": None, "interface_name": None, "enum_type": None})
 
     def test_subroutine_inout_annotation_name_match_with_description(self):
         self.fs.create_file(
-            '/fake/path/subroutine_inout_annotation.f90',
-            contents='''\
+            "/fake/path/subroutine_inout_annotation.f90",
+            contents="""\
     module subroutine_inout_annotation_module
     contains
     !!*
@@ -236,16 +242,16 @@ class TestSubroutineAnnotations(TestCase):
         x = x + 1.0
     end subroutine test_subroutine_inout_annotation
     end module subroutine_inout_annotation_module
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/subroutine_inout_annotation.f90')])
+        result = extract_module_data([Path("/fake/path/subroutine_inout_annotation.f90")])
 
         module = result[0]
-        subroutine = module['subroutines']['test_subroutine_inout_annotation']
-        inputs = subroutine['in']
-        outputs = subroutine['out']
-        self.assertEqual(inputs['x'], {'type': 'real', 'description': 'The variable to be updated', 'dimension': ''})
-        self.assertEqual(outputs['x'], {'type': 'real', 'description': 'The variable to be updated', 'dimension': ''})
+        subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
+        inputs = subroutine["in"]
+        outputs = subroutine["out"]
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The variable to be updated", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["x"], {"type": "REAL", "description": "The variable to be updated", "dimension": None, "interface_name": None, "enum_type": None})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

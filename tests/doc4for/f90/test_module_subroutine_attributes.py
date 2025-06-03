@@ -9,8 +9,8 @@ class TestSubroutines(TestCase):
 
     def test_find_pure_subroutines(self):
         self.fs.create_file(
-            '/fake/path/pure.f90',
-            contents='''\
+            "/fake/path/pure.f90",
+            contents="""\
 module pure_subroutines
 contains
 !!*
@@ -19,27 +19,27 @@ contains
 pure subroutine test()
 end subroutine test
 end module pure_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/pure.f90')])
+        result = extract_module_data([Path("/fake/path/pure.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'pure_subroutines')
-        self.assertEqual(module['file_name'], '/fake/path/pure.f90')
-        self.assertIn('module_description', module)
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('test', module['subroutines'])
-        subroutine = module['subroutines']['test']
-        self.assertIn('attributes', subroutine)
-        self.assertEqual(subroutine['description'], '\nA test pure subroutine\n\n')
-        attributes = subroutine['attributes']
-        self.assertEqual(attributes, ['pure'])
+        self.assertEqual(module["module_name"], "pure_subroutines")
+        self.assertEqual(module["file_name"], "/fake/path/pure.f90")
+        self.assertIn("module_description", module)
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("test", module["subroutines"])
+        subroutine = module["subroutines"]["test"]
+        self.assertIn("attributes", subroutine)
+        self.assertEqual(subroutine["description"], "\nA test pure subroutine\n\n")
+        attributes = subroutine["attributes"]
+        self.assertEqual(attributes, ["PURE"])
 
     def test_find_elemental_subroutines(self):
         self.fs.create_file(
-            '/fake/path/elemental.f90',
-            contents='''\
+            "/fake/path/elemental.f90",
+            contents="""\
     module elemental_subroutines
     contains
     !!*
@@ -51,25 +51,25 @@ end module pure_subroutines
         y = x * 2
     end subroutine elem_sub
     end module elemental_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/elemental.f90')])
+        result = extract_module_data([Path("/fake/path/elemental.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertEqual(module['module_name'], 'elemental_subroutines')
-        self.assertIn('module_description', module)
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('elem_sub', module['subroutines'])
-        subroutine = module['subroutines']['elem_sub']
-        self.assertIn('attributes', subroutine)
-        attributes = subroutine['attributes']
-        self.assertEqual(attributes, ['elemental'])
+        self.assertEqual(module["module_name"], "elemental_subroutines")
+        self.assertIn("module_description", module)
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("elem_sub", module["subroutines"])
+        subroutine = module["subroutines"]["elem_sub"]
+        self.assertIn("attributes", subroutine)
+        attributes = subroutine["attributes"]
+        self.assertEqual(attributes, ["ELEMENTAL"])
 
     def test_find_recursive_subroutines(self):
         self.fs.create_file(
-            '/fake/path/recursive.f90',
-            contents='''\
+            "/fake/path/recursive.f90",
+            contents="""\
     module recursive_subroutines
     contains
     !!*
@@ -86,25 +86,25 @@ end module pure_subroutines
         end if
     end subroutine fact
     end module recursive_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/recursive.f90')])
+        result = extract_module_data([Path("/fake/path/recursive.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertIn('module_description', module)
-        self.assertEqual(module['module_name'], 'recursive_subroutines')
-        self.assertEqual(len(module['subroutines']), 1)
-        self.assertIn('fact', module['subroutines'])
-        subroutine = module['subroutines']['fact']
-        self.assertIn('attributes', subroutine)
-        attributes = subroutine['attributes']
-        self.assertEqual(attributes, ['recursive'])
+        self.assertIn("module_description", module)
+        self.assertEqual(module["module_name"], "recursive_subroutines")
+        self.assertEqual(len(module["subroutines"]), 1)
+        self.assertIn("fact", module["subroutines"])
+        subroutine = module["subroutines"]["fact"]
+        self.assertIn("attributes", subroutine)
+        attributes = subroutine["attributes"]
+        self.assertEqual(attributes, ["RECURSIVE"])
 
     def test_find_combined_subroutines(self):
         self.fs.create_file(
-            '/fake/path/combined.f90',
-            contents='''\
+            "/fake/path/combined.f90",
+            contents="""\
     module combined_subroutines
     contains
     !!*
@@ -130,26 +130,26 @@ end module pure_subroutines
         end if
     end subroutine fact
     end module combined_subroutines
-                            ''',
+                            """,
         )
-        result = extract_module_data([Path('/fake/path/combined.f90')])
+        result = extract_module_data([Path("/fake/path/combined.f90")])
 
         self.assertEqual(len(result), 1)
         module = result[0]
-        self.assertIn('module_description', module)
-        self.assertEqual(module['module_name'], 'combined_subroutines')
-        self.assertEqual(len(module['subroutines']), 2)
-        self.assertIn('square', module['subroutines'])
-        square_subroutine = module['subroutines']['square']
-        self.assertIn('attributes', square_subroutine)
-        square_attributes = square_subroutine['attributes']
-        self.assertEqual(square_attributes, ['pure', 'elemental'])
+        self.assertIn("module_description", module)
+        self.assertEqual(module["module_name"], "combined_subroutines")
+        self.assertEqual(len(module["subroutines"]), 2)
+        self.assertIn("square", module["subroutines"])
+        square_subroutine = module["subroutines"]["square"]
+        self.assertIn("attributes", square_subroutine)
+        square_attributes = square_subroutine["attributes"]
+        self.assertEqual(square_attributes, ["PURE", "ELEMENTAL"])
 
-        self.assertIn('fact', module['subroutines'])
-        fact_subroutine = module['subroutines']['fact']
-        self.assertIn('attributes', fact_subroutine)
-        fact_attributes = fact_subroutine['attributes']
-        self.assertEqual(fact_attributes, ['recursive'])
+        self.assertIn("fact", module["subroutines"])
+        fact_subroutine = module["subroutines"]["fact"]
+        self.assertIn("attributes", fact_subroutine)
+        fact_attributes = fact_subroutine["attributes"]
+        self.assertEqual(fact_attributes, ["RECURSIVE"])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

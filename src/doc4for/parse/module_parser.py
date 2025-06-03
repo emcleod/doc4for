@@ -13,7 +13,8 @@ from fparser.two.Fortran2003 import (
     Access_Stmt,
     Name,
     Module_Subprogram_Part,
-    Function_Subprogram
+    Function_Subprogram,
+    Subroutine_Subprogram
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
@@ -21,7 +22,7 @@ from doc4for.parse.common_parser import FortranHandler
 from doc4for.parse.base_parser import (    
     VisibilityState,
     handle_function,
-#    handle_subroutine,
+    handle_subroutine,
     handle_type_declaration,
     handle_derived_type,
 #    handle_interface,
@@ -48,7 +49,7 @@ def _get_module_handler() -> ModuleHandler:
     if _module_handler_instance is None:
         handler = ModuleHandler()
         handler.register_handler(Function_Subprogram, handle_function)
-        # handler.register_handler(Subroutine, handle_subroutine)
+        handler.register_handler(Subroutine_Subprogram, handle_subroutine)
 #        handler.register_handler(FortranType, handle_type)
         handler.register_handler(
             Type_Declaration_Stmt, handle_type_declaration)

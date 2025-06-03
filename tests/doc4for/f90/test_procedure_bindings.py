@@ -9,98 +9,98 @@ class TestFunctionBindings(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    # def test_function_with_and_without_binding(self):
-    #     self.fs.create_file(
-    #         "/fake/path/c_binding.f90",
-    #         contents="""\
-    # module c_interface_mod
-    #     use iso_c_binding
-    #     implicit none
+    def test_function_with_and_without_binding(self):
+        self.fs.create_file(
+            "/fake/path/c_binding.f90",
+            contents="""\
+    module c_interface_mod
+        use iso_c_binding
+        implicit none
 
-    #     !!* Interface for C interoperable function *!
-    #     interface
-    #         !!* 
-    #         ! Calculate square of a number (C-interoperable)
-    #         ! @in x Value to square
-    #         ! @return Square of input value
-    #         !*!            
-    #         function square_it(x) bind(c, name="c_square") result(y)
-    #             use iso_c_binding
-    #             real(c_double), intent(in) :: x
-    #             real(c_double) :: y
-    #         end function square_it
-    #         !!* 
-    #         ! Do nothing
-    #         ! @in x Input value
-    #         ! @return The input value
-    #         !*!
-    #         function no_op(x) result(y)
-    #             real, intent(in) :: x
-    #             real :: y
-    #         end function no_op
-    #     end interface
+        !!* Interface for C interoperable function *!
+        interface
+            !!* 
+            ! Calculate square of a number (C-interoperable)
+            ! @in x Value to square
+            ! @return Square of input value
+            !*!            
+            function square_it(x) bind(c, name="c_square") result(y)
+                use iso_c_binding
+                real(c_double), intent(in) :: x
+                real(c_double) :: y
+            end function square_it
+            !!* 
+            ! Do nothing
+            ! @in x Input value
+            ! @return The input value
+            !*!
+            function no_op(x) result(y)
+                real, intent(in) :: x
+                real :: y
+            end function no_op
+        end interface
 
-    #     contains
+        contains
         
-    #     !!* 
-    #     ! Computes the cube of a value with C binding
-    #     ! @in x Input value
-    #     ! @return Cubed value
-    #     !*!
-    #     function cube_it(x) bind(c) result(y)
-    #         use iso_c_binding
-    #         real(c_double), intent(in) :: x
-    #         real(c_double) :: y
-    #         y = x * x * x
-    #     end function cube_it
+        !!* 
+        ! Computes the cube of a value with C binding
+        ! @in x Input value
+        ! @return Cubed value
+        !*!
+        function cube_it(x) bind(c) result(y)
+            use iso_c_binding
+            real(c_double), intent(in) :: x
+            real(c_double) :: y
+            y = x * x * x
+        end function cube_it
         
-    #     !!* 
-    #     ! Computes the square root of a value without any binding
-    #     ! @in x Input value
-    #     ! @return Square root
-    #     !*!
-    #     function square_root_it(x) result(y)
-    #         real, intent(in) :: x
-    #         real :: y
-    #         y = sqrt(x)
-    #     end function square_root_it
+        !!* 
+        ! Computes the square root of a value without any binding
+        ! @in x Input value
+        ! @return Square root
+        !*!
+        function square_root_it(x) result(y)
+            real, intent(in) :: x
+            real :: y
+            y = sqrt(x)
+        end function square_root_it
 
-    # end module c_interface_mod
-    # """
-    #         )
-    #     result = extract_module_data([Path("/fake/path/c_binding.f90")])
-    #     module = result[0]
+    end module c_interface_mod
+    """
+            )
+        result = extract_module_data([Path("/fake/path/c_binding.f90")])
+        module = result[0]
         
-    #     # Check that binding type is associated with the procedure, not the interface
+        # Check that binding type is associated with the procedure, not the interface
 
-    #     # interface = module["interfaces"][0]
-    #     # self.assertNotIn("binding_type", interface)  # Interface shouldn"t have binding type
+        # interface = module["interfaces"][0]
+        # self.assertNotIn("binding_type", interface)  # Interface shouldn"t have binding type
         
-    #     # Check binding type of a procedure within the interface
-    #     # function = interface["procedures"]["square_it"]
-    #     # self.assertIn("binding_type", function)
-    #     # self.assertEqual(function["binding_type"]["type"], BindingTypeEnum.BIND_C)
-    #     # self.assertEqual(function["binding_type"]["name"], "c_square")
+        # Check binding type of a procedure within the interface
+        # function = interface["procedures"]["square_it"]
+        # self.assertIn("binding_type", function)
+        # self.assertEqual(function["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        # self.assertEqual(function["binding_type"]["name"], "c_square")
         
-    #     # # Check binding type of a procedure within the interface
-    #     # function = interface["procedures"]["no_op"]
-    #     # self.assertIn("binding_type", function)
-    #     # self.assertIsNone(function["binding_type"])
+        # # Check binding type of a procedure within the interface
+        # function = interface["procedures"]["no_op"]
+        # self.assertIn("binding_type", function)
+        # self.assertIsNone(function["binding_type"])
 
-    #     # Check binding type of the procedure within the module
-    #     function = module["functions"]["cube_it"]
-    #     self.assertEqual(function["description"], "\nComputes the cube of a value with C binding\n\n")
-    #     self.assertIn("binding_type", function)
-    #     self.assertEqual(function["binding_type"]["type"], BindingTypeEnum.BIND_C)
-    #     self.assertIsNone(function["binding_type"]["name"])
-    #     self.assertEqual(function["in"]["x"]["description"], "Input value")
-    #     self.assertEqual(function["in"]["x"]["type"], "REAL")
-    #     self.assertEqual(function["return"]["description"], "Cubed value")
+        # Check binding type of the procedure within the module
+        function = module["functions"]["cube_it"]
+        self.assertEqual(function["description"], "\nComputes the cube of a value with C binding\n\n")
+        self.assertIn("binding_type", function)
+        self.assertEqual(function["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertIsNone(function["binding_type"]["name"])
+        self.assertEqual(function["in"]["x"]["description"], "Input value")
+        self.assertEqual(function["in"]["x"]["type"], "REAL")
+        self.assertEqual(function["return"]["description"], "Cubed value")
 
-    #     # Check binding type of the procedure within the module
-    #     function = module["functions"]["square_root_it"]
-    #     self.assertIn("binding_type", function)
-    #     self.assertIsNone(function["binding_type"])
+        # Check binding type of the procedure within the module
+        function = module["functions"]["square_root_it"]
+        self.assertIn("binding_type", function)
+        self.assertIsNone(function["binding_type"])
 
     def test_binding_capitalization_and_spacing_variations(self):
         self.fs.create_file(
@@ -258,8 +258,7 @@ class TestFunctionBindings(TestCase):
         # Check sub3 without binding
         sub3 = module["subroutines"]["sub3"]
         self.assertIn("binding_type", sub3)
-        self.assertEqual(sub3["binding_type"]["type"], BindingTypeEnum.DEFAULT)
-        self.assertIsNone(sub3["binding_type"]["name"])
+        self.assertIsNone(sub3["binding_type"])
 
 
     def test_complex_binding_names(self):
