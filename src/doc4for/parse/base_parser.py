@@ -36,7 +36,8 @@ from doc4for.models.module_models import ModuleDescription
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.parse.parameter_parser import parse_parameter
-from doc4for.parse.procedure_parser import parse_function, parse_subroutine
+from doc4for.parse.function_parser import parse_function
+from doc4for.parse.subroutine_parser import parse_subroutine
 from doc4for.parse.interface_parser import parse_interface
 from doc4for.parse.enum_parser import parse_enum
 from doc4for.parse.shared_data_parser import parse_block_data, parse_common_block

@@ -2,6 +2,8 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
+from doc4for.models.dimension_models import ArrayBound, BoundType, Expression
+from doc4for.models.common import ExpressionType
 
 class TestInterfaces(TestCase):
     maxDiff=None
@@ -9,131 +11,155 @@ class TestInterfaces(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_abstract_interface(self):
-        self.fs.create_file(
-            "/fake/path/abstract_interface.f90",
-            contents="""\
-module abstract_interface_mod
-    implicit none
-
-    !!*
-    ! An abstract interface containing a function <code>func</code>
-    !*!
-    abstract interface
-        !!* Transforms x into y somehow 
-        !*!
-        function func(x) result(y)
-            real, intent(in) :: x
-            real :: y
-        end function func
-    end interface
-
-end module abstract_interface_mod
-"""
-        )
-        result = extract_module_data([Path("/fake/path/abstract_interface.f90")])
-        self.assertEqual(len(result), 1)
-        module = result[0]
-        self.assertEqual(len(module["interfaces"]), 1)
-        interface = module["interfaces"][0]        
-        self.assertEqual(interface["description"], "\nAn abstract interface containing a function &lt;code&gt;func&lt;/code&gt;\n\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
-        self.assertNotIn("operator_symbol", interface)
-        self.assertEqual(len(interface["procedures"]), 1)
-        function = interface["procedures"]["func"]
-        self.assertEqual(function["arguments"], ["x"])
-        self.assertEqual(function["attributes"], [])
-        self.assertIsNone(function["binding_type"])
-        self.assertEqual(function["description"], "Transforms x into y somehow\n\n")
-        self.assertEqual(function["in"], {"x": {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None}})
-        self.assertEqual(function["out"], {})
-        self.assertEqual(function["return"], {"y": {"type": "REAL", "description": "", "dimension": ""}})
-
-
-#     def test_abstract_interface_with_nested_interface(self):
+#     def test_abstract_interface(self):
 #         self.fs.create_file(
-#             "/fake/path/nested_interface.f90",
+#             "/fake/path/abstract_interface.f90",
 #             contents="""\
-# module test_mod
+# module abstract_interface_mod
 #     implicit none
 
-#     !!* Interface for numerical integration functions *!
+#     !!*
+#     ! An abstract interface containing a function <code>func</code>
+#     !*!
 #     abstract interface
-#         !!*
-#         ! @in f Function to integrate
-#         ! @in a Lower bound
-#         ! @in b Upper bound
-#         ! @return Integral value
+#         !!* Transforms x into y somehow 
 #         !*!
-#         function integrand(f, a, b) result(integral)
-#             implicit none
-#             !!* Defines the signature for the argument f *!
-#             interface
-#                 !!* 
-#                 ! Required signature for the function to be integrated
-#                 ! @in x Point at which to evaluate the function
-#                 ! @return Value of the function at x
-#                 !*!            
-#                 function f(x)
-#                     real, intent(in) :: x
-#                     real :: f
-#                 end function f
-#             end interface
-#             real, intent(in) :: a, b
-#             real :: integral
-#         end function integrand
+#         function func(x) result(y)
+#             real, intent(in) :: x
+#             real :: y
+#         end function func
 #     end interface
 
-# end module test_mod
-# """
+#  end module abstract_interface_mod
+#  """
 #         )
-#         result = extract_module_data([Path("/fake/path/nested_interface.f90")])
+#         result = extract_module_data([Path("/fake/path/abstract_interface.f90")])
 #         self.assertEqual(len(result), 1)
 #         module = result[0]
 #         self.assertEqual(len(module["interfaces"]), 1)
-#         interface = module["interfaces"][0]
-
-#         # Check main interface properties
-#         self.assertEqual(interface["description"], "Interface for numerical integration functions\n")
-#         self.assertEqual(interface["attributes"], ["abstract"])
-#         self.assertNotIn("operator_symbol", interface)
-        
-#         # Check the integrand function
+#         interface = module["interfaces"][0]        
+#         self.assertEqual(interface["description"], "\nAn abstract interface containing a function &lt;code&gt;func&lt;/code&gt;\n\n")
+#         self.assertEqual(interface["attributes"], ["ABSTRACT"])
+#         self.assertIsNone(interface["operator_symbol"])
 #         self.assertEqual(len(interface["procedures"]), 1)
-#         function = interface["procedures"]["integrand"]
-#         self.assertEqual(function["arguments"], ["f", "a", "b"])
+#         function = interface["procedures"]["func"]
+#         self.assertEqual(function["arguments"], ["x"])
 #         self.assertEqual(function["attributes"], [])
-#         self.assertEqual(function["binding_type"], { "type": BindingTypeEnum.DEFAULT, "name": None})
-        
-#         # Check input parameters
-#         self.assertEqual(function["in"], {
-#             "a": {"type": "real", "description": "Lower bound", "dimension": ""},
-#             "b": {"type": "real", "description": "Upper bound", "dimension": ""},
-#             "f": {"type": "procedure", "description": "Function to integrate", "dimension": "", "interface_name": "f"}
-#         })
+#         self.assertIsNone(function["binding_type"])
+#         self.assertEqual(function["description"], "Transforms x into y somehow\n\n")
+#         self.assertEqual(function["in"], {"x": {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None}})
 #         self.assertEqual(function["out"], {})
-#         self.assertEqual(function["return"], {
-#             "integral": {"type": "real", "description": "Integral value", "dimension": ""}
-#         })
+#         self.assertEqual(function["return"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
-#         # Check the nested interface for f
-#         self.assertTrue("f" in function["argument_interfaces"])
-#         nested_interface = function["argument_interfaces"]["f"]
-#         self.assertEqual(nested_interface["description"], "Defines the signature for the argument f\n")
+    def test_abstract_interface_with_nested_interface(self):
+        self.fs.create_file(
+            "/fake/path/nested_interface.f90",
+            contents="""\
+module test_mod
+    implicit none
 
-#         # Check the function within the nested interface
-#         self.assertEqual(len(nested_interface["procedures"]), 1)
-#         nested_function = nested_interface["procedures"]["f"]
-#         self.assertEqual(nested_function["arguments"], ["x"])
-#         self.assertEqual(nested_function["in"], {
-#             "x": {"type": "real", "description": "Point at which to evaluate the function", "dimension": ""}
-#         })
-#         self.assertEqual(nested_function["out"], {})
-#         self.assertEqual(nested_function["return"], {
-#             "f": {"type": "real", "description": "Value of the function at x", "dimension": ""}
-#         })
-#         self.assertEqual(nested_interface["attributes"], [])  # not abstract
-# #         self.assertNotIn("operator_symbol", nested_interface)
+    !!* Interface for numerical integration functions *!
+    abstract interface
+        !!*
+        ! @in f Function to integrate
+        ! @in a Lower bound
+        ! @in b Upper bound
+        ! @return Integral value
+        !*!
+        function integrand(f, a, b) result(integral)
+            implicit none
+            !!* Defines the signature for the argument f *!
+            interface
+                !!* 
+                ! Required signature for the function to be integrated
+                ! @in x Point at which to evaluate the function
+                ! @return Value of the function at x
+                !*!            
+                function f(x)
+                    real, intent(in) :: x
+                    real :: f
+                end function f
+            end interface
+            real, intent(in) :: a, b
+            real :: integral
+        end function integrand
+    end interface
+
+end module test_mod
+"""
+        )
+        result = extract_module_data([Path("/fake/path/nested_interface.f90")])
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        self.assertEqual(len(module["interfaces"]), 1)
+        interface = module["interfaces"][0]
+
+        # Check main interface properties
+        self.assertEqual(interface["description"], "Interface for numerical integration functions\n")
+        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertIsNone(interface["operator_symbol"])
+        
+        # Check the integrand function
+        self.assertEqual(len(interface["procedures"]), 1)
+        function = interface["procedures"]["integrand"]
+        self.assertEqual(function["arguments"], ["f", "a", "b"])
+        self.assertEqual(function["attributes"], [])
+        self.assertIsNone(function["binding_type"])
+        
+        # Check input parameters
+        self.assertEqual(function["in"], {
+            "a": {"type": "REAL",
+                   "description": "Lower bound", 
+                   "dimension": None,
+                   "interface_name": None,
+                   "enum_type": None},
+            "b": {"type": "REAL", 
+                  "description": "Upper bound", 
+                  "dimension": None,
+                  "interface_name": None,
+                  "enum_type": None},
+            "f": {"type": "PROCEDURE", 
+                  "description": "Function to integrate", 
+                  "dimension": None, 
+                  "interface_name": "f",
+                  "enum_type": None}
+        })
+        self.assertEqual(function["out"], {})
+        self.assertEqual(function["return"], 
+            {"type": "REAL", 
+             "description": "Integral value", 
+             "dimension": None,
+             "interface_name": None,
+             "enum_type": None
+        })
+
+        # Check the nested interface for f
+        self.assertTrue("f" in function["argument_interfaces"])
+        nested_interface = function["argument_interfaces"]["f"]
+        self.assertEqual(nested_interface["description"], "Defines the signature for the argument f\n")
+
+        # Check the function within the nested interface
+        self.assertEqual(len(nested_interface["procedures"]), 1)
+        nested_function = nested_interface["procedures"]["f"]
+        self.assertEqual(nested_function["arguments"], ["x"])
+        self.assertEqual(nested_function["in"], {
+            "x": {"type": "REAL", 
+                  "description": "Point at which to evaluate the function", 
+                  "dimension": None,
+                  "interface_name": None,
+                  "enum_type": None}
+        })
+        self.assertEqual(nested_function["out"], {})
+        self.assertEqual(nested_function["return"], {
+            "type": "REAL", 
+            "description": "Value of the function at x", 
+            "dimension": None,
+            "interface_name": None,
+            "enum_type": None
+            }
+        )
+        self.assertEqual(nested_interface["attributes"], [])  # not abstract
+        self.assertNotIn("operator_symbol", nested_interface)
 
 
 #     def test_modern_procedure_interface(self):
@@ -588,7 +614,7 @@ end module abstract_interface_mod
 #         self.assertEqual(interface["description"], "\nInterface for vector operations\nContains functions for various vector manipulations\n\n")
 #         self.assertEqual(interface["attributes"], [])
 #         self.assertEqual(interface["name"], "vector_ops")
-#         self.assertNotIn("operator_symbol", interface)
+#         self.assertIsNone(interface["operator_symbol"])
         
 #         # Check that we have three procedures
 #         self.assertEqual(len(interface["procedures"]), 3)
@@ -598,11 +624,21 @@ end module abstract_interface_mod
 #         self.assertEqual(normalize["arguments"], ["v"])
 #         self.assertEqual(normalize["description"], "\nNormalizes a vector\n\n")
 #         self.assertEqual(normalize["in"], {
-#             "v": {"type": "real", "description": "Input vector", "dimension": ": (allocatable)"}
+#             "v": {"type": "REAL", 
+#                   "description": "Input vector", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(normalize["out"], {})
 #         self.assertEqual(normalize["return"], {
-#             "normalized": {"type": "real", "description": "Normalized vector", "dimension": "1:size(v)"}
+#             "type": "REAL", 
+#             "description": "Normalized vector", 
+#             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE, 
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value="SIZE(v)"))]},
+#             "interface_name": None,
+#             "enum_type": None
 #         })
 
 #         # Check magnitude function
@@ -610,11 +646,19 @@ end module abstract_interface_mod
 #         self.assertEqual(magnitude["arguments"], ["v"])
 #         self.assertEqual(magnitude["description"], "\nCalculates the magnitude of a vector\n\n")
 #         self.assertEqual(magnitude["in"], {
-#             "v": {"type": "real", "description": "Input vector", "dimension": ": (allocatable)"}
+#             "v": {"type": "REAL", 
+#                   "description": "Input vector", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(magnitude["out"], {})
 #         self.assertEqual(magnitude["return"], {
-#             "mag": {"type": "real", "description": "Scalar magnitude", "dimension": ""}
+#             "type": "REAL", 
+#             "description": "Scalar magnitude", 
+#             "dimension": None,
+#             "interface_name": None,
+#             "enum_type": None
 #         })
 
 #         # Check scale subroutine
@@ -622,11 +666,24 @@ end module abstract_interface_mod
 #         self.assertEqual(scale["arguments"], ["v", "factor"])
 #         self.assertEqual(scale["description"], "\nScales a vector by a factor\n\n")
 #         self.assertEqual(scale["in"], {
-#             "factor": {"type": "real", "description": "Scale factor to apply", "dimension": ""},
-#             "v": {"type": "real", "description": "Vector to scale", "dimension": ": (allocatable)"}
+#             "factor": {"type": "REAL",
+#                        "description": "Scale factor to apply", 
+#                        "dimension": None,
+#                        "interface_name": None,
+#                        "enum_type": None},
+#             "v": {"type": "REAL", 
+#                   "description": "Vector to scale", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(scale["out"], {
-#             "v": {"type": "real", "description": "Vector to scale", "dimension": ": (allocatable)"}
+#             "v": {
+#             "type": "REAL", 
+#             "description": "Vector to scale", 
+#             "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#             "interface_name": None,
+#             "enum_type": None}
 #         })
 #         self.assertNotIn("return", scale)  # It"s a subroutine, so no return value
 
@@ -705,7 +762,7 @@ end module abstract_interface_mod
 #         self.assertEqual(interface["description"], "\nInterface for matrix operations\nProvides operations for matrix manipulation\n\n")
 #         self.assertEqual(interface["attributes"], [])
 #         self.assertEqual(interface["name"], "matrix_ops")
-#         self.assertNotIn("operator_symbol", interface)
+#         self.assertIsNone(interface["operator_symbol"])
         
 #         self.assertEqual(len(interface["module_procedures"]), 3)
 #         self.assertEqual(len(interface["procedures"]), 1)
@@ -723,12 +780,30 @@ end module abstract_interface_mod
 #         self.assertEqual(add["arguments"], ["a", "b"])
 #         self.assertEqual(add["description"], "\nAdds two matrices\n\n")
 #         self.assertEqual(add["in"], {
-#             "a": {"type": "real", "description": "First matrix", "dimension": ": (allocatable) &times; : (allocatable)"},
-#             "b": {"type": "real", "description": "Second matrix", "dimension": ": (allocatable) &times; : (allocatable)"}
+#             "a": {"type": "REAL", 
+#                   "description": 
+#                   "First matrix", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE), ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None},
+#             "b": {"type": "REAL", 
+#                   "description": "Second matrix", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE), ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(add["out"], {})
 #         self.assertEqual(add["return"], {
-#             "c": {"type": "real", "description": "Sum of matrices", "dimension": "1:size(a,1) &times; 1:size(a,2)"}
+#             "type": "REAL", 
+#             "description": "Sum of matrices", 
+#             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
+#                                                     Expression(ExpressionType.LITERAL, value="1"),
+#                                                     Expression(ExpressionType.LITERAL, value="SIZE(a, 1)")),
+#                                         ArrayBound(BoundType.VARIABLE,
+#                                                    Expression(ExpressionType.LITERAL, value="1"),
+#                                                    Expression(ExpressionType.LITERAL, value="SIZE(a, 2)"))]},
+#             "interface_name": None,
+#             "enum_type": None
 #         })
 
 #     def test_operator_interface_explicit_procedure(self):
@@ -798,12 +873,27 @@ end module abstract_interface_mod
 #         self.assertEqual(add_vectors["arguments"], ["a", "b"])
 #         self.assertEqual(add_vectors["description"], "\nAdds two vectors of equal size\n\n")
 #         self.assertEqual(add_vectors["in"], {
-#             "a": {"type": "real", "description": "First vector", "dimension": ": (allocatable)"},
-#             "b": {"type": "real", "description": "Second vector", "dimension": ": (allocatable)"}
+#             "a": {"type": "REAL", 
+#                   "description": "First vector", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None},
+#             "b": {"type": "REAL", 
+#                   "description": "Second vector", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(add_vectors["out"], {})
 #         self.assertEqual(add_vectors["return"], {
-#             "add_vectors": {"type": "real", "description": "Sum of vectors", "dimension": "1:size(a)"}
+#             "type": "REAL", 
+#             "description": "Sum of vectors", 
+#             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value='SIZE(a)'))]},
+#             "interface_name": None,
+#             "enum_type": None
+                            
 #         })
 
 #         # Check add_vector_scalar function
@@ -811,12 +901,26 @@ end module abstract_interface_mod
 #         self.assertEqual(add_vector_scalar["arguments"], ["a", "b"])
 #         self.assertEqual(add_vector_scalar["description"], "\nAdds a scalar to each element of a vector\n\n")
 #         self.assertEqual(add_vector_scalar["in"], {
-#             "a": {"type": "real", "description": "Input vector", "dimension": ": (allocatable)"},
-#             "b": {"type": "real", "description": "Scalar value", "dimension": ""}
+#             "a": {"type": "REAL", 
+#                   "description": "Input vector", 
+#                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
+#                   "interface_name": None,
+#                   "enum_type": None},
+#             "b": {"type": "REAL", 
+#                   "description": "Scalar value", 
+#                   "dimension": None,
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
 #         self.assertEqual(add_vector_scalar["out"], {})
 #         self.assertEqual(add_vector_scalar["return"], {
-#             "add_vector_scalar": {"type": "real", "description": "Scaled vector", "dimension": "1:size(a)"}
+#             "type": "REAL", 
+#             "description": "Scaled vector", 
+#             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
+#                                                     Expression(expr_type=ExpressionType.LITERAL, value="SIZE(a)"))]},
+#             "interface_name": None,
+#             "enum_type": None
 #         })
 
 #     def test_operator_interface_module_procedure(self):
@@ -883,7 +987,6 @@ end module abstract_interface_mod
 #             "\nAdds two vectors of equal size\n\n"
 #         )
         
-#         # Check add_vector_scalar module procedure
 #         add_scalar_proc = interface["module_procedures"]["add_vector_scalar"]
 #         self.assertEqual(add_scalar_proc["name"], "add_vector_scalar")
 #         self.assertEqual(
@@ -893,6 +996,7 @@ end module abstract_interface_mod
         
 #         # Check that procedures dictionary is empty (as these are module procedures)
 #         self.assertEqual(len(interface["procedures"]), 0)
+#         self.assertEqual(len(module["functions"]), 2)
 
 #     def test_assignment_interface(self):
 #         self.fs.create_file(
@@ -949,6 +1053,134 @@ end module abstract_interface_mod
         
 #         # No explicit procedures in this interface
 #         self.assertEqual(interface["procedures"], {})
+#         self.assertEqual(len(module["subroutines"]), 1)
+
+    # def test_user_defined_operator_interface(self):
+    #     self.fs.create_file(
+    #         "/fake/path/user_operator.f90",
+    #         contents="""\
+    # module test_mod
+    #     implicit none
+
+    #     type :: vector3d
+    #         real :: x, y, z
+    #     end type vector3d
+
+    #     !!*
+    #     ! User-defined cross product operator for 3D vectors
+    #     ! Allows syntax like: c = a .cross. b
+    #     !*!
+    #     interface operator(.cross.)
+    #         !!*
+    #         ! Computes the cross product of two 3D vectors
+    #         ! @in a First vector
+    #         ! @in b Second vector 
+    #         ! @return Cross product vector
+    #         !*!
+    #         function cross_product(a, b) result(c)
+    #             import :: vector3d
+    #             type(vector3d), intent(in) :: a, b
+    #             type(vector3d) :: c
+    #         end function cross_product
+    #     end interface
+
+    #     !!*
+    #     ! User-defined dot product operator for 3D vectors
+    #     ! Allows syntax like: scalar = a .dot. b
+    #     !*!
+    #     interface operator(.dot.)
+    #         !!*
+    #         ! Computes the dot product of two 3D vectors
+    #         !*!
+    #         module procedure dot_product_3d
+    #     end interface
+
+    # contains
+    #     function cross_product(a, b) result(c)
+    #         type(vector3d), intent(in) :: a, b
+    #         type(vector3d) :: c
+    #         c%x = a%y * b%z - a%z * b%y
+    #         c%y = a%z * b%x - a%x * b%z
+    #         c%z = a%x * b%y - a%y * b%x
+    #     end function cross_product
+
+    #     function dot_product_3d(a, b) result(scalar)
+    #         type(vector3d), intent(in) :: a, b
+    #         real :: scalar
+    #         scalar = a%x * b%x + a%y * b%y + a%z * b%z
+    #     end function dot_product_3d
+    # end module test_mod
+    # """
+    #     )
+    #     result = extract_module_data([Path("/fake/path/user_operator.f90")])
+    #     self.assertEqual(len(result), 1)
+    #     module = result[0]
+    #     self.assertEqual(len(module["interfaces"]), 2)
+        
+    #     # Check .cross. operator interface
+    #     cross_interface = None
+    #     dot_interface = None
+    #     for interface in module["interfaces"]:
+    #         if interface.get("operator_symbol") == ".CROSS.":
+    #             cross_interface = interface
+    #         elif interface.get("operator_symbol") == ".DOT.":
+    #             dot_interface = interface
+        
+    #     self.assertIsNotNone(cross_interface, "Should find .cross. operator interface")
+    #     self.assertIsNotNone(dot_interface, "Should find .dot. operator interface")
+        
+    #     # Check .cross. interface properties
+    #     self.assertEqual(
+    #         cross_interface["description"], 
+    #         "\nUser-defined cross product operator for 3D vectors\n"
+    #         "Allows syntax like: c = a .cross. b\n\n"
+    #     )
+    #     self.assertEqual(cross_interface["attributes"], [])
+    #     self.assertEqual(cross_interface["operator_symbol"], ".CROSS.")
+    #     self.assertEqual(cross_interface["name"], "")
+        
+    #     # Check explicit procedure
+    #     self.assertEqual(len(cross_interface["procedures"]), 1)
+    #     self.assertEqual(len(cross_interface["module_procedures"]), 0)
+        
+    #     cross_func = cross_interface["procedures"]["cross_product"]
+    #     self.assertEqual(cross_func["arguments"], ["a", "b"])
+    #     self.assertEqual(
+    #         cross_func["description"],
+    #         "\nComputes the cross product of two 3D vectors\n\n"
+    #     )
+    #     self.assertEqual(list(cross_func["in"].keys()), ["a", "b"])
+    #     self.assertEqual(cross_func["in"]["a"]["type"], "vector3d")
+    #     self.assertEqual(cross_func["in"]["b"]["type"], "vector3d")
+    #     self.assertEqual(cross_func["out"], {})
+    #     self.assertIsNotNone(cross_func["return"])
+    #     self.assertEqual(cross_func["return"]["type"], "vector3d")
+        
+    #     # Check .dot. interface properties
+    #     self.assertEqual(
+    #         dot_interface["description"],
+    #         "\nUser-defined dot product operator for 3D vectors\n"
+    #         "Allows syntax like: scalar = a .dot. b\n\n"
+    #     )
+    #     self.assertEqual(dot_interface["attributes"], [])
+    #     self.assertEqual(dot_interface["operator_symbol"], ".DOT.")
+    #     self.assertEqual(dot_interface["name"], "")
+        
+    #     # Check module procedure
+    #     self.assertEqual(len(dot_interface["procedures"]), 0)
+    #     self.assertEqual(len(dot_interface["module_procedures"]), 1)
+        
+    #     dot_mp = dot_interface["module_procedures"]["dot_product_3d"]
+    #     self.assertEqual(dot_mp["name"], "dot_product_3d")
+    #     self.assertEqual(
+    #         dot_mp["description"],
+    #         "\nComputes the dot product of two 3D vectors\n\n"
+    #     )
+        
+    #     # Check the actual function implementations exist
+    #     self.assertEqual(len(module["functions"]), 2)
+    #     self.assertIn("cross_product", module["functions"])
+    #     self.assertIn("dot_product_3d", module["functions"])
 
 #     def test_comprehensive_interfaces(self):
 #         self.fs.create_file(

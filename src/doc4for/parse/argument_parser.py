@@ -20,7 +20,6 @@ from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_i
 logger: logging.Logger = logging.getLogger(__name__)
 
 def parse_arguments(declaration: Type_Declaration_Stmt) -> Tuple[Dict[str, Argument], str]:
-    # Extract type information using your existing function
     type_info = _extract_type_info(declaration)
     
     intent = None
