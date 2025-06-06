@@ -27,7 +27,7 @@ from fparser.two.Fortran2003 import (
     Subroutine_Subprogram,
     Interface_Block,
     Comment,
-    Name
+    Enum_Def,
 )
 from fparser.two.utils import walk
 from doc4for.models.common import BindingType, BindingTypeEnum
@@ -65,8 +65,8 @@ def handle_derived_type(item: Derived_Type_Def, data: T, comment_stack: List[Com
     type_desc: TypeDescription = handle_type_definition(item, comment_stack)
     data["types"][type_desc["type_name"]] = type_desc
 
-def handle_type_declaration(item: Type_Declaration_Stmt, data: ModuleDescription,
-                            comment_stack: List[Comment], **kwargs) -> None:
+def handle_type_declaration(item: Type_Declaration_Stmt, data: T,
+                            comment_stack: List[Comment], **kwargs: Any) -> None:
     dimension_stack = kwargs.get("dimension_stack", None)  
 
     if has_attribute(item, "PARAMETER"):
@@ -92,6 +92,12 @@ def handle_interface(item: Interface_Block, data: T, comment_stack: List[Comment
     interface_name, interface_description = parse_interface(item, comment_stack)
     data["interfaces"].append(interface_description)
 
+def handle_enum(item: Enum_Def, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    enumerator_name, enumerator_description = parse_enum(item, comment_stack)
+    data["enums"][enumerator_name] = enumerator_description
+
+
+#------------------------------------------- old stuff to be replaced
 def handle_module(item: Module, file_data: FileDescription,
                    comment_stack: List[Comment]):
     file_data["modules"][item.name] = initialise_module_description(item, comment_stack, file_data["file_name"])
@@ -154,73 +160,67 @@ def handle_use(item: Use, data: T, comment_stack: List[Comment]) -> None:
         data["uses"][module_name] = uses
 
 
-
-
-# def handle_interface(item: Interface, data: ModuleDescription,
-#                      comment_stack: List[Comment]) -> None:
-#     data["interfaces"].append(parse_interface(item, comment_stack))    
-
 def handle_common_block(item: Common, data: ModuleDescription,
                         comment_stack: List[Comment]) -> None:
     data["common_blocks"].append(parse_common_block(item, comment_stack))
+
+# def handle_enum(item: Enum, data: ModuleDescription,
+#                 comment_stack: List[Comment]) -> None:
     
-def handle_enum(item: Enum, data: ModuleDescription,
-                comment_stack: List[Comment]) -> None:
+#     enum_description = parse_enum(item, comment_stack)
+#     attributes, binding_type = extract_enum_attributes(item.item.line)
+#     enum_description["attributes"] = attributes
+#     enum_description["binding_type"] = binding_type
     
-    enum_description = parse_enum(item, comment_stack)
-    attributes, binding_type = extract_enum_attributes(item.item.line)
-    enum_description["attributes"] = attributes
-    enum_description["binding_type"] = binding_type
+#     # Find the name to use as key
+#     if not item.name or item.name == "__ENUM__":
+#         # Look explicitly for first enumerator"s name
+#         for content in item.content:
+#             if isinstance(content, Enumerator) and content.items:
+#                 first_item = content.items[0]
+#                 name = first_item.split("=")[0].strip() if "=" in first_item else first_item.strip()
+#                 break
+#         else:
+#             # Fallback in case no enumerator is found
+#             name = "__ENUM__" + str(len(data["enums"]) + 1)
+#     else:
+#         name = item.name
     
-    # Find the name to use as key
-    if not item.name or item.name == "__ENUM__":
-        # Look explicitly for first enumerator"s name
-        for content in item.content:
-            if isinstance(content, Enumerator) and content.items:
-                first_item = content.items[0]
-                name = first_item.split("=")[0].strip() if "=" in first_item else first_item.strip()
-                break
-        else:
-            # Fallback in case no enumerator is found
-            name = "__ENUM__" + str(len(data["enums"]) + 1)
-    else:
-        name = item.name
+#     data["enums"][name] = enum_description
     
-    data["enums"][name] = enum_description
+# def handle_enum(item: Enum_Def, data: ModuleDescription,
+#                 comment_stack: List[Comment]) -> None:
+#     first_name, enum_description = parse_enum(item, comment_stack)
+#     attributes, binding_type = extract_enum_attributes(item.item.line)
+#     enum_description["attributes"] = attributes
+#     enum_description["binding_type"] = binding_type
     
-def handle_enum(item: Enum, data: ModuleDescription,
-                comment_stack: List[Comment]) -> None:
-    first_name, enum_description = parse_enum(item, comment_stack)
-    attributes, binding_type = extract_enum_attributes(item.item.line)
-    enum_description["attributes"] = attributes
-    enum_description["binding_type"] = binding_type
+#     name = item.name if item.name and item.name != "__ENUM__" else first_name
+#     data["enums"][name] = enum_description
     
-    name = item.name if item.name and item.name != "__ENUM__" else first_name
-    data["enums"][name] = enum_description
+# def extract_enum_attributes(line: str) -> Tuple[List[str], Optional[BindingType]]:
+#     # Remove any comments (everything after !)
+#     line = line.split("!")[0].strip()
     
-def extract_enum_attributes(line: str) -> Tuple[List[str], Optional[BindingType]]:
-    # Remove any comments (everything after !)
-    line = line.split("!")[0].strip()
+#     # Split on commas and remove "enum"
+#     parts = [part.strip() for part in line.split(",")]
+#     parts = [part for part in parts if part.lower() != "enum"]
     
-    # Split on commas and remove "enum"
-    parts = [part.strip() for part in line.split(",")]
-    parts = [part for part in parts if part.lower() != "enum"]
+#     attributes = []
+#     binding_type = None
     
-    attributes = []
-    binding_type = None
+#     for part in parts:
+#         if part.lower().startswith("bind"):
+#             # Extract binding information
+#             match = re.match(r'bind\s*\(\s*c\s*(?:,\s*name\s*=\s*[\""]([^\""]*)[\""])?\s*\)', part, re.IGNORECASE)
+#             if match:
+#                 binding_name = match.group(1)  # Will be None if no name specified
+#                 binding_type = {
+#                     "type": BindingTypeEnum.BIND_C,
+#                     "name": binding_name
+#                 }
+#         else:
+#             # It"s a regular attribute
+#             attributes.append(part)
     
-    for part in parts:
-        if part.lower().startswith("bind"):
-            # Extract binding information
-            match = re.match(r'bind\s*\(\s*c\s*(?:,\s*name\s*=\s*[\""]([^\""]*)[\""])?\s*\)', part, re.IGNORECASE)
-            if match:
-                binding_name = match.group(1)  # Will be None if no name specified
-                binding_type = {
-                    "type": BindingTypeEnum.BIND_C,
-                    "name": binding_name
-                }
-        else:
-            # It"s a regular attribute
-            attributes.append(part)
-    
-    return attributes, binding_type
+#     return attributes, binding_type

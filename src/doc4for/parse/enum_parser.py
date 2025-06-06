@@ -1,82 +1,70 @@
 from typing import List, Dict, Tuple
-from fparser.one.block_statements import (
-    Comment,
-    Enum,
-    Enumerator
-)
-from doc4for.models.common import EnumDescription, EnumeratorDescription
+from fparser.two.Fortran2003 import (
+  Enum_Def, 
+  Enum_Def_Stmt,
+  Enumerator,
+  Enumerator_List, # type: ignore[attr-defined]
+  Enumerator_Def_Stmt, 
+  Comment,
+  Name)
+from fparser.two.utils import walk
+from doc4for.models.common import EnumDescription, EnumeratorDescription, BindingTypeEnum
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
-
-def parse_enum(enum: Enum, comment_stack: List[Comment]) -> Tuple[str, EnumDescription]:
+def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[str, EnumDescription]:
     description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
     enumerators: Dict[str, EnumeratorDescription] = {}
-    first_enumerator_name = None
-    
+    first_enum_name: str = None # for the entry in the module description
+    binding_type = None
+    enum_name = "__ENUM__"
+
+    implicit_value = 0
     enum_comment_stack = []
-    next_implicit_value = 0
-    
-    for content in enum.content:
-        if isinstance(content, Comment) and content.content:
-            enum_comment_stack.append(content)
-        
-        if isinstance(content, Enumerator):
-            enum_description = format_comments(enum_comment_stack) if is_doc4for_comment(enum_comment_stack) else ""
+    for node in enum.children:
+        if isinstance(node, Comment):
+            enum_comment_stack.append(node)
+        elif isinstance(node, Enum_Def_Stmt):
+            if "BIND(C)" in node.children[0]:
+                #TODO can have a kind in F2018, but it's not supported in fparser yet
+                binding_type = {"type": BindingTypeEnum.BIND_C, "name": None}
+        elif isinstance(node, Enumerator_Def_Stmt):
+            enum_desc = format_comments(enum_comment_stack) if is_doc4for_comment(enum_comment_stack) else ""
             enum_comment_stack.clear()
-            
-            # Get the original line text to preserve case
-            original_line = content.item.line
-            
-            for item in content.items:
-                if '=' in item:
-                    parts = item.split('=', 1)
-                    lowercase_name = parts[0].strip()
-                    lowercase_value = parts[1].strip()
-                    
-                    # Find the original name and value in the line text
-                    if '::' in original_line:
-                        decl_text = original_line.split('::', 1)[1].strip()
-                        for word in decl_text.split(','):
-                            if '=' in word:
-                                orig_parts = word.split('=', 1)
-                                orig_name = orig_parts[0].strip()
-                                if orig_name.lower() == lowercase_name:
-                                    name = orig_name
-                                    value = orig_parts[1].strip()  # Use original case for value
-                                    break
-                        else:
-                            name = lowercase_name
-                            value = lowercase_value
+            enum_list = walk(node, Enumerator_List)[0].children
+            for decl in enum_list:
+                name: str = ""
+                value: str = ""
+                if isinstance(decl, Enumerator):
+                    # has a value
+                    name = decl.children[0].string
+                    value = str(decl.children[2])  # More robust for expressions
+                    # str() will leave a space after the negative sign 
+                    if value.startswith('- '):
+                        value = '-' + value[2:].strip()
                     else:
-                        name = lowercase_name
-                        value = lowercase_value
-                else:
-                    name = item.strip()
-                    value = str(next_implicit_value)
-                    # Extract the original case for the name when no value is specified
-                    if '::' in original_line:
-                        decl_text = original_line.split('::', 1)[1].strip()
-                        for word in decl_text.split(','):
-                            if '=' not in word and word.strip().lower() == name.lower():
-                                name = word.strip()
-                                break
-                    next_implicit_value += 1
-                
-                if first_enumerator_name is None:
-                    first_enumerator_name = name
-                
-                item_description: EnumeratorDescription = {
+                        value = value.strip()                    
+                    # Try to track implicit value for simple numeric cases
+                    if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+                        implicit_value = int(value) + 1
+                    else:
+                        # For expressions, just increment by 1 from current
+                        implicit_value += 1     
+                elif isinstance(decl, Name):                
+                    name = decl.string
+                    value = str(implicit_value)
+                    implicit_value += 1  # Only increment when actually using implicit value                
+                if not first_enum_name:
+                    first_enum_name = name
+                enumerators[name] = {
                     "name": name,
                     "value": value,
-                    "description": enum_description
+                    "description": enum_desc
                 }
-                enumerators[name] = item_description
-    
     enum_description = {
-        "name": "__ENUM__" if enum.name is None else enum.name,
+        "name": enum_name,
         "description": description,
         "attributes": [],
         "enumerators": enumerators,
-        "binding_type": None
+        "binding_type": binding_type
     }
-    return first_enumerator_name, enum_description
+    return first_enum_name, enum_description

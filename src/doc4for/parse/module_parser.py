@@ -15,7 +15,8 @@ from fparser.two.Fortran2003 import (
     Module_Subprogram_Part,
     Function_Subprogram,
     Subroutine_Subprogram,
-    Interface_Block
+    Interface_Block,
+    Enum_Def
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
@@ -27,6 +28,7 @@ from doc4for.parse.base_parser import (
     handle_type_declaration,
     handle_derived_type,
     handle_interface,
+    handle_enum
     # handle_enum,
     # handle_use,
     # handle_common_block,
@@ -57,7 +59,7 @@ def _get_module_handler() -> ModuleHandler:
         handler.register_handler(
             Derived_Type_Def, handle_derived_type)
         handler.register_handler(Interface_Block, handle_interface)
-        # handler.register_handler(Enum, handle_enum)
+        handler.register_handler(Enum_Def, handle_enum)
         # handler.register_handler(Use, handle_use)
         # handler.register_handler(Common, handle_common_block)
         _module_handler_instance = handler
