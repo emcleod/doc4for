@@ -3,6 +3,7 @@ from doc4for.models.common import BindingType
 from doc4for.models.dimension_models import Dimension
 from enum import Enum, auto
 
+#TODO add source file information to all of these
 #TODO add coarray details
 Argument = TypedDict(
     "Argument",
@@ -43,7 +44,7 @@ FunctionDescription = TypedDict(
         "arguments": List[str],
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
-        "return": Argument, 
+        "return": Argument, #TODO maybe add return variable name to argument
         "argument_interfaces": Dict[str, InterfaceDescription],
         "binding_type": BindingType
     },

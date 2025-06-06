@@ -83,8 +83,29 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
                 modules.append(module_data)
                 comment_stack.clear()
                     
-            
+    _post_process_modules(modules)
     return modules
+
+# perform any post-processing that's required e.g. linking dummy procedure arguments to interface descriptions
+def _post_process_modules(modules: List[ModuleDescription]) -> None:
+    all_interfaces = {}
+    for module in modules:
+        for interface in module["interfaces"]:
+            # TODO this only works for cases where everything is in the same module
+            # will have to include module information when imports are stored
+            for proc_name in interface["procedures"]:
+                all_interfaces[proc_name] = interface
+    for module in modules:
+        for _, function in module["functions"].items():
+            argument_interfaces = function["argument_interfaces"]
+            for argument_interface in argument_interfaces:
+                if argument_interface in all_interfaces:
+                    argument_interfaces[argument_interface] = all_interfaces[argument_interface]
+        for _, subroutine in module["subroutines"].items():
+            argument_interfaces = subroutine["argument_interfaces"]
+            for argument_interface in argument_interfaces:
+                if argument_interface in all_interfaces:
+                    argument_interfaces[argument_interface] = all_interfaces[argument_interface]
 
 def create_modules_directory(output_dir: str, max_retries: int = 5, base_delay: float = 0.1) -> None:
     """

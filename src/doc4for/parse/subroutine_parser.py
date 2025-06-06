@@ -5,7 +5,8 @@ from fparser.two.Fortran2003 import (
     Subroutine_Stmt,
     Comment,
     Type_Declaration_Stmt,
-    Language_Binding_Spec
+    Language_Binding_Spec,
+    Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -19,8 +20,9 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comment]) -> Tuple[str, SubroutineDescription]:
-    declarations = walk(subroutine, Type_Declaration_Stmt)
-    common = parse_procedure(subroutine, Subroutine_Stmt, declarations, comment_stack)
+    type_decls = walk(subroutine, Type_Declaration_Stmt)
+    procedure_decls = walk(subroutine, Procedure_Declaration_Stmt)
+    common = parse_procedure(subroutine, Subroutine_Stmt, type_decls, procedure_decls, comment_stack)
     if common is None:
         return None
     

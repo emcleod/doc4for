@@ -9,7 +9,9 @@ from fparser.two.Fortran2003 import (
     Prefix,
     Name,
     Dummy_Arg_List, #TODO why doesn't this import?
-    Interface_Block
+    Interface_Block,
+    Type_Declaration_Stmt,
+    Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -19,13 +21,15 @@ from doc4for.models.procedure_models import (
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
 from doc4for.utils.comment_utils import format_comments
-from doc4for.parse.argument_parser import parse_arguments
+from doc4for.parse.argument_parser import parse_arguments, parse_procedure_argument
 from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def parse_procedure(procedure, stmt_type, declarations, comment_stack: List[Comment]) -> Dict:
+#TODO look at differing types passed in from interface_parser and function_parser
+def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt], 
+                    procedure_decls: List[Procedure_Declaration_Stmt], comment_stack: List[Comment]) -> Dict:
     # accumulate comment stack before declaration
     for node in procedure.children:
         if isinstance(node, Comment):
@@ -34,13 +38,13 @@ def parse_procedure(procedure, stmt_type, declarations, comment_stack: List[Comm
             break
     
     # only one declaration
-    procedure_declaration = walk(procedure, stmt_type)[0]
+    procedure_stmt = walk(procedure, stmt_type)[0]
     # only one name
-    procedure_name = walk(procedure_declaration, Name)[0].string
+    procedure_name = walk(procedure_stmt, Name)[0].string
     
     # process prefixes
     attributes = []
-    prefixes = walk(procedure_declaration, Prefix)
+    prefixes = walk(procedure_stmt, Prefix)
     if len(prefixes) > 1:
         logger.error(f"Have more than one Prefix in {prefixes}")
         return None
@@ -50,19 +54,18 @@ def parse_procedure(procedure, stmt_type, declarations, comment_stack: List[Comm
                 attributes.append(node.string)
     
     # extract dummy argument names
-    dummy_args = walk(procedure_declaration, Dummy_Arg_List)
+    dummy_args = walk(procedure_stmt, Dummy_Arg_List)
     dummy_arg_names = []
     if dummy_args:
         for dummy_arg in walk(dummy_args, Name):
             dummy_arg_names.append(dummy_arg.string)
     
     # process declarations
-    arguments = []
     intent_in = {}
     intent_out = {}
     all_parsed_arguments = {}
     
-    for decl in declarations:
+    for decl in type_decls:
         parsed_arguments, intent = parse_arguments(decl)
         all_parsed_arguments.update(parsed_arguments)
         
@@ -75,17 +78,28 @@ def parse_procedure(procedure, stmt_type, declarations, comment_stack: List[Comm
         if intent == 'INOUT' or not intent:
             intent_in.update(dummy_arguments)
             intent_out.update(dummy_arguments)
-        arguments.extend(dummy_arguments.keys())
     
+    # this will only have the interface names as keys - the interfaces will be 
+    # filled in in a post-processing step when all modules have been processed
+    argument_interfaces = {}
+    for decl in procedure_decls:
+        parsed_arguments, intent = parse_procedure_argument(decl)
+        dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
+        intent_in.update(dummy_arguments)
+        for _, dummy_argument in dummy_arguments.items():
+            argument_interfaces[dummy_argument["interface_name"]] = {}
+        
+
     return {
         "procedure_name": procedure_name,
-        "procedure_declaration": procedure_declaration,
+        "procedure_declaration": procedure_stmt,
         "attributes": attributes,
-        "arguments": arguments,
+        "arguments": dummy_arg_names, # keep the order of the arguments
         "intent_in": intent_in,
         "intent_out": intent_out,
         "all_parsed_arguments": all_parsed_arguments,
-        "prefixes": prefixes
+        "prefixes": prefixes,
+        "argument_interfaces": argument_interfaces
     }
 
 

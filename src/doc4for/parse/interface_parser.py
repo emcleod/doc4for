@@ -23,7 +23,8 @@ from fparser.two.Fortran2003 import (
     Defined_Op,
     Specification_Part,
     Implicit_Part,
-    Dummy_Arg_List
+    Dummy_Arg_List,
+    Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -70,7 +71,8 @@ def parse_interface(
     module_procedures = {}
     procedures = {}
     body_comment_stack = []
-    argument_decls = []
+    argument_decls: List[Type_Declaration_Stmt] = []
+    procedure_decls: List[Procedure_Declaration_Stmt] = []
 
     body_comment_stack = []
     for node in interface.children:
@@ -106,6 +108,8 @@ def parse_interface(
                     argument_decls.append(child)
                 elif isinstance(child, Specification_Part):
                     spec_comment_stack = []
+                    interface_blocks_in_order = []  # Track interfaces by position
+                    
                     for spec_child in child.children:
                         if isinstance(spec_child, Comment):
                             spec_comment_stack.append(spec_child)
@@ -118,23 +122,55 @@ def parse_interface(
                         elif isinstance(spec_child, Interface_Block):
                             _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
                             spec_comment_stack.clear() 
-                            interface_function_names = nested_interface_desc["procedures"].keys()
-                            for interface_function_name in interface_function_names:
-                                # Check against dummy_arg_names instead of common["arguments"]
-                                if interface_function_name in dummy_arg_names:
-                                    argument_interfaces[interface_function_name] = nested_interface_desc
-                                    # Track this as a procedure argument
-                                    procedure_arguments[interface_function_name] = {
-                                        "type": "PROCEDURE",
-                                        "description": "",  # Will be filled by update_arguments_with_comment_data
-                                        "dimension": None,
-                                        "interface_name": interface_function_name,
-                                        "enum_type": None
-                                    }
+                            interface_blocks_in_order.append(nested_interface_desc)
+
+                    # spec_comment_stack = []
+                    # for spec_child in child.children:
+                    #     if isinstance(spec_child, Comment):
+                    #         spec_comment_stack.append(spec_child)
+                    #     elif isinstance(spec_child, Type_Declaration_Stmt):
+                    #         argument_decls.append(spec_child)
+                    #     elif isinstance(spec_child, Implicit_Part):
+                    #         for implicit_child in spec_child.children:
+                    #             if isinstance(implicit_child, Comment):
+                    #                 spec_comment_stack.append(implicit_child)
+                    #     elif isinstance(spec_child, Interface_Block):
+                    #         _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
+                    #         spec_comment_stack.clear() 
+                    #         interface_procedure_names = nested_interface_desc["procedures"].keys()
+                    #         for interface_procedure_name in interface_procedure_names:
+                    #             # Check against dummy_arg_names instead of common["arguments"]
+                    #             if interface_procedure_name in dummy_arg_names:
+                    #                 argument_interfaces[interface_procedure_name] = nested_interface_desc
+                    #                 # Track this as a procedure argument
+                    #                 procedure_arguments[interface_procedure_name] = {
+                    #                     "type": "PROCEDURE",
+                    #                     "description": "",  # Will be filled by update_arguments_with_comment_data
+                    #                     "dimension": None, #TODO
+                    #                     "interface_name": interface_procedure_name,
+                    #                     "enum_type": None
+                    #                 }
             
             # Parse the main function
-            common = parse_procedure(function_stmt, Function_Stmt, argument_decls, procedure_comment_stack)
-            
+            common = parse_procedure(function_stmt, Function_Stmt, argument_decls, procedure_decls, procedure_comment_stack)
+                        
+            # Find which arguments are NOT covered by type declarations (these are procedure arguments)
+            procedure_arg_names = [name for name in dummy_arg_names if name not in common["intent_in"]]
+
+            # Match interface blocks to procedure arguments positionally
+            for i, interface_desc in enumerate(interface_blocks_in_order):
+                if i < len(procedure_arg_names):
+                    arg_name = procedure_arg_names[i]
+                    interface_proc_name = list(interface_desc["procedures"].keys())[0]  # Get the procedure name from interface
+                    
+                    argument_interfaces[arg_name] = interface_desc
+                    procedure_arguments[arg_name] = {
+                        "type": "PROCEDURE",
+                        "description": "",
+                        "dimension": None,
+                        "interface_name": interface_proc_name,
+                        "enum_type": None
+                    }            
             # Add procedure arguments to common
             common["intent_in"].update(procedure_arguments)            
             # Rebuild arguments list in the correct order using dummy_arg_names
@@ -185,26 +221,82 @@ def parse_interface(
             procedures[common["procedure_name"]] = function_description
             update_arguments_with_comment_data(procedure_comment_stack, function_description)
         elif isinstance(node, Subroutine_Body):
-            procedure_comment_stack = walk(node, Comment)
-            subroutine_stmt = walk(node, Subroutine_Stmt)[0] 
-            argument_decls = walk(node, Type_Declaration_Stmt)
-            common = parse_procedure(subroutine_stmt, Subroutine_Stmt, argument_decls, procedure_comment_stack)
+            subroutine_stmt = walk(node, Subroutine_Stmt)[0]
+            
+            # Extract dummy arguments from subroutine statement early
+            dummy_args = walk(subroutine_stmt, Dummy_Arg_List)
+            dummy_arg_names = []
+            if dummy_args:
+                for dummy_arg in walk(dummy_args, Name):
+                    dummy_arg_names.append(dummy_arg.string)
+            
+            # Process subroutine body children sequentially
+            procedure_comment_stack = []
+            argument_interfaces = {}
+            argument_decls = []  # Collect only direct child declarations
+            procedure_arguments = {}  # Track procedure arguments
+            
+            for child in node.children:
+                if isinstance(child, Comment):
+                    procedure_comment_stack.append(child)
+                elif isinstance(child, Type_Declaration_Stmt):
+                    argument_decls.append(child)
+                elif isinstance(child, Specification_Part):
+                    spec_comment_stack = []
+                    for spec_child in child.children:
+                        if isinstance(spec_child, Comment):
+                            spec_comment_stack.append(spec_child)
+                        elif isinstance(spec_child, Type_Declaration_Stmt):
+                            argument_decls.append(spec_child)
+                        elif isinstance(spec_child, Implicit_Part):
+                            for implicit_child in spec_child.children:
+                                if isinstance(implicit_child, Comment):
+                                    spec_comment_stack.append(implicit_child)
+                        elif isinstance(spec_child, Interface_Block):
+                            _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
+                            spec_comment_stack.clear() 
+                            interface_procedure_names = nested_interface_desc["procedures"].keys()
+                            for interface_procedure_name in interface_procedure_names:
+                                # Check against dummy_arg_names instead of common["arguments"]
+                                if interface_procedure_name in dummy_arg_names:
+                                    argument_interfaces[interface_procedure_name] = nested_interface_desc
+                                    # Track this as a procedure argument
+                                    procedure_arguments[interface_procedure_name] = {
+                                        "type": "PROCEDURE",
+                                        "description": "",  # Will be filled by update_arguments_with_comment_data
+                                        "dimension": None, #TODO
+                                        "interface_name": interface_procedure_name,
+                                        "enum_type": None
+                                    }
+            
+            # Parse the main function
+            common = parse_procedure(subroutine_stmt, Subroutine_Stmt, argument_decls, procedure_decls, procedure_comment_stack)
+            
+            # Add procedure arguments to common
+            common["intent_in"].update(procedure_arguments)            
+            # Rebuild arguments list in the correct order using dummy_arg_names
+            ordered_arguments = []
+            for arg_name in dummy_arg_names:
+                if arg_name in common["intent_in"] or arg_name in common["intent_out"] or arg_name in procedure_arguments:
+                    ordered_arguments.append(arg_name)
+
+            common["arguments"] = ordered_arguments                        
+
             suffixes = walk(common["procedure_declaration"], Suffix)
             if suffixes:
                 binding_type = _extract_binding_type(walk(suffixes, Language_Binding_Spec))
-            
+
             subroutine_description = {
                 "attributes": common["attributes"],
                 "description": "",
                 "arguments": common["arguments"],
                 "in": common["intent_in"],
                 "out": common["intent_out"],
-                "argument_interfaces": None,
+                "argument_interfaces": argument_interfaces,
                 "binding_type": binding_type
             }
             procedures[common["procedure_name"]] = subroutine_description
             update_arguments_with_comment_data(procedure_comment_stack, subroutine_description)
-            procedure_comment_stack.clear()
 
     interface_description: InterfaceDescription = {
         "description": description,

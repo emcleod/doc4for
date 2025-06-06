@@ -17,6 +17,8 @@ class PolymorphismType(Enum):
     LIMITED = "limited"  # CLASS(type_name)
     UNLIMITED = "unlimited"  # CLASS(*)
 
+#TODO add source file information to all of these
+
 #TODO add coarray information
 #TODO polymorphic information should contain information about the allowed types
 # e.g. class(shape) where shape is a type, need to indicate that the variable can

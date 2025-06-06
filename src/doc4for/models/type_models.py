@@ -3,6 +3,8 @@ from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.models.variable_models import DataComponent
 from doc4for.models.common import EnumDescription
 
+#TODO add source file information to all of these
+
 GenericInterface = TypedDict(
     "GenericInterface",
     {

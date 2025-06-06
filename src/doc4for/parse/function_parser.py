@@ -11,7 +11,8 @@ from fparser.two.Fortran2003 import (
     Intrinsic_Type_Spec,
     Type_Declaration_Stmt,
     Language_Binding_Spec,
-    Interface_Block
+    Interface_Block,
+    Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import FunctionDescription
@@ -22,9 +23,9 @@ from doc4for.parse.common_parser import _extract_binding_type
 logger: logging.Logger = logging.getLogger(__name__)
 
 def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) -> Tuple[str, FunctionDescription]:
-    declarations = walk(function, Type_Declaration_Stmt)
-
-    common = parse_procedure(function, Function_Stmt, declarations, comment_stack)
+    type_decls = walk(function, Type_Declaration_Stmt)
+    procedure_decls = walk(function, Procedure_Declaration_Stmt)
+    common = parse_procedure(function, Function_Stmt, type_decls, procedure_decls, comment_stack)
     if common is None:
         return None
     
