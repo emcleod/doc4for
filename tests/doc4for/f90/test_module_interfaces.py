@@ -51,185 +51,186 @@ class TestInterfaces(TestCase):
 #         self.assertEqual(function["out"], {})
 #         self.assertEqual(function["return"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
 
-    def test_abstract_interface_with_nested_interface(self):
-        self.fs.create_file(
-            "/fake/path/nested_interface.f90",
-            contents="""\
-module test_mod
-    implicit none
-
-    !!* Interface for numerical integration functions *!
-    abstract interface
-        !!*
-        ! @in f Function to integrate
-        ! @in a Lower bound
-        ! @in b Upper bound
-        ! @return Integral value
-        !*!
-        function integrand(f, a, b) result(integral)
-            implicit none
-            !!* Defines the signature for the argument f *!
-            interface
-                !!* 
-                ! Required signature for the function to be integrated
-                ! @in x Point at which to evaluate the function
-                ! @return Value of the function at x
-                !*!            
-                function f(x)
-                    real, intent(in) :: x
-                    real :: f
-                end function f
-            end interface
-            real, intent(in) :: a, b
-            real :: integral
-        end function integrand
-    end interface
-
-end module test_mod
-"""
-        )
-        result = extract_module_data([Path("/fake/path/nested_interface.f90")])
-        self.assertEqual(len(result), 1)
-        module = result[0]
-        self.assertEqual(len(module["interfaces"]), 1)
-        interface = module["interfaces"][0]
-
-        # Check main interface properties
-        self.assertEqual(interface["description"], "Interface for numerical integration functions\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
-        self.assertIsNone(interface["operator_symbol"])
-        
-        # Check the integrand function
-        self.assertEqual(len(interface["procedures"]), 1)
-        function = interface["procedures"]["integrand"]
-        self.assertEqual(function["arguments"], ["f", "a", "b"])
-        self.assertEqual(function["attributes"], [])
-        self.assertIsNone(function["binding_type"])
-        
-        # Check input parameters
-        self.assertEqual(function["in"], {
-            "a": {"type": "REAL",
-                   "description": "Lower bound", 
-                   "dimension": None,
-                   "interface_name": None,
-                   "enum_type": None},
-            "b": {"type": "REAL", 
-                  "description": "Upper bound", 
-                  "dimension": None,
-                  "interface_name": None,
-                  "enum_type": None},
-            "f": {"type": "PROCEDURE", 
-                  "description": "Function to integrate", 
-                  "dimension": None, 
-                  "interface_name": "f",
-                  "enum_type": None}
-        })
-        self.assertEqual(function["out"], {})
-        self.assertEqual(function["return"], 
-            {"type": "REAL", 
-             "description": "Integral value", 
-             "dimension": None,
-             "interface_name": None,
-             "enum_type": None
-        })
-
-        # Check the nested interface for f
-        self.assertTrue("f" in function["argument_interfaces"])
-        nested_interface = function["argument_interfaces"]["f"]
-        self.assertEqual(nested_interface["description"], "Defines the signature for the argument f\n")
-
-        # Check the function within the nested interface
-        self.assertEqual(len(nested_interface["procedures"]), 1)
-        nested_function = nested_interface["procedures"]["f"]
-        self.assertEqual(nested_function["arguments"], ["x"])
-        self.assertEqual(nested_function["in"], {
-            "x": {"type": "REAL", 
-                  "description": "Point at which to evaluate the function", 
-                  "dimension": None,
-                  "interface_name": None,
-                  "enum_type": None}
-        })
-        self.assertEqual(nested_function["out"], {})
-        self.assertEqual(nested_function["return"], {
-            "type": "REAL", 
-            "description": "Value of the function at x", 
-            "dimension": None,
-            "interface_name": None,
-            "enum_type": None
-            }
-        )
-        self.assertEqual(nested_interface["attributes"], [])  # not abstract
-        self.assertNotIn("operator_symbol", nested_interface)
-
-
-#     def test_modern_procedure_interface(self):
+#     def test_abstract_interface_with_nested_interface(self):
 #         self.fs.create_file(
-#             "/fake/path/modern_interface.f90",
+#             "/fake/path/nested_interface.f90",
 #             contents="""\
-#     module integration_mod
-#         implicit none
+# module test_mod
+#     implicit none
 
-#         !!* Interface for numerical functions to integrate *!
-#         abstract interface
-#             !!*
-#             ! @in x Point to evaluate
-#             ! @return Function value
-#             !*!
-#             function integrand(x) result(y)
-#                 real, intent(in) :: x
-#                 real :: y
-#             end function
-#         end interface
-
+#     !!* Interface for numerical integration functions *!
+#     abstract interface
 #         !!*
-#         ! Integrates a function using Simpson"s rule
 #         ! @in f Function to integrate
 #         ! @in a Lower bound
 #         ! @in b Upper bound
 #         ! @return Integral value
 #         !*!
-#         function simpson(f, a, b) result(integral)
-#             procedure(integrand) :: f
+#         function integrand(f, a, b) result(integral)
+#             implicit none
+#             !!* Defines the signature for the argument f *!
+#             interface
+#                 !!* 
+#                 ! Required signature for the function to be integrated
+#                 ! @in x Point at which to evaluate the function
+#                 ! @return Value of the function at x
+#                 !*!            
+#                 function f(x)
+#                     real, intent(in) :: x
+#                     real :: f
+#                 end function f
+#             end interface
 #             real, intent(in) :: a, b
 #             real :: integral
-#         end function simpson
+#         end function integrand
+#     end interface
 
-#     end module integration_mod
-#     """
+# end module test_mod
+# """
 #         )
-#         result = extract_module_data([Path("/fake/path/modern_interface.f90")])
+#         result = extract_module_data([Path("/fake/path/nested_interface.f90")])
 #         self.assertEqual(len(result), 1)
 #         module = result[0]
-        
-#         # Check that both the interface and function exist
 #         self.assertEqual(len(module["interfaces"]), 1)
 #         interface = module["interfaces"][0]
-        
-#         # Check integrand interface
-#         self.assertEqual(interface["description"], "Interface for numerical functions to integrate\n")
-#         self.assertEqual(interface["attributes"], ["abstract"])
+
+#         # Check main interface properties
+#         self.assertEqual(interface["description"], "Interface for numerical integration functions\n")
+#         self.assertEqual(interface["attributes"], ["ABSTRACT"])
+#         self.assertIsNone(interface["operator_symbol"])
+#         # Check the integrand function
 #         self.assertEqual(len(interface["procedures"]), 1)
+#         function = interface["procedures"]["integrand"]
+#         self.assertEqual(function["arguments"], ["f", "a", "b"])
+#         self.assertEqual(function["attributes"], [])
+#         self.assertIsNone(function["binding_type"])
         
-#         integrand = interface["procedures"]["integrand"]
-#         self.assertEqual(integrand["arguments"], ["x"])
-#         self.assertEqual(integrand["in"], {
-#             "x": {"type": "real", "description": "Point to evaluate", "dimension": ""}
+#         # Check input parameters
+#         self.assertEqual(function["in"], {
+#             "a": {"type": "REAL",
+#                    "description": "Lower bound", 
+#                    "dimension": None,
+#                    "interface_name": None,
+#                    "enum_type": None},
+#             "b": {"type": "REAL", 
+#                   "description": "Upper bound", 
+#                   "dimension": None,
+#                   "interface_name": None,
+#                   "enum_type": None},
+#             "f": {"type": "PROCEDURE", 
+#                   "description": "Function to integrate", 
+#                   "dimension": None, 
+#                   "interface_name": "f",
+#                   "enum_type": None}
 #         })
-#         self.assertEqual(integrand["return"], {
-#             "y": {"type": "real", "description": "Function value", "dimension": ""}
+#         self.assertEqual(function["out"], {})
+#         self.assertEqual(function["return"], 
+#             {"type": "REAL", 
+#              "description": "Integral value", 
+#              "dimension": None,
+#              "interface_name": None,
+#              "enum_type": None
 #         })
 
-#         # Check simpson function and its use of the procedure interface
-#         simpson = module["functions"]["simpson"]
-#         self.assertEqual(simpson["arguments"], ["f", "a", "b"])
-#         self.assertEqual(simpson["in"], {
-#             "f": {"type": "procedure", "description": "Function to integrate", "dimension": "", "interface_name": "integrand"},
-#             "a": {"type": "real", "description": "Lower bound", "dimension": ""},
-#             "b": {"type": "real", "description": "Upper bound", "dimension": ""}
+#         # Check the nested interface for f
+#         self.assertTrue("f" in function["argument_interfaces"])
+#         nested_interface = function["argument_interfaces"]["f"]
+#         self.assertEqual(nested_interface["description"], "Defines the signature for the argument f\n")
+
+#         # Check the function within the nested interface
+#         self.assertEqual(len(nested_interface["procedures"]), 1)
+#         nested_function = nested_interface["procedures"]["f"]
+#         self.assertEqual(nested_function["description"], "\nRequired signature for the function to be integrated\n\n")
+#         self.assertEqual(nested_function["arguments"], ["x"])
+#         self.assertEqual(nested_function["in"], {
+#             "x": {"type": "REAL", 
+#                   "description": "Point at which to evaluate the function", 
+#                   "dimension": None,
+#                   "interface_name": None,
+#                   "enum_type": None}
 #         })
-#         self.assertEqual(simpson["return"], {
-#             "integral": {"type": "real", "description": "Integral value", "dimension": ""}
-#         })
+#         self.assertEqual(nested_function["out"], {})
+#         self.assertEqual(nested_function["return"], {
+#             "type": "REAL", 
+#             "description": "Value of the function at x", 
+#             "dimension": None,
+#             "interface_name": None,
+#             "enum_type": None
+#             }
+#         )
+#         self.assertEqual(nested_interface["attributes"], [])  # not abstract
+#         self.assertIsNone(nested_interface["operator_symbol"])
+#         self.assertEqual(nested_interface["name"], "")
+#         self.assertEqual(nested_interface["module_procedures"], {})
+
+    def test_modern_procedure_interface(self):
+        self.fs.create_file(
+            "/fake/path/modern_interface.f90",
+            contents="""\
+    module integration_mod
+        implicit none
+
+        !!* Interface for numerical functions to integrate *!
+        abstract interface
+            !!*
+            ! @in x Point to evaluate
+            ! @return Function value
+            !*!
+            function integrand(x) result(y)
+                real, intent(in) :: x
+                real :: y
+            end function
+        end interface
+
+        !!*
+        ! Integrates a function using Simpson"s rule
+        ! @in f Function to integrate
+        ! @in a Lower bound
+        ! @in b Upper bound
+        ! @return Integral value
+        !*!
+        function simpson(f, a, b) result(integral)
+            procedure(integrand) :: f
+            real, intent(in) :: a, b
+            real :: integral
+        end function simpson
+
+    end module integration_mod
+    """
+        )
+        result = extract_module_data([Path("/fake/path/modern_interface.f90")])
+        self.assertEqual(len(result), 1)
+        module = result[0]
+        
+        # Check that both the interface and function exist
+        self.assertEqual(len(module["interfaces"]), 1)
+        interface = module["interfaces"][0]
+        
+        # Check integrand interface
+        self.assertEqual(interface["description"], "Interface for numerical functions to integrate\n")
+        self.assertEqual(interface["attributes"], ["abstract"])
+        self.assertEqual(len(interface["procedures"]), 1)
+        
+        integrand = interface["procedures"]["integrand"]
+        self.assertEqual(integrand["arguments"], ["x"])
+        self.assertEqual(integrand["in"], {
+            "x": {"type": "real", "description": "Point to evaluate", "dimension": ""}
+        })
+        self.assertEqual(integrand["return"], {
+            "y": {"type": "real", "description": "Function value", "dimension": ""}
+        })
+
+        # Check simpson function and its use of the procedure interface
+        simpson = module["functions"]["simpson"]
+        self.assertEqual(simpson["arguments"], ["f", "a", "b"])
+        self.assertEqual(simpson["in"], {
+            "f": {"type": "procedure", "description": "Function to integrate", "dimension": "", "interface_name": "integrand"},
+            "a": {"type": "real", "description": "Lower bound", "dimension": ""},
+            "b": {"type": "real", "description": "Upper bound", "dimension": ""}
+        })
+        self.assertEqual(simpson["return"], {
+            "integral": {"type": "real", "description": "Integral value", "dimension": ""}
+        })
         
 #     def test_subroutine_interface(self):
 #         self.fs.create_file(

@@ -56,12 +56,6 @@ def parse_procedure(procedure, stmt_type, declarations, comment_stack: List[Comm
         for dummy_arg in walk(dummy_args, Name):
             dummy_arg_names.append(dummy_arg.string)
     
-    argument_interfaces = {}
-    interfaces = walk(procedure, Interface_Block)
-    for interface in interfaces:
-        pass
-#        name, interface_description = parse_interface(interface, [])
-
     # process declarations
     arguments = []
     intent_in = {}

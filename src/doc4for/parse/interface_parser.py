@@ -21,7 +21,9 @@ from fparser.two.Fortran2003 import (
     Procedure_Stmt,
     Generic_Spec,
     Defined_Op,
-    Specification_Part
+    Specification_Part,
+    Implicit_Part,
+    Dummy_Arg_List
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -79,19 +81,69 @@ def parse_interface(
             proc_names = walk(node, Name)
             body_description = format_comments(body_comment_stack) if is_doc4for_comment(body_comment_stack) else ""
             for proc_name in proc_names:
-                module_procedures[proc_name.string] = {"name": proc_name.string,
-                                             "description": body_description}
+                module_procedures[proc_name.string] = {"name": proc_name.string, "description": body_description}
             body_comment_stack.clear()
         elif isinstance(node, Function_Body):
-            # only go down one level so we're not picking up any comments for nested interfaces
+            function_stmt = walk(node, Function_Stmt)[0]
+            
+            # Extract dummy arguments from function statement early
+            dummy_args = walk(function_stmt, Dummy_Arg_List)
+            dummy_arg_names = []
+            if dummy_args:
+                for dummy_arg in walk(dummy_args, Name):
+                    dummy_arg_names.append(dummy_arg.string)
+            
+            # Process function body children sequentially
             procedure_comment_stack = []
+            argument_interfaces = {}
+            argument_decls = []  # Collect only direct child declarations
+            procedure_arguments = {}  # Track procedure arguments
+            
             for child in node.children:
                 if isinstance(child, Comment):
                     procedure_comment_stack.append(child)
-            function_stmt = walk(node, Function_Stmt)[0] 
-            argument_decls = walk(node, Type_Declaration_Stmt)
+                elif isinstance(child, Type_Declaration_Stmt):
+                    argument_decls.append(child)
+                elif isinstance(child, Specification_Part):
+                    spec_comment_stack = []
+                    for spec_child in child.children:
+                        if isinstance(spec_child, Comment):
+                            spec_comment_stack.append(spec_child)
+                        elif isinstance(spec_child, Type_Declaration_Stmt):
+                            argument_decls.append(spec_child)
+                        elif isinstance(spec_child, Implicit_Part):
+                            for implicit_child in spec_child.children:
+                                if isinstance(implicit_child, Comment):
+                                    spec_comment_stack.append(implicit_child)
+                        elif isinstance(spec_child, Interface_Block):
+                            _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
+                            spec_comment_stack.clear() 
+                            interface_function_names = nested_interface_desc["procedures"].keys()
+                            for interface_function_name in interface_function_names:
+                                # Check against dummy_arg_names instead of common["arguments"]
+                                if interface_function_name in dummy_arg_names:
+                                    argument_interfaces[interface_function_name] = nested_interface_desc
+                                    # Track this as a procedure argument
+                                    procedure_arguments[interface_function_name] = {
+                                        "type": "PROCEDURE",
+                                        "description": "",  # Will be filled by update_arguments_with_comment_data
+                                        "dimension": None,
+                                        "interface_name": interface_function_name,
+                                        "enum_type": None
+                                    }
+            
+            # Parse the main function
             common = parse_procedure(function_stmt, Function_Stmt, argument_decls, procedure_comment_stack)
-            # Handle return type and return variable
+            
+            # Add procedure arguments to common
+            common["intent_in"].update(procedure_arguments)            
+            # Rebuild arguments list in the correct order using dummy_arg_names
+            ordered_arguments = []
+            for arg_name in dummy_arg_names:
+                if arg_name in common["intent_in"] or arg_name in common["intent_out"] or arg_name in procedure_arguments:
+                    ordered_arguments.append(arg_name)
+
+            common["arguments"] = ordered_arguments                        
             return_type, return_variable = None, None
             if common["prefixes"]:
                 for prefix_node in common["prefixes"][0].children:
@@ -120,21 +172,6 @@ def parse_interface(
                     "interface_name": None,
                     "type": return_type
                 }
-            argument_interfaces = {}
-            nested_interfaces = walk(node, Interface_Block)
-            for nested_interface in nested_interfaces:
-                _, nested_interface_desc = parse_interface(nested_interface, procedure_comment_stack)
-                # find the procedures in the common arguments and replace the type and interface name
-                interface_function_names = nested_interface_desc["procedures"].keys()
-                in_arguments = common["intent_in"]
-                out_arguments = common["intent_out"]
-                for interface_function_name in interface_function_names:
-                    if interface_function_name in in_arguments:
-                        in_arguments[interface_function_name]["type"] = "PROCEDURE"
-                        in_arguments[interface_function_name]["interface_name"] = interface_function_name
-                        argument_interfaces[interface_function_name] = nested_interface_desc
-                    if interface_function_name in out_arguments:
-                        del out_arguments[interface_function_name]
             function_description = {
                 "attributes": common["attributes"],
                 "description": "",
