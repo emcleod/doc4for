@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import List, Any, Tuple, Optional, Union, Dict
+from typing import List, Union, Dict
 from collections import defaultdict
 from fparser.two.Fortran2003 import (
     Name,
@@ -8,8 +8,7 @@ from fparser.two.Fortran2003 import (
     Prefix_Spec,
     Prefix,
     Name,
-    Dummy_Arg_List, #TODO why doesn't this import?
-    Interface_Block,
+    Dummy_Arg_List, # type: ignore[attr-defined]
     Type_Declaration_Stmt,
     Procedure_Declaration_Stmt
 )
