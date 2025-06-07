@@ -16,6 +16,7 @@ from fparser.two.Fortran2003 import (
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import Argument
 from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.variable_models import PolymorphismType
 if TYPE_CHECKING:
     from doc4for.models.dimension_models import Dimension
 from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info, _extract_length_and_kind
@@ -60,7 +61,7 @@ def parse_procedure_argument(declaration: Procedure_Declaration_Stmt) -> Tuple[D
             "default_value": None,
             "interface_name": interface_name,  
             "enum_type": None,
-            "polymorphism_type": None #TODO check this          
+            "polymorphism_type": PolymorphismType.NONE        
         }
     return arguments, intent
 

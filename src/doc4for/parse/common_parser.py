@@ -174,14 +174,7 @@ def _extract_type_info(declaration) -> Dict[str, str]:
         length = "1"
     info["length"] = length
     info["kind"] = kind
-    #TODO put this in a method
-    language_binding = walk(declaration, Language_Binding_Spec)
-    if language_binding:
-        binding_type = { "type": BindingTypeEnum.BIND_C }
-        external_name = walk(language_binding, Char_Literal_Constant)
-        if external_name:
-            binding_type["name"] = external_name[0].string
-        info["binding_type"] = binding_type
+    info["binding_type"] = _extract_binding_type(walk(declaration, Language_Binding_Spec))
     return info
 
 def _extract_literal_value(node):

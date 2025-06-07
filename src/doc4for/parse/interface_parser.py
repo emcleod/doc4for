@@ -26,6 +26,7 @@ from fparser.two.Fortran2003 import (
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import InterfaceDescription
+from doc4for.models.variable_models import PolymorphismType
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 from doc4for.parse.common_parser import _extract_binding_type
@@ -48,6 +49,7 @@ def parse_interface(
     module_procedures = {}
     procedures = {}
     body_comment_stack = []
+    argument_decls = []
     procedure_decls = []
     
     # Process interface body
@@ -68,7 +70,7 @@ def parse_interface(
             
         elif isinstance(node, Function_Body):
             # Process function body
-            proc_info = _process_procedure_body(node, Function_Stmt, procedure_decls)
+            proc_info = _process_procedure_body(node, Function_Stmt, argument_decls, procedure_decls)
             common = proc_info["common"]
             
             # Extract return information
@@ -94,7 +96,7 @@ def parse_interface(
             
         elif isinstance(node, Subroutine_Body):
             # Process subroutine body
-            proc_info = _process_procedure_body(node, Subroutine_Stmt, procedure_decls)
+            proc_info = _process_procedure_body(node, Subroutine_Stmt, argument_decls, procedure_decls)
             common = proc_info["common"]
             
             # Extract binding type
@@ -155,10 +157,10 @@ def _extract_interface_name_and_attributes(interface_stmt: Interface_Stmt) -> Tu
     
     return name, attributes
 
-
 def _process_specification_part(
     spec_part: Specification_Part,
-    argument_decls: List[Type_Declaration_Stmt]
+    argument_decls: List[Type_Declaration_Stmt],
+    procedure_decls: List[Procedure_Declaration_Stmt]
 ) -> List[InterfaceDescription]:
     """Process a specification part to extract type declarations and interfaces."""
     spec_comment_stack = []
@@ -169,6 +171,8 @@ def _process_specification_part(
             spec_comment_stack.append(spec_child)
         elif isinstance(spec_child, Type_Declaration_Stmt):
             argument_decls.append(spec_child)
+        elif isinstance(spec_child, Procedure_Declaration_Stmt):
+            procedure_decls.append(spec_child)
         elif isinstance(spec_child, Implicit_Part):
             for implicit_child in spec_child.children:
                 if isinstance(implicit_child, Comment):
@@ -177,12 +181,10 @@ def _process_specification_part(
             _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
             spec_comment_stack.clear()
             interface_blocks_in_order.append(nested_interface_desc)
-    
     return interface_blocks_in_order
 
 
 def _extract_dummy_arg_names(proc_stmt: Union[Function_Stmt, Subroutine_Stmt]) -> List[str]:
-    """Extract dummy argument names from procedure statement."""
     dummy_arg_names = []
     dummy_args = walk(proc_stmt, Dummy_Arg_List)
     if dummy_args:
@@ -196,7 +198,6 @@ def _match_interfaces_to_procedure_arguments(
     dummy_arg_names: List[str],
     parsed_arguments: Dict[str, Any]
 ) -> Tuple[Dict[str, InterfaceDescription], Dict[str, Dict[str, Any]]]:
-    """Match interface blocks to procedure arguments positionally."""
     argument_interfaces = {}
     procedure_arguments = {}
     
@@ -215,7 +216,13 @@ def _match_interfaces_to_procedure_arguments(
                 "description": "",
                 "dimension": None,
                 "interface_name": interface_proc_name,
-                "enum_type": None
+                "enum_type": None,
+                #TODO
+                "attributes": [],
+                "kind": None,
+                "length": None,
+                "polymorphism_type": PolymorphismType.NONE,
+                "default_value": None
             }
     
     return argument_interfaces, procedure_arguments
@@ -224,6 +231,7 @@ def _match_interfaces_to_procedure_arguments(
 def _process_procedure_body(
     node: Union[Function_Body, Subroutine_Body],
     stmt_type: type,
+    argument_decls: List[Type_Declaration_Stmt],
     procedure_decls: List[Procedure_Declaration_Stmt]
 ) -> Dict[str, Any]:
     """Process function or subroutine body and extract all relevant information."""
@@ -241,7 +249,7 @@ def _process_procedure_body(
         elif isinstance(child, Type_Declaration_Stmt):
             argument_decls.append(child)
         elif isinstance(child, Specification_Part):
-            interface_blocks = _process_specification_part(child, argument_decls)
+            interface_blocks = _process_specification_part(child, argument_decls, procedure_decls)
             break
     else:
         interface_blocks = []

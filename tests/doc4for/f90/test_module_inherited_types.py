@@ -4,6 +4,8 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 
 class TestInheritedTypes(TestCase):
+    maxDiff=None
+
     def setUp(self):
         self.setUpPyfakefs()
 

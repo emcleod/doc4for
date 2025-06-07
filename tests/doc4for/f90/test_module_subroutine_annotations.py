@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
+from doc4for.models.variable_models import PolymorphismType
 
 class TestSubroutineAnnotations(TestCase):
 
@@ -32,8 +33,28 @@ class TestSubroutineAnnotations(TestCase):
         subroutine = module["subroutines"]["test_subroutine_in_annotation"]
         self.assertEqual(subroutine["description"], "\nA subroutine with @in annotation\n\n")
         inputs = subroutine["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
 
     def test_subroutine_in_annotation_name_mismatch(self):
         self.fs.create_file(
@@ -58,8 +79,28 @@ class TestSubroutineAnnotations(TestCase):
             module = result[0]
             subroutine = module["subroutines"]["test_subroutine_in_annotation"]
             inputs = subroutine["in"]
-            self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-            self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+            self.assertEqual(inputs["x"], {"type": "REAL", 
+                                           "description": "", 
+                                           "dimension": None, 
+                                           "interface_name": None, 
+                                           "enum_type": None,
+                                           "default_value": None,
+                                            "attributes": [],
+                                            "kind": None,
+                                            "length": None,
+                                            "polymorphism_type": PolymorphismType.NONE
+                                            })
+            self.assertEqual(inputs["y"], {"type": "REAL", 
+                                           "description": "", 
+                                           "dimension": None, 
+                                           "interface_name": None,
+                                           "enum_type": None,
+                                           "default_value": None,
+                                            "attributes": [],
+                                            "kind": None,
+                                            "length": None,
+                                            "polymorphism_type": PolymorphismType.NONE
+                                            })
             self.assertNotIn("z", inputs)
             self.assertIn("Warning: 'in' annotation 'z' not found in arguments [['x', 'y']]", cm.output[0])
 
@@ -86,9 +127,29 @@ class TestSubroutineAnnotations(TestCase):
         module = result[0]
         subroutine = module["subroutines"]["test_subroutine_out_annotation"]
         inputs = subroutine["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
         outputs = subroutine["out"]
-        self.assertEqual(outputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["y"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "default_value": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
 
     def test_subroutine_out_annotation_name_mismatch(self):
         self.fs.create_file(
@@ -114,9 +175,29 @@ class TestSubroutineAnnotations(TestCase):
         subroutine = module["subroutines"]["test_subroutine_out_annotation"]
         self.assertEqual(subroutine["description"], "\nA subroutine with @out annotation\n\n")
         inputs = subroutine["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "default_value": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
         outputs = subroutine["out"]
-        self.assertEqual(outputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["y"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "default_value": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
         self.assertNotIn("z", outputs)
 
     def test_subroutine_inout_annotation_name_match(self):
@@ -142,8 +223,28 @@ class TestSubroutineAnnotations(TestCase):
         subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
         inputs = subroutine["in"]
         outputs = subroutine["out"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
+        self.assertEqual(outputs["x"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "default_value": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
 
     def test_subroutine_inout_annotation_name_mismatch(self):
         self.fs.create_file(
@@ -168,8 +269,28 @@ class TestSubroutineAnnotations(TestCase):
         subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
         inputs = subroutine["in"]
         outputs = subroutine["out"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
+        self.assertEqual(outputs["x"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None,
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "default_value": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
         self.assertNotIn("z", inputs)
         self.assertNotIn("z", outputs)
 
@@ -196,8 +317,28 @@ class TestSubroutineAnnotations(TestCase):
         module = result[0]
         subroutine = module["subroutines"]["test_subroutine_in_annotation"]
         inputs = subroutine["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The first input", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "The second input", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "The first input", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "The second input", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
 
     def test_subroutine_out_annotation_name_match_with_description(self):
         self.fs.create_file(
@@ -223,9 +364,29 @@ class TestSubroutineAnnotations(TestCase):
         module = result[0]
         subroutine = module["subroutines"]["test_subroutine_out_annotation"]
         inputs = subroutine["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The input", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "The input", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
         outputs = subroutine["out"]
-        self.assertEqual(outputs["y"], {"type": "REAL", "description": "The output", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["y"], {"type": "REAL", 
+                                        "description": "The output", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "default_value": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
 
     def test_subroutine_inout_annotation_name_match_with_description(self):
         self.fs.create_file(
@@ -250,8 +411,28 @@ class TestSubroutineAnnotations(TestCase):
         subroutine = module["subroutines"]["test_subroutine_inout_annotation"]
         inputs = subroutine["in"]
         outputs = subroutine["out"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The variable to be updated", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(outputs["x"], {"type": "REAL", "description": "The variable to be updated", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "The variable to be updated", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "default_value": None,
+                                       "attributes": [],
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                       })
+        self.assertEqual(outputs["x"], {"type": "REAL", 
+                                        "description": "The variable to be updated", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,
+                                        "default_value": None,
+                                        "attributes": [],
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
 
 if __name__ == "__main__":
     unittest.main()

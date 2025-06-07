@@ -422,7 +422,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(inputs["vector"]["dimension"]["dimensions"], 
                         [ArrayBound(bound_type=BoundType.ASSUMED_SHAPE)])
 
-#    @unittest.skip("fparser doesn't like assumed rank arrays")
+    @unittest.skip("fparser doesn't like assumed rank arrays")
     def test_function_with_assumed_rank_array(self):
         self.fs.create_file(
             "/fake/path/assumed_rank.f90",

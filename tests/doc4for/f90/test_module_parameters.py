@@ -780,9 +780,8 @@ end module test_mod
         self.assertEqual(container["data_components"]["scale"]["description"].strip(), 
                         "Scale factor for all shapes")
         
-        # TODO: Future enhancement - check nested type definition
-        # This would require extending your TypeDescription to support nested types
-        # For now, we might just check that the parser doesn't crash on nested types
+        # TODO: Check nested type definition
+        # This would require extending TypeDescription to support nested types
         
         # Check components that use the nested type
         self.assertEqual(container["data_components"]["origin"]["type"], "point3d")

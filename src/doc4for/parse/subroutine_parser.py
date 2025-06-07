@@ -9,10 +9,7 @@ from fparser.two.Fortran2003 import (
     Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
-from doc4for.models.procedure_models import (
-    SubroutineDescription, 
-    InterfaceDescription,
-)
+from doc4for.models.procedure_models import SubroutineDescription
 from doc4for.parse.common_parser import _extract_binding_type
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 

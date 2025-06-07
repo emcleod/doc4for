@@ -109,8 +109,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
         # convert them to parameters and add the initial value
         if parameter_stack:
             process_parameter_statements(module_data, parameter_stack)
-        if access_stack:
-            process_access_statements(module_data, access_stack)
+    if access_stack:
+        process_access_statements(module_data, access_stack)
 
 def process_parameter_statements(module_data: ModuleDescription, parameter_statements: List[Parameter_Stmt]) -> None:
     for param_stmt in parameter_statements:

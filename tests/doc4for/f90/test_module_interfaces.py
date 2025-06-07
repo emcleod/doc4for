@@ -4,6 +4,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.dimension_models import ArrayBound, BoundType, Expression
 from doc4for.models.common import ExpressionType
+from doc4for.models.variable_models import PolymorphismType
 
 class TestInterfaces(TestCase):
     maxDiff=None
@@ -47,9 +48,30 @@ module abstract_interface_mod
         self.assertEqual(function["attributes"], [])
         self.assertIsNone(function["binding_type"])
         self.assertEqual(function["description"], "Transforms x into y somehow\n\n")
-        self.assertEqual(function["in"], {"x": {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None}})
+        self.assertEqual(function["in"], {"x": {"type": 
+                                                "REAL", 
+                                                "description": "", 
+                                                "dimension": None, 
+                                                "interface_name": None, 
+                                                "enum_type": None,
+                                                "attributes": [],
+                                                "kind": None,
+                                                "length": None,
+                                                "default_value": None,
+                                                "polymorphism_type": PolymorphismType.NONE
+                                                }})
         self.assertEqual(function["out"], {})
-        self.assertEqual(function["return"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(function["return"], {"type": "REAL", 
+                                              "description": "", 
+                                              "dimension": None, 
+                                              "interface_name": None, 
+                                              "enum_type": None,
+                                                "attributes": [],
+                                                "kind": None,
+                                                "length": None,
+                                                "default_value": None,
+                                                "polymorphism_type": PolymorphismType.NONE
+                                              })
 
     def test_abstract_interface_with_nested_interface(self):
         self.fs.create_file(
@@ -111,17 +133,35 @@ end module test_mod
                    "description": "Lower bound", 
                    "dimension": None,
                    "interface_name": None,
-                   "enum_type": None},
+                   "enum_type": None,
+                    "attributes": [],
+                    "kind": None,
+                    "length": None,
+                    "default_value": None,
+                    "polymorphism_type": PolymorphismType.NONE
+                   },
             "b": {"type": "REAL", 
                   "description": "Upper bound", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "f": {"type": "PROCEDURE", 
                   "description": "Function to integrate", 
                   "dimension": None, 
                   "interface_name": "f",
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(function["out"], {})
         self.assertEqual(function["return"], 
@@ -129,7 +169,12 @@ end module test_mod
              "description": "Integral value", 
              "dimension": None,
              "interface_name": None,
-             "enum_type": None
+             "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check the nested interface for f
@@ -147,7 +192,13 @@ end module test_mod
                   "description": "Point at which to evaluate the function", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(nested_function["out"], {})
         self.assertEqual(nested_function["return"], {
@@ -155,7 +206,12 @@ end module test_mod
             "description": "Value of the function at x", 
             "dimension": None,
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
             }
         )
         self.assertEqual(nested_interface["attributes"], [])  # not abstract
@@ -219,14 +275,25 @@ end module test_mod
                   "description": "Point to evaluate", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(integrand["return"], 
             {"type": "REAL", 
                   "description": "Function value", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check Simpson function and its use of the procedure interface
@@ -237,24 +304,47 @@ end module test_mod
                   "description": "Function to integrate", 
                   "dimension": None, 
                   "interface_name": "integrand",
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "a": {"type": "REAL", 
                   "description": "Lower bound", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "b": {"type": "REAL", 
                   "description": "Upper bound", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(simpson["return"], {
             "type": "REAL", 
             "description": "Integral value", 
             "dimension": None,
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
         
     def test_subroutine_interface(self):
@@ -307,19 +397,34 @@ end module test_mod
                           "description": "Callback subroutine to process data", 
                           "dimension": None, 
                           "interface_name": "processor",
-                          "enum_type": None},
+                          "enum_type": None,
+                          "attributes": [],
+                          "kind": None,
+                          "length": None,
+                          "default_value": None,
+                          "polymorphism_type": PolymorphismType.NONE},
             "data": {"type": "REAL", 
                      "description": "Input/output array to process", 
                      "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                      "interface_name": None,
-                     "enum_type": None}
+                     "enum_type": None,
+                     "attributes": [],
+                     "kind": None,
+                     "length": None,
+                     "default_value": None,
+                     "polymorphism_type": PolymorphismType.NONE}
         })
         self.assertEqual(process_data["out"], {
             "data": {"type": "REAL", 
                      "description": "Input/output array to process", 
                      "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                      "interface_name": None,
-                     "enum_type": None}
+                     "enum_type": None,
+                    "attributes": [],
+                    "kind": None,
+                    "length": None,
+                    "default_value": None,
+                    "polymorphism_type": PolymorphismType.NONE}
         })
         self.assertNotIn("return", process_data)  # It"s a subroutine, so no return value
 
@@ -338,14 +443,26 @@ end module test_mod
                   "description": "Data array to modify", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+            }  
         })
         self.assertEqual(processor_proc["out"], {
             "x": {"type": "REAL", 
                   "description": "Data array to modify", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertNotIn("return", processor_proc)
 
@@ -428,13 +545,62 @@ end module test_mod
         optimize = interface["procedures"]["optimize"]
         self.assertEqual(optimize["arguments"], ["f", "df", "constraint", "x0"])
         self.assertEqual(optimize["in"], {
-            "f": {"type": "PROCEDURE", "description": "Objective function to minimize", "dimension": None, "interface_name": "f", "enum_type": None},
-            "df": {"type": "PROCEDURE", "description": "Derivative of objective function", "dimension": None, "interface_name": "df", "enum_type": None},
-            "constraint": {"type": "PROCEDURE", "description": "Constraint function", "dimension": None, "interface_name": "constraint", "enum_type": None},
-            "x0": {"type": "REAL", "description": "Initial guess", "dimension": None, "interface_name": None, "enum_type": None}
+            "f": {"type": "PROCEDURE", 
+                  "description": "Objective function to minimize", 
+                  "dimension": None, 
+                  "interface_name": "f", 
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
+            "df": {"type": "PROCEDURE", 
+                   "description": "Derivative of objective function", 
+                   "dimension": None, 
+                   "interface_name": "df", 
+                   "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                   },
+            "constraint": {"type": "PROCEDURE", 
+                           "description": "Constraint function", 
+                           "dimension": None, 
+                           "interface_name": "constraint", 
+                           "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                           },
+            "x0": {"type": "REAL", 
+                   "description": "Initial guess", 
+                   "dimension": None, 
+                   "interface_name": None, 
+                   "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                   }
         })
         self.assertEqual(optimize["return"], {
-            "type": "REAL", "description": "Optimized value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Optimized value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check nested interfaces
@@ -446,10 +612,29 @@ end module test_mod
         f_proc = f_interface["procedures"]["f"]
         self.assertEqual(f_proc["arguments"], ["x"])
         self.assertEqual(f_proc["in"], {
-            "x": {"type": "REAL", "description": "Point to evaluate", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Point to evaluate", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(f_proc["return"], {
-            "type": "REAL", "description": "Function value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Function value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check derivative function interface
@@ -458,10 +643,29 @@ end module test_mod
         df_proc = df_interface["procedures"]["df"]
         self.assertEqual(df_proc["arguments"], ["x"])
         self.assertEqual(df_proc["in"], {
-            "x": {"type": "REAL", "description": "Point to evaluate derivative", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Point to evaluate derivative", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(df_proc["return"], {
-            "type": "REAL", "description": "Derivative value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Derivative value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check constraint function interface
@@ -470,10 +674,29 @@ end module test_mod
         constraint_proc = constraint_interface["procedures"]["constraint"]
         self.assertEqual(constraint_proc["arguments"], ["x"])
         self.assertEqual(constraint_proc["in"], {
-            "x": {"type": "REAL", "description": "Point to check", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Point to check", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(constraint_proc["return"], {
-            "type": "LOGICAL", "description": "True if constraint is satisfied", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "LOGICAL", 
+            "description": "True if constraint is satisfied", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
     def test_interface_position_matching(self):
@@ -541,12 +764,51 @@ end module test_mod
         minimize = interface["procedures"]["minimize"]
         self.assertEqual(minimize["arguments"], ["objective", "gradient", "x0"])
         self.assertEqual(minimize["in"], {
-            "objective": {"type": "PROCEDURE", "description": "Function to minimize", "dimension": None, "interface_name": "func1", "enum_type": None},  
-            "gradient": {"type": "PROCEDURE", "description": "Gradient function", "dimension": None, "interface_name": "grad", "enum_type": None},  
-            "x0": {"type": "REAL", "description": "Initial guess", "dimension": None, "interface_name": None, "enum_type": None}
+            "objective": {"type": "PROCEDURE", 
+                          "description": "Function to minimize", 
+                          "dimension": None, 
+                          "interface_name": "func1", 
+                          "enum_type": None,
+                            "attributes": [],
+                            "kind": None,
+                            "length": None,
+                            "default_value": None,
+                            "polymorphism_type": PolymorphismType.NONE
+                          },  
+            "gradient": {"type": "PROCEDURE", 
+                         "description": "Gradient function", 
+                         "dimension": None, 
+                         "interface_name": "grad", 
+                         "enum_type": None,
+                        "attributes": [],
+                        "kind": None,
+                        "length": None,
+                        "default_value": None,
+                        "polymorphism_type": PolymorphismType.NONE
+                         },  
+            "x0": {"type": "REAL", 
+                   "description": "Initial guess", 
+                   "dimension": None, 
+                   "interface_name": None, 
+                   "enum_type": None,
+                    "attributes": [],
+                    "kind": None,
+                    "length": None,
+                    "default_value": None,
+                    "polymorphism_type": PolymorphismType.NONE
+                   }
         })
         self.assertEqual(minimize["return"], {
-            "type": "REAL", "description": "Optimized value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Optimized value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check nested interfaces - they should be associated with arguments by position
@@ -561,10 +823,29 @@ end module test_mod
         objective_proc = objective_interface["procedures"]["func1"]  # Note different name
         self.assertEqual(objective_proc["arguments"], ["x"])
         self.assertEqual(objective_proc["in"], {
-            "x": {"type": "REAL", "description": "Evaluation point", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Evaluation point", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                    "attributes": [],
+                    "kind": None,
+                    "length": None,
+                    "default_value": None,
+                    "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(objective_proc["return"], {
-            "type": "REAL", "description": "Function value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Function value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
         # Second interface should be associated with "gradient" parameter
@@ -576,10 +857,29 @@ end module test_mod
         gradient_proc = gradient_interface["procedures"]["grad"]  # Note different name
         self.assertEqual(gradient_proc["arguments"], ["x"])
         self.assertEqual(gradient_proc["in"], {
-            "x": {"type": "REAL", "description": "Point to evaluate gradient", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Point to evaluate gradient", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                "attributes": [],
+                "kind": None,
+                "length": None,
+                "default_value": None,
+                "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(gradient_proc["return"], {
-            "type": "REAL", "description": "Gradient value", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Gradient value", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })        
 
     def test_named_interface_explicit_procedure(self):
@@ -672,7 +972,13 @@ end module test_mod
                   "description": "Input vector", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(normalize["out"], {})
         self.assertEqual(normalize["return"], {
@@ -682,7 +988,12 @@ end module test_mod
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
                                                     Expression(expr_type=ExpressionType.LITERAL, value="SIZE(v)"))]},
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check magnitude function
@@ -694,7 +1005,13 @@ end module test_mod
                   "description": "Input vector", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(magnitude["out"], {})
         self.assertEqual(magnitude["return"], {
@@ -702,7 +1019,12 @@ end module test_mod
             "description": "Scalar magnitude", 
             "dimension": None,
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+                "attributes": [],
+                "kind": None,
+                "length": None,
+                "default_value": None,
+                "polymorphism_type": PolymorphismType.NONE
         })
 
         # Check scale subroutine
@@ -714,12 +1036,24 @@ end module test_mod
                        "description": "Scale factor to apply", 
                        "dimension": None,
                        "interface_name": None,
-                       "enum_type": None},
+                       "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                       },
             "v": {"type": "REAL", 
                   "description": "Vector to scale", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(scale["out"], {
             "v": {
@@ -727,7 +1061,13 @@ end module test_mod
             "description": "Vector to scale", 
             "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
             "interface_name": None,
-            "enum_type": None}
+            "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+            }
         })
         self.assertNotIn("return", scale)  # It"s a subroutine, so no return value
 
@@ -829,12 +1169,24 @@ end module matrix_ops_mod
                   "First matrix", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE), ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "b": {"type": "REAL", 
                   "description": "Second matrix", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE), ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(add["out"], {})
         self.assertEqual(add["return"], {
@@ -847,7 +1199,12 @@ end module matrix_ops_mod
                                                    Expression(ExpressionType.LITERAL, value="1"),
                                                    Expression(ExpressionType.LITERAL, value="SIZE(a, 2)"))]},
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
     def test_operator_interface_explicit_procedure(self):
@@ -921,12 +1278,24 @@ end module matrix_ops_mod
                   "description": "First vector", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "b": {"type": "REAL", 
                   "description": "Second vector", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+            }
         })
         self.assertEqual(add_vectors["out"], {})
         self.assertEqual(add_vectors["return"], {
@@ -936,8 +1305,12 @@ end module matrix_ops_mod
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
                                                     Expression(expr_type=ExpressionType.LITERAL, value='SIZE(a)'))]},
             "interface_name": None,
-            "enum_type": None
-                            
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE                            
         })
 
         # Check add_vector_scalar function
@@ -949,12 +1322,24 @@ end module matrix_ops_mod
                   "description": "Input vector", 
                   "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
                   "interface_name": None,
-                  "enum_type": None},
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  },
             "b": {"type": "REAL", 
                   "description": "Scalar value", 
                   "dimension": None,
                   "interface_name": None,
-                  "enum_type": None}
+                  "enum_type": None,
+                  "attributes": [],
+                  "kind": None,
+                  "length": None,
+                  "default_value": None,
+                  "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(add_vector_scalar["out"], {})
         self.assertEqual(add_vector_scalar["return"], {
@@ -964,7 +1349,12 @@ end module matrix_ops_mod
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
                                                     Expression(expr_type=ExpressionType.LITERAL, value="SIZE(a)"))]},
             "interface_name": None,
-            "enum_type": None
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
 
     def test_operator_interface_module_procedure(self):
@@ -1383,11 +1773,30 @@ end module matrix_ops_mod
         self.assertEqual(proc["arguments"], ["x"])
         self.assertEqual(proc["description"], "\nFunction template for numerical operations\n\n")
         self.assertEqual(proc["in"], {
-            "x": {"type": "REAL", "description": "Point at which to evaluate function", "dimension": None, "interface_name": None, "enum_type": None}
+            "x": {"type": "REAL", 
+                  "description": "Point at which to evaluate function", 
+                  "dimension": None, 
+                  "interface_name": None, 
+                  "enum_type": None,
+                    "attributes": [],
+                    "kind": None,
+                    "length": None,
+                    "default_value": None,
+                    "polymorphism_type": PolymorphismType.NONE
+                  }
         })
         self.assertEqual(proc["out"], {})
         self.assertEqual(proc["return"], {
-            "type": "REAL", "description": "Function value at x", "dimension": None, "interface_name": None, "enum_type": None
+            "type": "REAL", 
+            "description": "Function value at x", 
+            "dimension": None, 
+            "interface_name": None, 
+            "enum_type": None,
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         })
         self.assertEqual(proc["attributes"], [])
         self.assertEqual(proc["argument_interfaces"], {})
@@ -1706,6 +2115,8 @@ end module matrix_ops_mod
         
         advanced_source_interface = math_advanced["interfaces"][0] 
         self.assertEqual(advanced_source_interface["procedures"]["integrate"]["arguments"], ["f", "a", "b", "method", "tolerance"])
+
+
 if __name__ == "__main__":
     unittest.main()
 

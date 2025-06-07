@@ -68,6 +68,7 @@ class TestInterfaces(TestCase):
     end module mixed_interface_mod
     """
         )
+        
         result = extract_module_data([Path("/fake/path/mixed_interface.f90")])
         module = result[0]
         interface = module["interfaces"][0]

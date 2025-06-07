@@ -40,13 +40,13 @@ class TestTypeBindingProcedures(TestCase):
     contains
 
         !!* Set the C callback pointer *!
-        subroutine set_callback(new_callback) bind(c, name='set_c_callback')
+        subroutine set_callback(new_callback) bind(c, name="set_c_callback")
             type(c_funptr), value :: new_callback
             ! Implementation would convert c_funptr to Fortran procedure pointer
         end subroutine
         
         !!* Function that can be assigned to procedure pointer *!
-        function square_it(x) bind(c, name='c_square') result(y)
+        function square_it(x) bind(c, name="c_square") result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -56,38 +56,38 @@ class TestTypeBindingProcedures(TestCase):
     end module proc_pointer_binding_mod
     """
         )
-        result = extract_module_data([Path('/fake/path/proc_pointer_binding.f90')])
+        result = extract_module_data([Path("/fake/path/proc_pointer_binding.f90")])
         module = result[0]
         
         # Check the abstract interface
-        callback_interface = module['interfaces'][0]  # First interface
-        self.assertIn('abstract', callback_interface['attributes'])
+        callback_interface = module["interfaces"][0]  # First interface
+        self.assertEqual(callback_interface["attributes"], ["ABSTRACT"])
         
-        callback_func = callback_interface['procedures']['callback_func']
-        self.assertIn('binding_type', callback_func)
-        self.assertEqual(callback_func['binding_type']['type'], BindingTypeEnum.BIND_C)
+        callback_func = callback_interface["procedures"]["callback_func"]
+        self.assertIn("binding_type", callback_func)
+        self.assertEqual(callback_func["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
         # Check the module procedures
-        set_callback = module['subroutines']['set_callback']
-        self.assertIn('binding_type', set_callback)
-        self.assertEqual(set_callback['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(set_callback['binding_type']['name'], 'set_c_callback')
+        set_callback = module["subroutines"]["set_callback"]
+        self.assertIn("binding_type", set_callback)
+        self.assertEqual(set_callback["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(set_callback["binding_type"]["name"], "set_c_callback")
         
-        square_it = module['functions']['square_it']
-        self.assertIn('binding_type', square_it)
-        self.assertEqual(square_it['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(square_it['binding_type']['name'], 'c_square')
+        square_it = module["functions"]["square_it"]
+        self.assertIn("binding_type", square_it)
+        self.assertEqual(square_it["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(square_it["binding_type"]["name"], "c_square")
                 
-        if 'c_callback' in module.get('variables', {}):
-            c_callback = module['variables']['c_callback']
-            self.assertIn('binding_type', c_callback)
-            self.assertEqual(c_callback['binding_type']['type'], BindingTypeEnum.BIND_C)
-            self.assertIn('pointer', c_callback['attributes'])
+        if "c_callback" in module.get("variables", {}):
+            c_callback = module["variables"]["c_callback"]
+            self.assertIn("binding_type", c_callback)
+            self.assertEqual(c_callback["binding_type"]["type"], BindingTypeEnum.BIND_C)
+            self.assertIn("pointer", c_callback["attributes"])
         
-        if 'f_callback' in module.get('variables', {}):
-            f_callback = module['variables']['f_callback']
-            self.assertIn('binding_type', f_callback)
-            self.assertIn('pointer', f_callback['attributes'])
+        if "f_callback" in module.get("variables", {}):
+            f_callback = module["variables"]["f_callback"]
+            self.assertIn("binding_type", f_callback)
+            self.assertIn("pointer", f_callback["attributes"])
 
 
     def test_mixed_procedure_pointers(self):
@@ -161,51 +161,51 @@ class TestTypeBindingProcedures(TestCase):
     end module mixed_proc_pointers_mod
     """
         )
-        result = extract_module_data([Path('/fake/path/mixed_proc_pointers.f90')])
+        result = extract_module_data([Path("/fake/path/mixed_proc_pointers.f90")])
         module = result[0]
             
-        result = extract_module_data([Path('/fake/path/mixed_proc_pointers.f90')])
+        result = extract_module_data([Path("/fake/path/mixed_proc_pointers.f90")])
         module = result[0]
         
         # Check the type with procedure pointers
-        callback_type = module['types']['callback_container']
+        callback_type = module["types"]["callback_container"]
         
         # Check c_proc - now in the procedures section
-        c_proc = callback_type['procedures']['c_proc']
-        self.assertIn('binding_type', c_proc)
-        binding_type = cast(BindingType, c_proc['binding_type'])
-        self.assertEqual(binding_type['type'], BindingTypeEnum.BIND_C)
-        self.assertIn('nopass', c_proc['attributes'])
+        c_proc = callback_type["procedures"]["c_proc"]
+        self.assertIn("binding_type", c_proc)
+        binding_type = cast(BindingType, c_proc["binding_type"])
+        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
+        self.assertIn("nopass", c_proc["attributes"])
         
         # Check f_proc - now in the procedures section
-        f_proc = callback_type['procedures']['f_proc']
-        self.assertIn('binding_type', f_proc)
-        binding_type = cast(BindingType, f_proc['binding_type'])
-        self.assertEqual(binding_type['type'], BindingTypeEnum.DEFAULT)
-        self.assertIn('nopass', f_proc['attributes'])
+        f_proc = callback_type["procedures"]["f_proc"]
+        self.assertIn("binding_type", f_proc)
+        binding_type = cast(BindingType, f_proc["binding_type"])
+        self.assertEqual(binding_type["type"], BindingTypeEnum.DEFAULT)
+        self.assertIn("nopass", f_proc["attributes"])
         
         # Check the abstract interfaces
-        c_interface = module['interfaces'][0]  # First interface
-        c_func = c_interface['procedures']['c_func_interface']
-        self.assertEqual(c_func['binding_type']['type'], BindingTypeEnum.BIND_C)
+        c_interface = module["interfaces"][0]  # First interface
+        c_func = c_interface["procedures"]["c_func_interface"]
+        self.assertEqual(c_func["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
-        f_interface = module['interfaces'][1]  # Second interface
-        f_func = f_interface['procedures']['regular_func_interface']
-        self.assertEqual(f_func['binding_type']['type'], BindingTypeEnum.DEFAULT)
+        f_interface = module["interfaces"][1]  # Second interface
+        f_func = f_interface["procedures"]["regular_func_interface"]
+        self.assertEqual(f_func["binding_type"]["type"], BindingTypeEnum.DEFAULT)
         
         # Check subroutines
-        register_c = module['subroutines']['register_c_proc']
-        self.assertEqual(register_c['binding_type']['type'], BindingTypeEnum.BIND_C)
+        register_c = module["subroutines"]["register_c_proc"]
+        self.assertEqual(register_c["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
-        register_f = module['subroutines']['register_f_proc']
-        self.assertEqual(register_f['binding_type']['type'], BindingTypeEnum.DEFAULT)
+        register_f = module["subroutines"]["register_f_proc"]
+        self.assertEqual(register_f["binding_type"]["type"], BindingTypeEnum.DEFAULT)
         
         # Check function implementations
-        c_example = module['functions']['example_c_func']
-        self.assertEqual(c_example['binding_type']['type'], BindingTypeEnum.BIND_C)
+        c_example = module["functions"]["example_c_func"]
+        self.assertEqual(c_example["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
-        f_example = module['functions']['example_f_func']
-        self.assertEqual(f_example['binding_type']['type'], BindingTypeEnum.DEFAULT)
+        f_example = module["functions"]["example_f_func"]
+        self.assertEqual(f_example["binding_type"]["type"], BindingTypeEnum.DEFAULT)
 
 
 if __name__ == "__main__":
