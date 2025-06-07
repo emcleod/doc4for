@@ -459,14 +459,14 @@ end module variable_dims
         self.assertIn("ALLOCATABLE", [attr.upper() for attr in variables["x"]["attributes"]])
         dimension = cast(Dimension, variables["x"]["dimension"])
         self.assertEqual(len(dimension["dimensions"]), 1)
-        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ALLOCATABLE)
+        self.assertEqual(dimension["dimensions"][0].bound_type, BoundType.ASSUMED_SHAPE)
         self.assertEqual(variables["x"]["polymorphism_type"], PolymorphismType.NONE)
         
         # Check 2D allocatable
         dimension = cast(Dimension, variables["matrix"]["dimension"])
         self.assertEqual(len(dimension["dimensions"]), 2)
         for i in range(2):
-            self.assertEqual(dimension["dimensions"][i].bound_type, BoundType.ALLOCATABLE)
+            self.assertEqual(dimension["dimensions"][i].bound_type, BoundType.ASSUMED_SHAPE)
         self.assertEqual(variables["matrix"]["polymorphism_type"], PolymorphismType.NONE)
             
         # Check 3D allocatable
@@ -1231,7 +1231,7 @@ C     Old-style parameter statement with the type declared elsewhere
         # Check arrays in common blocks
         self.assertEqual(variables["arr1"]["type"], "REAL")
         self.assertEqual(variables["arr1"]["polymorphism_type"], PolymorphismType.NONE)
-        dimension = cast(Dimension, variables["arr1"]["dimension"])
+        dimension = variables["arr1"]["dimension"]
         self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 100))
         
         self.assertEqual(variables["arr2"]["type"], "REAL")

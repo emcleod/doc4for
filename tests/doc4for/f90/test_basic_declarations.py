@@ -411,7 +411,7 @@ class TestBasicDeclarations(TestCase):
                 "kind": "c_int",
                 "initial_value": None,
                 "length": None,
-                "binding_type": {"type": BindingTypeEnum.BIND_C }
+                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": None }
             }
         }
         self.assertEqual(variables, expected)
@@ -440,7 +440,7 @@ class TestBasicDeclarations(TestCase):
                 "kind": "c_double",
                 "initial_value": None,
                 "length": None,
-                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": '"my_c_var"'}
+                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": "my_c_var"}
             }
         }
         self.assertEqual(variables, expected)

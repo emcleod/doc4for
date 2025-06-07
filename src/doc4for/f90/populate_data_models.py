@@ -13,24 +13,6 @@ from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 # TODO move these to separate parsers like type_parser
 # TODO should use the handlers instead of testing for cases
 
-def parse_program(
-    program: Program, comment_stack: List[Comment], file_name: str
-) -> ProgramDescription:
-    program_details: ProgramDescription = {
-        "program_name": program.name,
-        "file_name": file_name,
-        "program_description": "",
-        "uses": {},
-    }
-    if is_doc4for_comment(comment_stack):
-        program_details["program_description"] = format_comments(comment_stack)
-    for program_child in program.content:
-        if isinstance(program_child, Use):
-            from doc4for.parse.base_parser import handle_use
-            handle_use(program_child, program_details, comment_stack)
-    return program_details
-
-
 def initialise_module_description(
     module: Module, comment_stack: List[Comment], file_name: str
 ) -> ModuleDescription:

@@ -4,19 +4,20 @@ from fparser.two.Fortran2003 import (
   Comment,
   Module,
   Function_Subprogram,
-  Subroutine_Subprogram
+  Subroutine_Subprogram,
+  Main_Program
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
+from doc4for.parse.common_parser import FortranHandler
 from doc4for.parse.base_parser import ( 
-    FortranHandler,
     VisibilityState,
     handle_module,
     handle_function, 
     handle_subroutine, 
     # handle_block_data, 
     # handle_module, 
-    # handle_program,
+    handle_program,
     # handle_use
     )
 
@@ -36,7 +37,7 @@ def _get_file_handler() -> FileHandler:
         handler.register_handler(Module, handle_module)
         handler.register_handler(Function_Subprogram, handle_function)
         handler.register_handler(Subroutine_Subprogram, handle_subroutine)
-        # handler.register_handler(Program, handle_program)
+        handler.register_handler(Main_Program, handle_program)
         # handler.register_handler(BlockData, handle_block_data)
         # handler.register_handler(Use, handle_use)
         _file_handler_instance = handler
