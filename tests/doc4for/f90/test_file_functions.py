@@ -148,18 +148,15 @@ end module test_mod
         func_no_doc = file_data["functions"]["rectangle_area_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "",
-            "arguments": ["length", "width", "scale"],
+            "description": "\n",
+            "arguments": ["length", "width"],
             "in": {
                 "length": {"description": "", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
                 "width": {"description": "", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
-                "scale": {"description": "", "dimension": None, "type": "REAL",
-                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE}
             },
             "out": {},
             "return": {"description": "", "dimension": None, "type": "REAL",

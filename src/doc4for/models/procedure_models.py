@@ -85,7 +85,8 @@ ProcedureDescription = TypedDict(
         "bound_to": Optional[str], # e.g. procedure(iname) :: proc would give bound_to=iname
         "pass_type": Optional[PassType], # pass, nopass
         "pass_name": Optional[str],
-        "implementation": Optional[str] # e.g. add => add_implementation
+        "implementation": Optional[str], # e.g. add => add_implementation
+        "binding_type": BindingType
     },
 )
 

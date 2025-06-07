@@ -15,6 +15,7 @@ from fparser.two.Fortran2003 import (
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import FunctionDescription
+from doc4for.models.variable_models import PolymorphismType
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 from doc4for.parse.common_parser import _extract_binding_type
 
@@ -53,11 +54,16 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
     
     if not return_argument:
         return_argument = {
+            "type": return_type,
             "description": "",
             "dimension": None,
             "enum_type": None,
             "interface_name": None,
-            "type": return_type
+            "kind": None,
+            "length": None,
+            "attributes": [],
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         }
     
     function_description = {
