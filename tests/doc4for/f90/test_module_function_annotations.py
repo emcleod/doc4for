@@ -34,8 +34,23 @@ class TestFunctionAnnotations(TestCase):
         function = module["functions"]["test_in_annotation"]
         self.assertEqual(function["description"], "\nA function with @in annotation\n\n")
         inputs = function["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None,                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
 
     def test_in_annotation_description(self):
         self.fs.create_file(
@@ -63,8 +78,28 @@ class TestFunctionAnnotations(TestCase):
         function = module["functions"]["test_in_annotation"]
         self.assertEqual(function["description"], "\nA function with @in annotation\n\n")
         inputs = function["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The first argument", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "The first argument", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
 
     def test_missing_description_warning(self):
         self.fs.create_file("/fake/path/test.f90", contents="""
@@ -110,8 +145,28 @@ class TestFunctionAnnotations(TestCase):
             module = result[0]
             function = module["functions"]["test_in_annotation"]
             inputs = function["in"]
-            self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
-            self.assertEqual(inputs["y"], {"type": "INTEGER", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+            self.assertEqual(inputs["x"], {"type": "REAL", 
+                                           "description": "", 
+                                           "dimension": None, 
+                                           "enum_type": None, 
+                                           "interface_name": None,                                       
+                                           "attributes": [],
+                                           "default_value": None,
+                                           "kind": None,
+                                           "length": None,
+                                           "polymorphism_type": PolymorphismType.NONE
+                                        })
+            self.assertEqual(inputs["y"], {"type": "INTEGER", 
+                                           "description": "", 
+                                           "dimension": None, 
+                                           "enum_type": None, 
+                                           "interface_name": None,                                       
+                                           "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
             self.assertNotIn("z", inputs)
             # check that there's a warning for wrong variable name in comment
             self.assertIn("Warning: 'in' annotation 'z' not found in arguments [['x', 'y']]", cm.output[0])
@@ -142,9 +197,28 @@ class TestFunctionAnnotations(TestCase):
         function = module["functions"]["test_out_annotation"]
         self.assertEqual(function["description"], "\nA function with @out annotation\n\n")
         inputs = function["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
         outputs = function["out"]
-        self.assertEqual(outputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(outputs["y"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None, 
+                                        "interface_name": None, "enum_type": None,
+                                        "attributes": [],
+                                        "default_value": None,
+                                        "kind": None,
+                                        "length": None,
+                                        "polymorphism_type": PolymorphismType.NONE
+                                        })
 
     def test_out_annotation_name_mismatch(self):
         self.fs.create_file(
@@ -171,8 +245,28 @@ class TestFunctionAnnotations(TestCase):
             module = result[0]
             function = module["functions"]["test_out_annotation"]
             inputs = function["in"]
-            self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
-            self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+            self.assertEqual(inputs["x"], {"type": "REAL", 
+                                           "description": "", 
+                                           "dimension": None, 
+                                           "enum_type": None, 
+                                           "interface_name": None,
+                                           "attributes": [],
+                                           "default_value": None,
+                                           "kind": None,
+                                           "length": None,
+                                           "polymorphism_type": PolymorphismType.NONE
+                                        })
+            self.assertEqual(inputs["y"], {"type": "REAL", 
+                                           "description": "", 
+                                           "dimension": None,
+                                           "enum_type": None, 
+                                           "interface_name": None,
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                        })
             self.assertNotIn("z", inputs)
             # check that there's a warning for wrong variable name in comment
             self.assertIn("Warning: 'out' annotation 'z' not found in arguments [[]]", cm.output[0])
@@ -203,9 +297,39 @@ class TestFunctionAnnotations(TestCase):
         self.assertEqual(function["description"], "\nA function with @inout annotation\n\n")
         inputs = function["in"]
         outputs = function["out"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
-        self.assertEqual(outputs["x"], {"type": "REAL", "description": "", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "interface_name": None, 
+                                       "enum_type": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(outputs["x"], {"type": "REAL", 
+                                        "description": "", 
+                                        "dimension": None, 
+                                        "interface_name": None, 
+                                        "enum_type": None,                                       
+                                        "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
 
     def test_inout_annotation_name_mismatch(self):
         self.fs.create_file(
@@ -272,20 +396,35 @@ class TestFunctionAnnotations(TestCase):
                                        "description": "", 
                                        "dimension": None, 
                                        "enum_type": None, 
-                                       "interface_name": None
+                                       "interface_name": None,
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
                                        })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
                                        "dimension": None, 
                                        "enum_type": None, 
-                                       "interface_name": None
+                                       "interface_name": None,
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
                                        })
         results = function["return"]
         self.assertEqual(results, {"type": "INTEGER", 
                                    "description": "The result", 
                                    "dimension": None, 
                                    "interface_name": None, 
-                                   "enum_type": None
+                                   "enum_type": None,
+                                   "attributes": [],
+                                   "default_value": None,
+                                   "kind": None,
+                                   "length": None,
+                                   "polymorphism_type": PolymorphismType.NONE
                                    })
 
     def test_no_description_for_return(self):
@@ -363,11 +502,61 @@ class TestFunctionAnnotations(TestCase):
         self.assertEqual(function["description"], "\nA function with all annotations.\n\n\n")
         inputs = function["in"]
         outputs = function["out"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "The first variable", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(inputs["z"], {"type": "INTEGER", "description": "The final variable", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(outputs["y"], {"type": "REAL", "description": "The second variable", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(outputs["z"], {"type": "INTEGER", "description": "The final variable", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(function["return"], {"type": "REAL", "description": "The result", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "The first variable", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(inputs["z"], {"type": "INTEGER", 
+                                       "description": "The final variable", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,                                       
+                                       "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(outputs["y"], {"type": "REAL", 
+                                        "description": "The second variable", 
+                                        "dimension": None, 
+                                        "enum_type": None, 
+                                        "interface_name": None,                                       
+                                        "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(outputs["z"], {"type": "INTEGER", 
+                                        "description": "The final variable", 
+                                        "dimension": None, 
+                                        "enum_type": None, 
+                                        "interface_name": None,                                       
+                                        "attributes": [],
+                                       "default_value": None,
+                                       "kind": None,
+                                       "length": None,
+                                       "polymorphism_type": PolymorphismType.NONE
+                                    })
+        self.assertEqual(function["return"], {"type": "REAL", 
+                                              "description": "The result", 
+                                              "dimension": None, 
+                                              "interface_name": None, 
+                                              "enum_type": None,                                       
+                                              "attributes": [],
+                                            "default_value": None,
+                                            "kind": None,
+                                            "length": None,
+                                            "polymorphism_type": PolymorphismType.NONE
+                                        })
 
 if __name__ == "__main__":
     unittest.main()

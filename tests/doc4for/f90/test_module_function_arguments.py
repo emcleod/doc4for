@@ -3,6 +3,7 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.variable_models import PolymorphismType
 
 class TestFunctionArguments(TestCase):
     maxDiff=None
@@ -47,7 +48,12 @@ class TestFunctionArguments(TestCase):
             "description": "",
             "dimension": None,
             "enum_type": None,
-            "interface_name": None
+            "interface_name": None,
+            "attributes": [],
+            "default_value": None,
+            "kind": None,
+            "length": None, 
+            "polymorphism_type": PolymorphismType.NONE
         }
         self.assertEqual(returns, expected_returns)
         self.assertEqual(function["arguments"], [])
@@ -81,11 +87,41 @@ class TestFunctionArguments(TestCase):
         outputs = function["out"]
         results = function["return"]
         self.assertEqual(len(inputs), 2)
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,
+                                        "attributes": [],
+                                        "default_value": None,
+                                        "kind": None,
+                                        "length": None, 
+                                        "polymorphism_type": PolymorphismType.NONE                                                                              
+                                       })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None,            
+                                       "attributes": [],
+                                        "default_value": None,
+                                        "kind": None,
+                                        "length": None, 
+                                        "polymorphism_type": PolymorphismType.NONE
+                                       })
         self.assertCountEqual(function["arguments"], ["x", "y"])
         self.assertEqual(len(outputs), 0)
-        self.assertEqual(results, {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+        self.assertEqual(results, {"type": "REAL", 
+                                   "description": "", 
+                                   "dimension": None,
+                                   "enum_type": None, 
+                                   "interface_name": None,
+                                    "attributes": [],
+                                    "default_value": None,
+                                    "kind": None,
+                                    "length": None, 
+                                    "polymorphism_type": PolymorphismType.NONE
+                                   })
 
     def test_function_with_return_prefix(self):
         self.fs.create_file(
@@ -198,7 +234,6 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(outputs), 0)
         self.assertEqual(results["type"], "REAL")
 
-#    @unittest.skip("This technically should work because it's using implicit typing. However, it's not implemented yet")
     def test_function_with_scalar_args_4(self):
         self.fs.create_file(
             "/fake/path/scalar_args.f90",
@@ -232,7 +267,8 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(inputs["x"]["type"], "REAL")
         self.assertEqual(inputs["y"]["type"], "REAL")
         self.assertEqual(len(outputs), 0)
-        self.assertEqual(results["type"], "REAL")
+        # note that this is none because implicit return typing is used
+        self.assertIsNone(results["type"])
 
     def test_function_with_array_args(self):
         self.fs.create_file(

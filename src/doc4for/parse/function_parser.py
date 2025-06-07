@@ -11,13 +11,11 @@ from fparser.two.Fortran2003 import (
     Intrinsic_Type_Spec,
     Type_Declaration_Stmt,
     Language_Binding_Spec,
-    Interface_Block,
     Procedure_Declaration_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import FunctionDescription
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
-from doc4for.parse.interface_parser import parse_interface
 from doc4for.parse.common_parser import _extract_binding_type
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -29,7 +27,7 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
     if common is None:
         return None
     
-    # Function-specific: handle return type and return variable
+    # Handle return type and return variable
     return_type, return_variable = None, None
     if common["prefixes"]:
         for node in common["prefixes"][0].children:
