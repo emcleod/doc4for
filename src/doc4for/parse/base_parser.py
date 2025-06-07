@@ -1,26 +1,16 @@
-import re
 import logging
 from dataclasses import dataclass, field
-from typing import TypeVar, Generic, Dict, Type, Callable, List, Any, Tuple, Optional, Protocol
+from typing import TypeVar, List, Any
 from fparser.one.block_statements import (
-    #Comment,
-    Module,
     Program,
     BlockData,
     ModuleProcedure,
     Type as FortranType,
-    EndModule,
-    EndType,
-    Contains,
-    Implicit,
-    Private,
-    Public,
-    Enum,
-    Enumerator,
     Use,
     Common
 )
 from fparser.two.Fortran2003 import (
+    Module,
     Type_Declaration_Stmt,
     Derived_Type_Def,
     Function_Subprogram,
@@ -96,11 +86,13 @@ def handle_enum(item: Enum_Def, data: T, comment_stack: List[Comment], **kwargs:
     enumerator_name, enumerator_description = parse_enum(item, comment_stack)
     data["enums"][enumerator_name] = enumerator_description
 
-
+def handle_module(item: Module, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    module_description = initialise_module_description(item, comment_stack, data["file_name"])
+    data["modules"][module_description["module_name"]] = module_description
 #------------------------------------------- old stuff to be replaced
-def handle_module(item: Module, file_data: FileDescription,
-                   comment_stack: List[Comment]):
-    file_data["modules"][item.name] = initialise_module_description(item, comment_stack, file_data["file_name"])
+# def handle_module(item: Module, file_data: FileDescription,
+#                    comment_stack: List[Comment]):
+#     file_data["modules"][item.name] = initialise_module_description(item, comment_stack, file_data["file_name"])
 
 
 def handle_module_procedure(item: ModuleProcedure, data: T, 

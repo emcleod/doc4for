@@ -6,13 +6,12 @@ import random
 import logging
 import sys
 from enum import Enum, auto
-from typing import List
+from typing import List, Any
 from fparser.two.parser import ParserFactory
 from fparser.common.readfortran import FortranFileReader
 from fparser.two.Fortran2003 import (
     Module, 
-    Comment,
-    Dimension_Stmt
+    Comment
 )
 from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
@@ -69,7 +68,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
         f90_file_path: str = os.fspath(f90_file)
         
         reader = FortranFileReader(f90_file_path, ignore_comments=False)
-        tree = parser(reader)
+        tree: Any = parser(reader)
         
         # Walk through the parse tree  
         for child in tree.content:     

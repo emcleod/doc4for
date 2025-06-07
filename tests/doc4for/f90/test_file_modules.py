@@ -57,7 +57,7 @@ end module module2
         self.assertIn('module1', file_data['modules'])
         self.assertIn('module2', file_data['modules'])
         modules1 = file_data['modules']['module1']
-        #self.assertEqual(modules1['module_description'], 'This is the first module')
+#        self.assertEqual(modules1['module_description'], 'This is the first module')
         modules2 = file_data['modules']['module2']
         self.assertEqual(modules2['module_description'], '\nThis is the second module\n\n')
 

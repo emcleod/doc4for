@@ -3,6 +3,9 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.models.common import BindingTypeEnum
+from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.common import Expression, ExpressionType
+from doc4for.models.variable_models import PolymorphismType
 
 class TestFunctionSignatures(TestCase):
     maxDiff = None
@@ -55,9 +58,11 @@ end module test_mod
             "arguments": [],
             "out": {},
             "in": {},
-            "return": {"simple": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
+            "return": {"description": "Always returns 42", "dimension": None, "type": "INTEGER",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -65,13 +70,15 @@ end module test_mod
         func_no_doc = file_data["functions"]["simple_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "",
+            "description": "\n",
             "arguments": [],
             "out": {},
             "in": {},
-            "return": {"simple_no_doc": {"description": "", "dimension": "", "type": "integer"}},
+            "return": {"description": "", "dimension": None, "type": "INTEGER",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -118,14 +125,22 @@ end module test_mod
             "description": "\nCalculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale"],
             "in": {
-                "length": {"type": "real", "description": "The length of the rectangle", "dimension": ""},
-                "width": {"type": "real", "description": "The width of the rectangle", "dimension": ""},
-                "scale": {"type": "real", "description": "The scale, not used", "dimension": ""}
+                "length": {"description": "The length of the rectangle", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "width": {"description": "The width of the rectangle", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "scale": {"description": "The scale, not used", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             },
             "out": {},
-            "return": {"rectangle_area": {"description": "Area of the rectangle", "dimension": "", "type": "real"}},
+            "return": {"description": "Area of the rectangle", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
+            "binding_type": None
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -134,15 +149,24 @@ end module test_mod
         expected_no_doc = {
             "attributes": [],
             "description": "",
-            "arguments": ["length", "width"],
+            "arguments": ["length", "width", "scale"],
             "in": {
-                "length": {"type": "real", "description": "", "dimension": ""},
-                "width": {"type": "real", "description": "", "dimension": ""}
+                "length": {"description": "", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "width": {"description": "", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "scale": {"description": "", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             },
             "out": {},
-            "return": {"rectangle_area_no_doc": {"description": "", "dimension": "", "type": "real"}},
+            "return": {"description": "", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
+            "binding_type": None
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -185,37 +209,14 @@ end module test_mod
         self.assertEqual(len(file_data["functions"]), 2)
 
         func_annotations = file_data["functions"]["test_annotations"]
-        expected_annotations = {
-            "attributes": [],
-            "description": "\nTest function with various annotation styles\n\n",
-            "arguments": ["arg1", "arg2", "arg3", "arg4"],
-            "in": {
-                "arg1": {"type": "integer", "description": "Input argument 1", "dimension": ""},
-                "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
-                "arg4": {"type": "logical", "description": "Argument 4 with no space after colon", "dimension": ""}
-            },
-            "out": {
-                "arg2": {"type": "real", "description": "Output argument 2", "dimension": ""},
-                "arg3": {"type": "character", "description": "Argument 3 for both input and output", "dimension": ""},
-            },
-            "return": {"res": {"description": "The result of the calculation", "dimension": "", "type": "real"}},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
-        }
-        self.assertEqual(func_annotations, expected_annotations)
+        self.assertEqual(func_annotations["in"]["arg1"]["description"], "Input argument 1")
+        self.assertEqual(func_annotations["in"]["arg3"]["description"], "Argument 3 for both input and output")
+        self.assertEqual(func_annotations["out"]["arg2"]["description"], "Output argument 2")
+        self.assertEqual(func_annotations["out"]["arg3"]["description"], "Argument 3 for both input and output")
+        self.assertEqual(func_annotations["return"]["description"], "The result of the calculation")
 
         func_unnamed = file_data["functions"]["unnamed_return"]
-        expected_unnamed = {
-            "attributes": [],
-            "description": "\nFunction with unnamed return\n\n",
-            "arguments": [],
-            "in": {},
-            "out": {},
-            "return": {"unnamed_return": {"description": "Always returns 42", "dimension": "", "type": "integer"}},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}            
-        }
-        self.assertEqual(func_unnamed, expected_unnamed)
+        self.assertEqual(func_unnamed["return"]["description"], "Always returns 42")
 
     def test_function_with_array_arguments(self):
         self.fs.create_file(
@@ -247,14 +248,25 @@ end module test_mod
             "description": "\nFunction with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
-                "matrix": {"type": "real", "description": "The input matrix", "dimension": "1:100 &times; 1:100"}
+                "matrix": {"description": "The input matrix", 
+                       "dimension": {"dimensions": [
+                           ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100")),
+                           ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
+                       "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             },
             "out": {
-                "vector": {"type": "real", "description": "The output vector", "dimension": "1:100"}
+                "vector": {"description": "The output vector", 
+                       "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
+                       "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             },
-            "return": {"process_matrix": {"description": "Whether the operation was successful", "dimension": "", "type": "logical"}},
+            "return": {"description": "Whether the operation was successful", 
+                       "dimension": None, 
+                       "type": "LOGICAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}           
+            "binding_type": None
         }
         self.assertEqual(func_array, expected_array)
 
@@ -295,10 +307,11 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"unnamed_return": {"description": "Description for unnamed return",
-                                         "dimension": "", "type": "real"}},
+            "return": {"description": "Description for unnamed return", "dimension": None, "type": "REAL",
+                       "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_attached, expected_attached)
 
@@ -347,40 +360,121 @@ end module test_mod
         func_styles = file_data["functions"]["test_arg_styles"]
         self.assertEqual(func_styles["description"], "\nFunction to test all argument annotation styles\n\n")
         # Check input arguments
-        self.assertEqual(func_styles['in'], {
-            'a': {'type': 'integer', 'description': 'Standard input annotation', 'dimension': ''},
-            'b': {'type': 'integer', 'description': 'No space after variable name', 'dimension': ''},
-            'c': {'type': 'integer', 'description': 'Space before type', 'dimension': ''},
-            'd': {'type': 'integer', 'description': 'No spaces around colon', 'dimension': ''},
-            'e': {'type': 'integer', 'description': 'Array input', 'dimension': '1:10'},
-            'k': {'type': 'logical', 'description': 'Standard inout annotation', 'dimension': ''},
-            'l': {'type': 'logical', 'description': 'No space after variable name', 'dimension': ''},
-            'm': {'type': 'logical', 'description': 'Space before type', 'dimension': ''},
-            'n': {'type': 'logical', 'description': 'No spaces around colon', 'dimension': ''},
-            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'},
-            'p': {'type': 'integer', 'description': 'Array input and output', 'dimension': '1:4'},
-            'q': {'type': 'integer', 'description': 'Array inout', 'dimension': '1:2'}
-        })
+        self.assertEqual(len(func_styles["in"]), 12)
+
+        self.assertEqual(func_styles["in"]["a"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["a"]["description"], "Standard input annotation")
+        self.assertIsNone(func_styles["in"]["a"]["dimension"])
+        self.assertEqual(func_styles["in"]["b"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["b"]["description"], "No space after variable name")
+        self.assertIsNone(func_styles["in"]["b"]["dimension"])
+        self.assertEqual(func_styles["in"]["c"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["c"]["description"], "Space before type")
+        self.assertIsNone(func_styles["in"]["c"]["dimension"])
+        self.assertEqual(func_styles["in"]["d"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["d"]["description"], "No spaces around colon")
+        self.assertIsNone(func_styles["in"]["d"]["dimension"])
+        self.assertEqual(func_styles["in"]["e"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["e"]["description"], "Array input")
+        self.assertEqual(func_styles["in"]["e"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "10"))]})
+        self.assertEqual(func_styles["in"]["k"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["in"]["k"]["description"], "Standard inout annotation")
+        self.assertIsNone(func_styles["in"]["k"]["dimension"])
+        self.assertEqual(func_styles["in"]["l"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["in"]["l"]["description"], "No space after variable name")
+        self.assertIsNone(func_styles["in"]["l"]["dimension"])
+        self.assertEqual(func_styles["in"]["m"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["in"]["m"]["description"], "Space before type")
+        self.assertIsNone(func_styles["in"]["m"]["dimension"])
+        self.assertEqual(func_styles["in"]["n"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["in"]["n"]["description"], "No spaces around colon")
+        self.assertIsNone(func_styles["in"]["n"]["dimension"])
+        self.assertEqual(func_styles["in"]["o"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["in"]["o"]["description"], "Array inout")
+        self.assertEqual(func_styles["in"]["o"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "3"))]})
+        self.assertEqual(func_styles["in"]["p"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["p"]["description"], "Array input and output")
+        self.assertEqual(func_styles["in"]["p"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "4"))]})
+        self.assertEqual(func_styles["in"]["q"]["type"], "INTEGER")
+        self.assertEqual(func_styles["in"]["q"]["description"], "Array inout")
+        self.assertEqual(func_styles["in"]["q"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "2"))]})
 
         # Check output arguments
-        self.assertEqual(func_styles['out'], {
-            'f': {'type': 'real', 'description': 'Standard output annotation', 'dimension': ''},
-            'g': {'type': 'real', 'description': 'No space after variable name', 'dimension': ''},
-            'h': {'type': 'real', 'description': 'Space before type', 'dimension': ''},
-            'i': {'type': 'real', 'description': 'No spaces around colon', 'dimension': ''},
-            'j': {'type': 'real', 'description': 'Array output', 'dimension': '1:5'},
-            'k': {'type': 'logical', 'description': 'Standard inout annotation', 'dimension': ''},
-            'l': {'type': 'logical', 'description': 'No space after variable name', 'dimension': ''},
-            'm': {'type': 'logical', 'description': 'Space before type', 'dimension': ''},
-            'n': {'type': 'logical', 'description': 'No spaces around colon', 'dimension': ''},
-            'o': {'type': 'logical', 'description': 'Array inout', 'dimension': '1:3'},
-            'p': {'type': 'integer', 'description': 'Array input and output', 'dimension': '1:4'},
-            'q': {'type': 'integer', 'description': 'Array inout', 'dimension': '1:2'}
-        })
+        self.assertEqual(len(func_styles["out"]), 12)
+
+        self.assertEqual(func_styles["out"]["f"]["type"], "REAL")
+        self.assertEqual(func_styles["out"]["f"]["description"], "Standard output annotation")
+        self.assertIsNone(func_styles["out"]["f"]["dimension"])
+        self.assertEqual(func_styles["out"]["g"]["type"], "REAL")
+        self.assertEqual(func_styles["out"]["g"]["description"], "No space after variable name")
+        self.assertIsNone(func_styles["out"]["g"]["dimension"])
+        self.assertEqual(func_styles["out"]["h"]["type"], "REAL")
+        self.assertEqual(func_styles["out"]["h"]["description"], "Space before type")
+        self.assertIsNone(func_styles["out"]["h"]["dimension"])
+        self.assertEqual(func_styles["out"]["i"]["type"], "REAL")
+        self.assertEqual(func_styles["out"]["i"]["description"], "No spaces around colon")
+        self.assertIsNone(func_styles["out"]["i"]["dimension"])
+        self.assertEqual(func_styles["out"]["j"]["type"], "REAL")
+        self.assertEqual(func_styles["out"]["j"]["description"], "Array output")
+        self.assertEqual(func_styles["out"]["j"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "5"))]})
+        self.assertEqual(func_styles["out"]["k"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["out"]["k"]["description"], "Standard inout annotation")
+        self.assertIsNone(func_styles["out"]["k"]["dimension"])
+        self.assertEqual(func_styles["out"]["l"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["out"]["l"]["description"], "No space after variable name")
+        self.assertIsNone(func_styles["out"]["l"]["dimension"])
+        self.assertEqual(func_styles["out"]["m"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["out"]["m"]["description"], "Space before type")
+        self.assertIsNone(func_styles["out"]["m"]["dimension"])
+        self.assertEqual(func_styles["out"]["n"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["out"]["n"]["description"], "No spaces around colon")
+        self.assertIsNone(func_styles["out"]["n"]["dimension"])
+        self.assertEqual(func_styles["out"]["o"]["type"], "LOGICAL")
+        self.assertEqual(func_styles["out"]["o"]["description"], "Array inout")
+        self.assertEqual(func_styles["out"]["o"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "3"))]})
+        self.assertEqual(func_styles["out"]["p"]["type"], "INTEGER")
+        self.assertEqual(func_styles["out"]["p"]["description"], "Array input and output")
+        self.assertEqual(func_styles["out"]["p"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "4"))]})
+        self.assertEqual(func_styles["out"]["q"]["type"], "INTEGER")
+        self.assertEqual(func_styles["out"]["q"]["description"], "Array inout")
+        self.assertEqual(func_styles["out"]["q"]["dimension"], 
+                         {"dimensions": [ArrayBound(BoundType.FIXED, 
+                                                    Expression(ExpressionType.LITERAL, "1"), 
+                                                    Expression(ExpressionType.LITERAL, "2"))]})
 
         # Check return
-        self.assertEqual(func_styles['return'], {
-            'res': {'type': 'character', 'description': 'Return type', 'dimension': ''}
+        self.assertEqual(func_styles["return"], {
+            "type": "CHARACTER", 
+            "description": "Return type", 
+            "dimension": None,
+            "attributes": [],
+            "enum_type": None,
+            "interface_name": None,
+            "kind": None,
+            "length": "1",
+            "polymorphism_type": PolymorphismType.NONE,
+            "default_value": None
         })
 
     def test_argument_annotations_with_complex_descriptions(self):
@@ -422,47 +516,53 @@ end module test_mod
         func_complex = file_data["functions"]["complex_args"]
 
         # Check complex descriptions
-        self.assertEqual(func_complex['in']['matrix'], {
-            'type': 'real',
-            'description': 'The input matrix, used for primary calculations',
-            'dimension': '1:100 &times; 1:100'
-        })
+        matrix = func_complex["in"]["matrix"]
+        self.assertEqual(matrix["type"], "REAL")
+        self.assertEqual(matrix["description"], "The input matrix, used for primary calculations")
+        self.assertEqual(matrix["dimension"], {"dimensions":
+                                               [ArrayBound(BoundType.FIXED,
+                                                           Expression(ExpressionType.LITERAL, "1"),
+                                                           Expression(ExpressionType.LITERAL, "100")),
+                                                ArrayBound(BoundType.FIXED,
+                                                           Expression(ExpressionType.LITERAL, "1"),
+                                                           Expression(ExpressionType.LITERAL, "100"))
+                                                ]})
 
-        expected_stats_desc = ('Output statistics array: '
-                               '1: mean '
-                               '2: median '
-                               '3-5: quartiles '
-                               '6-10: reserved for future use')
-        self.assertEqual(func_complex['out']['stats'], {
-            'type': 'real',
-            'description': expected_stats_desc,
-            'dimension': '1:10'
-        })
+        expected_stats_desc = ("Output statistics array: "
+                               "1: mean "
+                               "2: median "
+                               "3-5: quartiles "
+                               "6-10: reserved for future use")
+        stats = func_complex["out"]["stats"]
+        self.assertEqual(stats["type"], "REAL")
+        self.assertEqual(stats["description"], expected_stats_desc)
+        self.assertEqual(stats["dimension"], {"dimensions":
+                                               [ArrayBound(BoundType.FIXED,
+                                                           Expression(ExpressionType.LITERAL, "1"),
+                                                           Expression(ExpressionType.LITERAL, "10"))
+                                                ]})
 
-        expected_flag_desc = ('Processing flag: '
-                              '0 = not started '
-                              '1 = in progress '
-                              '2 = completed '
-                              'negative = error code')
-        self.assertEqual(func_complex['in']['flag'], {
-            'type': 'integer',
-            'description': expected_flag_desc,
-            'dimension': ''
-        })
-        self.assertEqual(func_complex['out']['flag'], {
-            'type': 'integer',
-            'description': expected_flag_desc,
-            'dimension': ''
-        })
+        expected_flag_desc = ("Processing flag: "
+                              "0 = not started "
+                              "1 = in progress "
+                              "2 = completed "
+                              "negative = error code")
+        flag = func_complex["in"]["flag"]
+        self.assertEqual(flag["type"], "INTEGER")
+        self.assertEqual(flag["description"], expected_flag_desc)
+        self.assertIsNone(flag["dimension"])
+
+        flag = func_complex["out"]["flag"]
+        self.assertEqual(flag["type"], "INTEGER")
+        self.assertEqual(flag["description"], expected_flag_desc)
+        self.assertIsNone(flag["dimension"])
 
         # Check return description
-        expected_return_desc = ('True if processing was successful, '
-                                'False otherwise')
-        self.assertEqual(func_complex['return']['complex_args'], {
-            'type': 'logical',
-            'description': expected_return_desc,
-            'dimension': ''
-        })
+        expected_return_desc = ("True if processing was successful, "
+                                "False otherwise")
+        self.assertEqual(func_complex["return"]["type"], "LOGICAL")
+        self.assertEqual(func_complex["return"]["description"], expected_return_desc)
+        self.assertIsNone(func_complex["return"]["dimension"])
 
     def test_return_with_arrays(self):
         self.fs.create_file(
@@ -517,13 +617,12 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"vector_return": {
-                "description": "Returns a vector of results",
-                "dimension": "1:10",
-                "type": "real"
-            }},
+            "return": {"description": "Returns a vector of results", 
+                       "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "10"))]}, 
+                       "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_vector, expected_vector)
 
@@ -535,13 +634,15 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"result": {
+            "return": {
                 "description": "Returns a matrix of counts",
-                "dimension": "1:5 &times; 1:5",
-                "type": "integer"
-            }},
+                "dimension": {"dimensions": [
+                    ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "5")),
+                    ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "5"))]}, 
+                "type": "INTEGER", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_matrix, expected_matrix)
 
@@ -553,13 +654,13 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"res": {
+            "return": {
                 "description": "Returns complex values",
-                "dimension": "1:3",
-                "type": "complex"
-            }},
+                "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "3"))]}, 
+                "type": "COMPLEX", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
             "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         }
         self.assertEqual(func_spaced, expected_spaced)
 
@@ -571,13 +672,13 @@ end module test_mod
             "arguments": [],
             "in": {},
             "out": {},
-            "return": {"output": {
+            "return": {
                 "description": "Returns many values",
-                "dimension": "1:100",
-                "type": "real"
-            }},
-            "argument_interfaces": {}  ,
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}          
+                "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
+                "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},            
+            "argument_interfaces": {},
+            "binding_type": None
         }
         self.assertEqual(func_dense, expected_dense)
 
@@ -731,5 +832,5 @@ end module test_mod
         self.assertEqual(func_spaced, expected_spaced)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

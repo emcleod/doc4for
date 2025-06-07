@@ -1,16 +1,22 @@
 import os
+import sys
 import logging
 from pathlib import Path
-from typing import List, Union, Optional, Iterator, Any, Dict, Set
+from typing import List, Union, Optional, Iterator, Dict, Tuple
 from jinja2 import Environment, FileSystemLoader, Template
-from fparser.api import parse as fortran_parser  # type: ignore
-from fparser.one.block_statements import Comment 
+from fparser.common.readfortran import FortranFileReader
+from fparser.two.parser import ParserFactory
 from doc4for.models.file_models import FileDescription
 from doc4for.parse.file_parser import parse_file_content
 from doc4for.models.file_models import FileDescription
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+try:
+    from fparser.two import Fortran2008
+    sys.modules['fparser.two.Fortran2008'] = Fortran2008
+except ImportError:
+    pass
 
 class DirectoryTree:
     """Represents a directory tree structure."""
@@ -22,7 +28,7 @@ class DirectoryTree:
 
     def add_path(self, path: Path) -> None:
         normalized_path: Path = Path(str(path).replace('\\', '/'))
-        parts: List[str] = normalized_path.parts
+        parts: Tuple[str] = normalized_path.parts
         current: DirectoryTree = self
         for part in parts[:-1]:
             child: Optional[DirectoryTree] = next((c for c in current.children if isinstance(c, DirectoryTree) and c.name == part), None)
@@ -61,11 +67,21 @@ def build_directory_tree(files: List[Path]) -> DirectoryTree:
 #TODO see generate module tree - don't initialise in this method
 def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
     files: List[FileDescription] = []
+
+    # Create a parser
+    try:
+        parser = ParserFactory().create(std="f2008")
+    except:
+        parser = ParserFactory().create(std="f2003")
+
     for f90_file in f90_files:
-        f90_file_str: str = os.fspath(f90_file)
-        tree: Any = fortran_parser(f90_file_str, ignore_comments=False)
+        f90_file_path: str = os.fspath(f90_file)
+
+        reader = FortranFileReader(f90_file_path, ignore_comments=False)
+        tree = parser(reader)
+
         file_data: FileDescription = {
-            'file_name': f90_file_str,
+            'file_name': f90_file_path,
             'file_description': '',
             'functions': {},
             'subroutines': {},

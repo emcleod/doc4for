@@ -1,7 +1,9 @@
 from typing import List
+from fparser.two.Fortran2003 import (
+    Comment, 
+    Module
+)
 from fparser.one.block_statements import (
-    Module,
-    Comment,
     Program,
     Use
 )
