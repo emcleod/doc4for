@@ -228,45 +228,46 @@ class TestComplexCases(TestCase):
         module = result[0]
         subroutine = module["subroutines"]["test_sub"]
         arguments = subroutine["arguments"]
+        self.assertEqual(arguments, ["x", "y", "z"])
         expected = {
             "x": {
                 "description": "",
                 "type": "REAL",
-                "name": "x",
                 "dimension": None,
                 "polymorphism_type": PolymorphismType.NONE,
-                "attributes": ["intent(in)"],
+                "attributes": [],
                 "kind": '8',
-                "initial_value": None,
+                "default_value": None,
                 "length": None,
-                "binding_type": None
+                "interface_name": None,
+                "enum_type": None
             },
             "y": {
                 "description": "",
                 "type": "REAL",
-                "name": "y",
                 "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
                 "polymorphism_type": PolymorphismType.NONE,
-                "attributes": ["intent(in)"],
+                "attributes": [],
                 "kind": '8',
-                "initial_value": None,
+                "default_value": None,
                 "length": None,
-                "binding_type": None
+                "interface_name": None,
+                "enum_type": None
             },
             "z": {
                 "description": "",
                 "type": "REAL",
-                "name": "z",
                 "dimension": None,
                 "polymorphism_type": PolymorphismType.NONE,
-                "attributes": ["intent(in)"],
+                "attributes": [],
                 "kind": '8',
-                "initial_value": None,
+                "default_value": None,
                 "length": None,
-                "binding_type": None
+                "interface_name": None,
+                "enum_type": None
             }
         }
-        self.assertEqual(arguments, expected)
+        self.assertEqual(subroutine["in"], expected)
 
     def test_all_features_combined(self):
         self.fs.create_file(

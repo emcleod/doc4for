@@ -445,7 +445,7 @@ class TestCharacterVariables(TestCase):
         }
         self.assertEqual(variables, expected)
 
-    @unittest.skip("fparser doesn't interpret selected_char_kind('ASCII') as number so it fails")
+#    @unittest.skip("fparser doesn't interpret selected_char_kind('ASCII') as number so it fails")
     def test_character_kind_complex_expression(self):
         self.fs.create_file(
             "/fake/path/test.f90",

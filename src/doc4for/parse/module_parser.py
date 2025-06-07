@@ -29,7 +29,6 @@ from doc4for.parse.base_parser import (
     handle_derived_type,
     handle_interface,
     handle_enum
-    # handle_enum,
     # handle_use,
     # handle_common_block,
 #    handle_type

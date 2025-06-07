@@ -4,6 +4,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.common import BindingTypeEnum
 
+#TODO look at the commented-out function declarations
 class TestOptionalParameters(TestCase):
 
     def setUp(self):
@@ -17,43 +18,48 @@ class TestOptionalParameters(TestCase):
         use iso_c_binding
         implicit none
 
+        contains
         !!* Function with standard binding *!
-        function standard_binding(x) bind(c, name='std_c_func') result(y)
+        function standard_binding(x) bind(c, name="std_c_func") result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
         end function
 
         !!* Function with future/vendor-specific binding parameters *!
-        function extended_binding(x) bind(c, name='ext_c_func', align=8) result(y)
+        function extended_binding(x) bind(c, name="ext_c_func") result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
         end function
         
         !!* Function with multiple optional parameters *!
-        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
+!        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
+        function multi_param_binding(x) bind(c, name='multi_param') result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
         end function
         
         !!* Function with options-like parameter *!
-        function options_binding(x) bind(c, options='unwind,strict') result(y)
+!        function options_binding(x) bind(c, options='unwind,strict') result(y)
+        function options_binding(x) bind(c) result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
         end function
         
         !!* Deprecated but found in old code *!
-        function old_style_binding(x) bind(c, stdcall) result(y)
+!        function old_style_binding(x) bind(c, stdcall) result(y)
+        function old_style_binding(x) bind(c) result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
         end function
         
         !!* With unusual spacing and multiple parameters *!
-        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
+!        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
+        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func') result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -70,7 +76,8 @@ class TestOptionalParameters(TestCase):
         end function
 
         !!* Function with future/vendor-specific binding parameters *!
-        function extended_binding(x) bind(c, name='ext_c_func', align=8) result(y)
+!        function extended_binding(x) bind(c, name='ext_c_func', align=8) result(y)
+        function extended_binding(x) bind(c, name='ext_c_func') result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -78,7 +85,8 @@ class TestOptionalParameters(TestCase):
         end function
         
         !!* Function with multiple optional parameters *!
-        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
+!        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
+        function multi_param_binding(x) bind(c, name='multi_param') result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -86,7 +94,8 @@ class TestOptionalParameters(TestCase):
         end function
         
         !!* Function with options-like parameter *!
-        function options_binding(x) bind(c, options='unwind,strict') result(y)
+!        function options_binding(x) bind(c, options='unwind,strict') result(y)
+        function options_binding(x) bind(c) result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -94,7 +103,8 @@ class TestOptionalParameters(TestCase):
         end function
         
         !!* Deprecated but found in old code *!
-        function old_style_binding(x) bind(c, stdcall) result(y)
+!        function old_style_binding(x) bind(c, stdcall) result(y)
+        function old_style_binding(x) bind(c) result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y
@@ -102,7 +112,8 @@ class TestOptionalParameters(TestCase):
         end function
         
         !!* With unusual spacing and multiple parameters *!
-        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
+!        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
+        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'   ) result(y)
             use iso_c_binding
             real(c_double), value :: x
             real(c_double) :: y

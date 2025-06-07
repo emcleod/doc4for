@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
+from doc4for.models.variable_models import PolymorphismType
 
 class TestFunctionAnnotations(TestCase):
     def setUp(self):
@@ -267,10 +268,25 @@ class TestFunctionAnnotations(TestCase):
         function = module["functions"]["test_return_type"]
         self.assertEqual(function["description"], "\nA function with return type\n\n")
         inputs = function["in"]
-        self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
-        self.assertEqual(inputs["y"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None})
+        self.assertEqual(inputs["x"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None
+                                       })
+        self.assertEqual(inputs["y"], {"type": "REAL", 
+                                       "description": "", 
+                                       "dimension": None, 
+                                       "enum_type": None, 
+                                       "interface_name": None
+                                       })
         results = function["return"]
-        self.assertEqual(results, {"type": "INTEGER", "description": "The result", "dimension": None, "interface_name": None, "enum_type": None})
+        self.assertEqual(results, {"type": "INTEGER", 
+                                   "description": "The result", 
+                                   "dimension": None, 
+                                   "interface_name": None, 
+                                   "enum_type": None
+                                   })
 
     def test_no_description_for_return(self):
         self.fs.create_file(

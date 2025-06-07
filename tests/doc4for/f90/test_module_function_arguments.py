@@ -198,7 +198,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(outputs), 0)
         self.assertEqual(results["type"], "REAL")
 
-    @unittest.skip("This technically should work because it's using implicit typing. However, it's not implemented yet")
+#    @unittest.skip("This technically should work because it's using implicit typing. However, it's not implemented yet")
     def test_function_with_scalar_args_4(self):
         self.fs.create_file(
             "/fake/path/scalar_args.f90",
@@ -386,7 +386,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(inputs["vector"]["dimension"]["dimensions"], 
                         [ArrayBound(bound_type=BoundType.ASSUMED_SHAPE)])
 
-    @unittest.skip("fparser doesn't like assumed rank arrays")
+#    @unittest.skip("fparser doesn't like assumed rank arrays")
     def test_function_with_assumed_rank_array(self):
         self.fs.create_file(
             "/fake/path/assumed_rank.f90",

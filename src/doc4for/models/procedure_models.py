@@ -1,6 +1,7 @@
 from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any, Tuple
 from doc4for.models.common import BindingType
 from doc4for.models.dimension_models import Dimension
+from doc4for.models.variable_models import PolymorphismType
 from enum import Enum, auto
 
 #TODO add source file information to all of these
@@ -9,10 +10,15 @@ Argument = TypedDict(
     "Argument",
     {
         "type": str,
+        "kind": Optional[str],
+        "length": Optional[str], # character length
         "description": str,
         "dimension": Dimension,
+        "attributes": List[str],
+        "default_value": Optional[str],
         "interface_name": Optional[str],
         "enum_type": Optional[str],  # Reference to enum if this is an enum type
+        "polymorphism_type": Optional[PolymorphismType], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
     },
 )
 
@@ -36,6 +42,7 @@ InterfaceDescription = TypedDict(
     },
 )
 
+#TODO should the declaration string be added
 FunctionDescription = TypedDict(
     "FunctionDescription",
     {

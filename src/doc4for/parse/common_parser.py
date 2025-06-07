@@ -1,26 +1,6 @@
 import re
 import logging
 from typing import List, Dict, Any, Tuple, TypeVar, Generic, Type, Protocol
-# from fparser.one.block_statements import (
-#     Module,
-#     Function, 
-#     Subroutine,
-#     Interface,
-#     Program,
-#     BlockData,
-#     ModuleProcedure,
-#     Type as FortranType,
-#     EndModule,
-#     EndType,
-#     Contains,
-#     Implicit,
-#     Private,
-#     Public,
-#     Enum,
-#     Enumerator,
-#     Use,
-#     Common
-# )
 from fparser.two.Fortran2003 import (
     Comment, 
     Name, 
@@ -158,7 +138,7 @@ def _extract_char_length(declaration: Any) -> str:
             return length_value[0].string
     return None
 
-def _extract_length_and_kind(declaration: Any) -> str:
+def _extract_length_and_kind(declaration: Any) -> Tuple[str, str]:
     selector = walk(declaration, Char_Selector)
     length, kind = None, None
     if selector:

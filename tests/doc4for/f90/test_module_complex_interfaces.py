@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum
+from doc4for.models.variable_models import PolymorphismType
 
 class TestInterfaces(TestCase):
     maxDiff=None
@@ -68,29 +68,29 @@ class TestInterfaces(TestCase):
     end module mixed_interface_mod
     """
         )
-        result = extract_module_data([Path('/fake/path/mixed_interface.f90')])
+        result = extract_module_data([Path("/fake/path/mixed_interface.f90")])
         module = result[0]
-        interface = module['interfaces'][0]
+        interface = module["interfaces"][0]
 
         # Check interface type
-        self.assertEqual(interface['name'], 'merge_data')
-        self.assertEqual(interface['description'], "\nGeneric interface for merging data\nSupports different merge algorithms\n\n")
+        self.assertEqual(interface["name"], "merge_data")
+        self.assertEqual(interface["description"], "\nGeneric interface for merging data\nSupports different merge algorithms\n\n")
         
         # Check module procedures
-        self.assertEqual(len(interface['module_procedures']), 2)
-        self.assertIn('merge_sorted', interface['module_procedures'])
-        self.assertIn('merge_unsorted', interface['module_procedures'])
+        self.assertEqual(len(interface["module_procedures"]), 2)
+        self.assertIn("merge_sorted", interface["module_procedures"])
+        self.assertIn("merge_unsorted", interface["module_procedures"])
         
         # Check explicit procedures
-        self.assertEqual(len(interface['procedures']), 1)
-        merge_comp = interface['procedures']['merge_with_comparator']
-        self.assertEqual(len(merge_comp['argument_interfaces']), 1)
+        self.assertEqual(len(interface["procedures"]), 1)
+        merge_comp = interface["procedures"]["merge_with_comparator"]
+        self.assertEqual(len(merge_comp["argument_interfaces"]), 1)
         
         # Check nested interface
-        comp_interface = merge_comp['argument_interfaces']['comparator']
-        self.assertEqual(comp_interface['description'], "Comparison function interface\n")
-        comp_func = comp_interface['procedures']['comparator']
-        self.assertEqual(comp_func['return']['comparator']['type'], 'logical')
+        comp_interface = merge_comp["argument_interfaces"]["comparator"]
+        self.assertEqual(comp_interface["description"], "Comparison function interface\n")
+        comp_func = comp_interface["procedures"]["comparator"]
+        self.assertEqual(comp_func["return"]["type"], "LOGICAL")
 
     def test_interface_multiple_operators(self):
         """Test module with multiple operator interfaces."""
@@ -133,21 +133,21 @@ class TestInterfaces(TestCase):
     end module matrix_operators
     """
         )
-        result = extract_module_data([Path('/fake/path/operators.f90')])
+        result = extract_module_data([Path("/fake/path/operators.f90")])
         module = result[0]
         
-        self.assertEqual(len(module['interfaces']), 3)
+        self.assertEqual(len(module["interfaces"]), 3)
         
         # Check operator symbols
-        operators = ['+', '*', '==']
+        operators = ["+", "*", "=="]
         for i, op in enumerate(operators):
-            self.assertEqual(module['interfaces'][i]['operator_symbol'], op)
+            self.assertEqual(module["interfaces"][i]["operator_symbol"], op)
         
         # Check types of procedures
-        self.assertEqual(len(module['interfaces'][0]['module_procedures']), 1)  # +
-        self.assertEqual(len(module['interfaces'][1]['module_procedures']), 1)  # *
-        self.assertEqual(len(module['interfaces'][2]['procedures']), 1)  # ==
-        self.assertEqual(len(module['interfaces'][2]['module_procedures']), 0)  # ==
+        self.assertEqual(len(module["interfaces"][0]["module_procedures"]), 1)  # +
+        self.assertEqual(len(module["interfaces"][1]["module_procedures"]), 1)  # *
+        self.assertEqual(len(module["interfaces"][2]["procedures"]), 1)  # ==
+        self.assertEqual(len(module["interfaces"][2]["module_procedures"]), 0)  # ==
 
     def test_interface_with_use_statements(self):
         """Test interfaces that use types from other modules."""
@@ -193,16 +193,16 @@ class TestInterfaces(TestCase):
     """
         )
         # This test simulates handling of modules that import types from other modules
-        result = extract_module_data([Path('/fake/path/interface_with_type.f90')])
+        result = extract_module_data([Path("/fake/path/interface_with_type.f90")])
         operations_mod = result[1]  # Second module: operations
         
-        interface = operations_mod['interfaces'][0]
-        proc = interface['procedures']['distance_points']
+        interface = operations_mod["interfaces"][0]
+        proc = interface["procedures"]["distance_points"]
         
         # Check if the type information is correctly parsed
-        self.assertEqual(proc['in']['p1']['type'], 'point')
-        self.assertEqual(proc['in']['p2']['type'], 'point')
-        self.assertEqual(proc['return']['dist']['type'], 'real')
+        self.assertEqual(proc["in"]["p1"]["type"], "point")
+        self.assertEqual(proc["in"]["p2"]["type"], "point")
+        self.assertEqual(proc["return"]["type"], "REAL")
 
     def test_interface_with_deferred_binding(self):
         """Test interface with type-bound procedures."""
@@ -248,21 +248,20 @@ class TestInterfaces(TestCase):
     end module abstract_type
     """
         )
-        result = extract_module_data([Path('/fake/path/deferred_binding.f90')])
+        result = extract_module_data([Path("/fake/path/deferred_binding.f90")])
         module = result[0]
         
-        # Check that we have two abstract interfaces
-        self.assertEqual(len(module['interfaces']), 2)
+        interfaces = module["interfaces"]
+        self.assertEqual(len(interfaces), 1)
         
-        # Verify they are abstract
-        for interface in module['interfaces']:
-            self.assertEqual(interface['attributes'], ['abstract'])
+        for interface in module["interfaces"]:
+            self.assertEqual(interface["attributes"], ["ABSTRACT"])
         
         # Check the import statement was handled
-        area_interface = module['interfaces'][0]
-        area_proc = area_interface['procedures']['area_interface']
-        self.assertEqual(area_proc['in']['this']['type'], 'shape')
-        self.assertIn('class', str(area_proc['in']['this']))
+        area_interface = module["interfaces"][0]
+        area_proc = area_interface["procedures"]["area_interface"]
+        self.assertEqual(area_proc["in"]["this"]["type"], "shape")
+        self.assertEqual(area_proc["in"]["this"]["polymorphism_type"], PolymorphismType.LIMITED)
 
     def test_interface_with_elemental_pure(self):
         """Test interface with elemental and pure procedures."""
@@ -333,22 +332,22 @@ class TestInterfaces(TestCase):
     end module math_functions
     """
         )
-        result = extract_module_data([Path('/fake/path/elemental_pure.f90')])
+        result = extract_module_data([Path("/fake/path/elemental_pure.f90")])
         module = result[0]
         
         # Check sigmoid interface
-        sigmoid_interface = module['interfaces'][0]
-        sigmoid_proc = sigmoid_interface['procedures']['sigmoid_scalar']
-        self.assertIn('elemental', sigmoid_proc['attributes'])
-        self.assertIn('pure', sigmoid_proc['attributes'])
+        sigmoid_interface = module["interfaces"][0]
+        sigmoid_proc = sigmoid_interface["procedures"]["sigmoid_scalar"]
+        self.assertEqual(sigmoid_proc["attributes"], ["ELEMENTAL", "PURE"])
         
         # Check safe_divide interface
-        safe_divide_interface = module['interfaces'][1]
-        self.assertEqual(len(safe_divide_interface['module_procedures']), 2)
+        safe_divide_interface = module["interfaces"][1]
+        self.assertEqual(len(safe_divide_interface["module_procedures"]), 2)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
 
+#TODO
 # module complex_interfaces
 #     implicit none
 #     private
