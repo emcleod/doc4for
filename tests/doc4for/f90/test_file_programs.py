@@ -3,7 +3,6 @@ from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 
-
 class TestProgramDocumentation(TestCase):
     maxDiff = None
 
@@ -58,9 +57,9 @@ class TestProgramDocumentation(TestCase):
         expected_doc = {
             "program_name": "process_climate_data",
             "file_name": "/fake/path/programs.f90",
-            "program_description": '\nMain program that processes climate data\nReads '\
+            "program_description": 'Main program that processes climate data\nReads '\
                 'input files, calculates averages, and generates reports\n@version'\
-                     ' 1.2.3\n@author Jane Smith\n@date 2024-01-20\n\n',
+                     ' 1.2.3\n@author Jane Smith\n@date 2024-01-20\n',
             "uses": {}
         }
         self.assertEqual(prog_doc, expected_doc)
@@ -81,7 +80,7 @@ class TestProgramDocumentation(TestCase):
             "program_name": "utility",
             "file_name": "/fake/path/programs.f90",
             "uses": {},
-            "program_description": "\nSimple utility program\nJust a basic example\n\n"
+            "program_description": "Simple utility program\nJust a basic example\n"
         }
         self.assertEqual(prog_simple, expected_simple)
 

@@ -9,7 +9,7 @@ DataStatementDescription = TypedDict(
     {
         "variable": str,            
         "value": str,              
-        "description": Optional[str],  
+        "description": str,  
         "implied_initialisation": Optional[str]   
     }
 )
@@ -19,8 +19,8 @@ CommonBlockDescription = TypedDict(
     {
         "name": str,
         "variables": Dict[str, VariableDescription],
-        "description": Optional[str],
-        "binding_type": BindingType
+        "description": str,
+        "binding_type": Optional[BindingType]
     },
 )
 

@@ -32,7 +32,7 @@ end module pure_functions
         self.assertIn("test", module["functions"])
         function = module["functions"]["test"]
         self.assertIn("attributes", function)
-        self.assertEqual(function["description"], "\nA test pure function\n\n")
+        self.assertEqual(function["description"], "A test pure function\n")
         attributes = function["attributes"]
         self.assertEqual(attributes, ["PURE"])
         return_value = function["return"]

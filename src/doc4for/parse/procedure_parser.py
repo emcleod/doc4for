@@ -19,6 +19,7 @@ from doc4for.models.procedure_models import (
 )
 from doc4for.models.common import ANNOTATION_PREFIX, IGNORE_PREFIX, IGNORE_SUFFIX
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
+from doc4for.models.variable_models import PolymorphismType
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.argument_parser import parse_arguments, parse_procedure_argument
 from doc4for.utils.comment_utils import format_comments
@@ -64,30 +65,52 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
     intent_out = {}
     all_parsed_arguments = {}
     
-    for decl in type_decls:
-        parsed_arguments, intent = parse_arguments(decl)
-        all_parsed_arguments.update(parsed_arguments)
-        
-        # filter to keep only the actual arguments
-        dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
-        if intent == 'IN':
-            intent_in.update(dummy_arguments)
-        if intent == 'OUT':
-            intent_out.update(dummy_arguments)
-        if intent == 'INOUT' or not intent:
-            intent_in.update(dummy_arguments)
-            intent_out.update(dummy_arguments)
-    
     # this will only have the interface names as keys - the interfaces will be 
     # filled in in a post-processing step when all modules have been processed
     argument_interfaces = {}
-    for decl in procedure_decls:
-        parsed_arguments, intent = parse_procedure_argument(decl)
-        dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
-        intent_in.update(dummy_arguments)
-        for _, dummy_argument in dummy_arguments.items():
-            argument_interfaces[dummy_argument["interface_name"]] = {}
+    if type_decls:        
+        for decl in type_decls:
+            parsed_arguments, intent = parse_arguments(decl)
+            all_parsed_arguments.update(parsed_arguments)
+            
+            # filter to keep only the actual arguments
+            dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
+            if intent == 'IN':
+                intent_in.update(dummy_arguments)
+            if intent == 'OUT':
+                intent_out.update(dummy_arguments)
+            if intent == 'INOUT' or not intent:
+                intent_in.update(dummy_arguments)
+                intent_out.update(dummy_arguments)
         
+        for decl in procedure_decls:
+            parsed_arguments, intent = parse_procedure_argument(decl)
+            dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
+            intent_in.update(dummy_arguments)
+            for _, dummy_argument in dummy_arguments.items():
+                argument_interfaces[dummy_argument["interface_name"]] = {}
+    else:
+        # there were no specific declarations of the type, so the only thing that we
+        # can do is to assume intent inout and fill in the name
+        #
+        for dummy_argument in dummy_arg_names:
+            #TODO need to check if implicit none has been used
+            type = "INTEGER" if dummy_argument.upper()[0] in "IJKLMN" else "REAL"
+            argument = {
+                "type": type,  
+                "kind": "",
+                "length": "", 
+                "description": "",  # Will be filled in later
+                "dimension": "",
+                "attributes": [],
+                "default_value": "",
+                "interface_name": None,  
+                "enum_type": None, 
+                "polymorphism_type": PolymorphismType.NONE
+            } 
+            all_parsed_arguments[dummy_argument] = argument
+            intent_in[dummy_argument] = argument
+            intent_out[dummy_argument] = argument
 
     return {
         "procedure_name": procedure_name,

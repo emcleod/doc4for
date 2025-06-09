@@ -254,7 +254,7 @@ class TestEnumerations(TestCase):
         # Check multi-line description
         self.assertEqual(
             enum["description"], 
-            "\nMulti-line enum description\nwith detailed documentation\n\n"
+            "Multi-line enum description\nwith detailed documentation\n"
         )
         
         self.assertEqual(enum["name"], "__ENUM__")
@@ -275,7 +275,7 @@ class TestEnumerations(TestCase):
         self.assertEqual(enumerators["SECOND"]["value"], "2")
         self.assertEqual(
             enumerators["SECOND"]["description"],
-            "\nMulti-line\nenumerator description\n\n"
+            "Multi-line\nenumerator description\n"
         )
 
     def test_enum_with_calculated_values(self):

@@ -33,21 +33,6 @@ def parse_procedure_argument(declaration: Procedure_Declaration_Stmt) -> Tuple[D
     attributes = [attr.string for attr in walk(declaration, Attr_Spec)]
     attributes.extend([attr.string for attr in walk(declaration, Access_Spec)])
 
-    # TODO is it possible for a procedure argument to be in an array
-    # Check for dimension in attributes
-    # dimension_attr = walk(declaration, Dimension_Attr_Spec)
-    # base_dimension = _extract_dimension_info(dimension_attr) if dimension_attr else None
-    
-    # if no dimension, it might be assumed size e.g. real, intent(in) :: arr(*)
-    # if not base_dimension:
-    #     assumed_size_decl = walk(declaration, Assumed_Size_Spec)
-    #     if assumed_size_decl:
-    #         base_dimension = {}
-    #         dimension_list = []
-    #         for _ in range(len(assumed_size_decl)):
-    #             dimension_list.append(ArrayBound(bound_type=BoundType.ASSUMED_SIZE))
-    #         base_dimension["dimensions"] = dimension_list
-
     arguments = {}
     interface_name = declaration.children[0].string
     for argument_name in walk(declaration, Proc_Decl_List)[0].children:

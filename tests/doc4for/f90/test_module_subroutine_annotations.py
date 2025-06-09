@@ -31,7 +31,7 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module["subroutines"]["test_subroutine_in_annotation"]
-        self.assertEqual(subroutine["description"], "\nA subroutine with @in annotation\n\n")
+        self.assertEqual(subroutine["description"], "A subroutine with @in annotation\n\n")
         inputs = subroutine["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
                                        "description": "", 
@@ -173,7 +173,7 @@ class TestSubroutineAnnotations(TestCase):
 
         module = result[0]
         subroutine = module["subroutines"]["test_subroutine_out_annotation"]
-        self.assertEqual(subroutine["description"], "\nA subroutine with @out annotation\n\n")
+        self.assertEqual(subroutine["description"], "A subroutine with @out annotation\n\n")
         inputs = subroutine["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
                                        "description": "", 

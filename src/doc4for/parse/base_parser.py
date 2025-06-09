@@ -2,10 +2,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TypeVar, List, Any
 from fparser.one.block_statements import (
-    BlockData,
     ModuleProcedure,
     Type as FortranType,
-    Use,
     Common
 )
 from fparser.two.Fortran2003 import (
@@ -17,7 +15,8 @@ from fparser.two.Fortran2003 import (
     Interface_Block,
     Comment,
     Enum_Def,
-    Main_Program
+    Main_Program,
+    Block_Data
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.models.module_models import ModuleDescription
@@ -28,7 +27,7 @@ from doc4for.parse.function_parser import parse_function
 from doc4for.parse.subroutine_parser import parse_subroutine
 from doc4for.parse.interface_parser import parse_interface
 from doc4for.parse.enum_parser import parse_enum
-from doc4for.parse.shared_data_parser import parse_block_data, parse_common_block
+from doc4for.parse.shared_data_parser import parse_block_data
 from doc4for.parse.program_parser import parse_program
 from doc4for.parse.type_parser import handle_type_definition
 from doc4for.parse.variable_parser import parse_variable
@@ -91,6 +90,10 @@ def handle_module(item: Module, data: T, comment_stack: List[Comment], **kwargs:
 def handle_program(item: Main_Program, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
     name, program_description = parse_program(item, comment_stack, data["file_name"])
     data["programs"][name] = program_description
+
+def handle_block_data(item: Block_Data, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    name, block_data_description = parse_block_data(item, comment_stack)
+    data["block_data"][name] = block_data_description
 #------------------------------------------- old stuff to be replaced
 
 
@@ -106,46 +109,6 @@ def handle_module_procedure(item: ModuleProcedure, data: T,
            "bound_to": None
        }
        data["procedures"][name] = procedure_description
-
-
-
-def handle_block_data(item: BlockData, data: FileDescription,
-                      comment_stack: List[Comment]) -> None:
-    data["block_data"][item.name] = parse_block_data(item, comment_stack)
-
-
-def handle_use(item: Use, data: T, comment_stack: List[Comment]) -> None:
-    module_name = item.name  # The first item is the module name
-    selections = item.items  # "items" contains any selections
-    
-    # Process selections to handle renames
-    processed_selections = []
-    if selections:
-        for selection in selections:
-            if "=>" in selection:
-                # This is a renamed import
-                local_name, original_name = [s.strip() for s in selection.split("=>", 1)]
-                processed_selections.append({local_name: original_name})
-            else:
-                # This is a regular import
-                processed_selections.append(selection)
-    
-    if module_name in data["uses"]:
-        # already using something from this module
-        if not selections:
-            # if items is empty, it"s using everything, so remove selections
-            data["uses"][module_name]["selections"] = []
-        else:
-            # otherwise, add new selections
-            data["uses"][module_name]["selections"].extend(processed_selections)
-    else:
-        # first time we"ve seen this module name
-        uses = {
-            "module_name": module_name,
-            "selections": processed_selections
-        }
-        # Add to the uses dictionary with the module name as the key
-        data["uses"][module_name] = uses
 
 
 def handle_common_block(item: Common, data: ModuleDescription,

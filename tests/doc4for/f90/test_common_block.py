@@ -56,7 +56,7 @@ end module
         physics_block = module["common_blocks"]["physics"]
         self.assertEqual(physics_block["name"], "physics")
         self.assertEqual(physics_block["description"], "Basic common block for physical constants")
-        self.assertEqual(physics_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(physics_block["binding_type"])
         self.assertEqual(len(physics_block["variables"]), 3)
         self.assertIn("pi", physics_block["variables"])
         self.assertIn("gravity", physics_block["variables"])
@@ -66,7 +66,7 @@ end module
         grid_block = module["common_blocks"]["grid_params"]
         self.assertEqual(grid_block["name"], "grid_params")
         self.assertEqual(grid_block["description"], "Grid parameters common block")
-        self.assertEqual(grid_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(grid_block["binding_type"])
         self.assertEqual(len(grid_block["variables"]), 6)
         self.assertIn("nx", grid_block["variables"])
         self.assertIn("dy", grid_block["variables"])
@@ -121,8 +121,8 @@ end block data
         # Physics common block
         physics_block = block_data["common_blocks"]["physics"]
         self.assertEqual(physics_block["name"], "physics")
-        self.assertEqual(physics_block["description"], "\nBasic common block for physical constants\n\n")
-        self.assertEqual(physics_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertEqual(physics_block["description"], "Basic common block for physical constants\n")
+        self.assertIsNone(physics_block["binding_type"])
         self.assertEqual(len(physics_block["variables"]), 3)
         self.assertIn("pi", physics_block["variables"])
         self.assertIn("gravity", physics_block["variables"])
@@ -132,7 +132,7 @@ end block data
         grid_block = block_data["common_blocks"]["grid_params"]
         self.assertEqual(grid_block["name"], "grid_params")
         self.assertEqual(grid_block["description"], "Grid parameters common block\n")
-        self.assertEqual(grid_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(grid_block["binding_type"])
         self.assertEqual(len(grid_block["variables"]), 6)
         self.assertIn("nx", grid_block["variables"])
         self.assertIn("dy", grid_block["variables"])

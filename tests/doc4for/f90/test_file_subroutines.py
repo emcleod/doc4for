@@ -52,7 +52,7 @@ end module test_mod
         sub_doc = file_data["subroutines"]["simple"]
         expected_doc = {
             "attributes": [],
-            "description": "\nDoes nothing.\n\n",
+            "description": "Does nothing.\n",
             "arguments": [],
             "out": {},
             "in": {},
@@ -65,7 +65,7 @@ end module test_mod
         func_no_doc = file_data["subroutines"]["simple_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "\n",
+            "description": "",
             "arguments": [],
             "out": {},
             "in": {},
@@ -116,7 +116,7 @@ end module test_mod
         sub_doc = file_data["subroutines"]["rectangle_area"]
         expected_doc = {
             "attributes": [],
-            "description": "\nCalculates the area of a rectangle\n\n",
+            "description": "Calculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale", "area"],
             "in": {
                 "length": {"type": "REAL", 
@@ -171,7 +171,7 @@ end module test_mod
         sub_no_doc = file_data["subroutines"]["rectangle_area_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "\n",
+            "description": "",
             "arguments": ["length", "width", "area"],
             "in": {
                 "length": {"type": "REAL", 
@@ -242,7 +242,7 @@ end module test_mod
 
         # Test various annotations
         sub_annotations = file_data["subroutines"]["test_annotations"]
-        self.assertEqual(sub_annotations["description"], "\nTest subroutine with various annotation styles\n\n")
+        self.assertEqual(sub_annotations["description"], "Test subroutine with various annotation styles\n\n")
         self.assertEqual(sub_annotations["arguments"], ["arg1", "arg2", "arg3", "arg4"])
         self.assertEqual(sub_annotations["in"]["arg1"]["description"], "Input argument 1")
         self.assertEqual(sub_annotations["in"]["arg3"]["description"], "Argument 3 for both input and output")
@@ -275,7 +275,7 @@ end module test_mod
         sub_array = file_data["subroutines"]["process_matrix"]
         expected_array = {
             "attributes": [],
-            "description": "\nSubroutine with array arguments\n\n",
+            "description": "Subroutine with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
                 "matrix": {"type": "REAL", 

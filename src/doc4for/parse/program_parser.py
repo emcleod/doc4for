@@ -74,12 +74,3 @@ def parse_uses(program: Main_Program) -> Dict[str, Uses]:
             uses_comment_stack.clear()
     return uses
 
-
-# Uses = TypedDict(
-#     "Uses",
-#     {
-#         "module_name": str,
-#         "selections": List[Union[str, Dict[str, str]]],  # Can be either a simple string or a dict with {"local_name": "original_name"}
-#         "description": Optional[str]
-#     }
-# )

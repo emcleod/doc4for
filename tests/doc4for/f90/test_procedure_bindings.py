@@ -90,7 +90,7 @@ class TestFunctionBindings(TestCase):
 
         # Check binding type of the procedure within the module
         function = module["functions"]["cube_it"]
-        self.assertEqual(function["description"], "\nComputes the cube of a value with C binding\n\n")
+        self.assertEqual(function["description"], "Computes the cube of a value with C binding\n\n")
         self.assertIn("binding_type", function)
         self.assertEqual(function["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(function["binding_type"]["name"])

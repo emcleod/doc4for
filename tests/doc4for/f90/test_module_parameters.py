@@ -43,7 +43,7 @@ class TestParameterDeclarations(TestCase):
         self.assertEqual(module["module_name"], "simple")
         self.assertEqual(module["file_name"], "/fake/path/constants.f90")
         self.assertEqual(
-            module["module_description"], "\nModule containing constants\n\n"
+            module["module_description"], "Module containing constants\n"
         )
         self.assertIn("PI", module["parameters"])
         self.assertEqual(module["parameters"]["PI"]["value"], "3.14159")
@@ -636,7 +636,7 @@ end module test_mod
         # Check module-level comment
         self.assertEqual(
             module_data["module_description"],
-            "\nModule with comprehensive documentation\nDemonstrates comment association at various levels\n\n"
+            "Module with comprehensive documentation\nDemonstrates comment association at various levels\n"
         )
         
         # Check parameter group comments (multiple declarations on one line)
@@ -657,7 +657,7 @@ end module test_mod
         vector_type = module_data["types"]["vector3d"]
         self.assertEqual(
             vector_type["description"],
-            "\nComprehensive type documentation\nModels a 3D vector with coordinates\n\n"
+            "Comprehensive type documentation\nModels a 3D vector with coordinates\n"
         )
         
         # Check type components with shared comment
@@ -676,7 +676,7 @@ end module test_mod
         # Check multi-line component comment
         self.assertEqual(
             vector_type["data_components"]["history"]["description"],
-            "\nMulti-dimensional array of values\nUsed for storing historical positions\n\n"
+            "Multi-dimensional array of values\nUsed for storing historical positions\n"
         )
         
         # Check parameter with derived type
@@ -688,7 +688,7 @@ end module test_mod
         # Check array parameter with multi-line comment
         self.assertEqual(
             module_data["parameters"]["basis"]["description"],
-            "\nArray of standard basis vectors\nThese form an orthonormal basis\n\n"
+            "Array of standard basis vectors\nThese form an orthonormal basis\n"
         )
         
         # Check variable comment

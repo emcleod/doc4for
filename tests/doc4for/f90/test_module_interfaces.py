@@ -39,7 +39,7 @@ module abstract_interface_mod
         module = result[0]
         self.assertEqual(len(module["interfaces"]), 1)
         interface = module["interfaces"][0]        
-        self.assertEqual(interface["description"], "\nAn abstract interface containing a function &lt;code&gt;func&lt;/code&gt;\n\n")
+        self.assertEqual(interface["description"], "An abstract interface containing a function &lt;code&gt;func&lt;/code&gt;\n")
         self.assertEqual(interface["attributes"], ["ABSTRACT"])
         self.assertIsNone(interface["operator_symbol"])
         self.assertEqual(len(interface["procedures"]), 1)
@@ -47,7 +47,7 @@ module abstract_interface_mod
         self.assertEqual(function["arguments"], ["x"])
         self.assertEqual(function["attributes"], [])
         self.assertIsNone(function["binding_type"])
-        self.assertEqual(function["description"], "Transforms x into y somehow\n\n")
+        self.assertEqual(function["description"], "Transforms x into y somehow\n")
         self.assertEqual(function["in"], {"x": {"type": 
                                                 "REAL", 
                                                 "description": "", 
@@ -185,7 +185,7 @@ end module test_mod
         # Check the function within the nested interface
         self.assertEqual(len(nested_interface["procedures"]), 1)
         nested_function = nested_interface["procedures"]["f"]
-        self.assertEqual(nested_function["description"], "\nRequired signature for the function to be integrated\n\n")
+        self.assertEqual(nested_function["description"], "Required signature for the function to be integrated\n\n")
         self.assertEqual(nested_function["arguments"], ["x"])
         self.assertEqual(nested_function["in"], {
             "x": {"type": "REAL", 
@@ -955,7 +955,7 @@ end module test_mod
         interface = module["interfaces"][0]
 
         # Check interface properties
-        self.assertEqual(interface["description"], "\nInterface for vector operations\nContains functions for various vector manipulations\n\n")
+        self.assertEqual(interface["description"], "Interface for vector operations\nContains functions for various vector manipulations\n")
         self.assertEqual(interface["attributes"], [])
         self.assertEqual(interface["name"], "vector_ops")
         self.assertIsNone(interface["operator_symbol"])
@@ -966,7 +966,7 @@ end module test_mod
         # Check normalize function
         normalize = interface["procedures"]["normalize"]
         self.assertEqual(normalize["arguments"], ["v"])
-        self.assertEqual(normalize["description"], "\nNormalizes a vector\n\n")
+        self.assertEqual(normalize["description"], "Normalizes a vector\n\n")
         self.assertEqual(normalize["in"], {
             "v": {"type": "REAL", 
                   "description": "Input vector", 
@@ -999,7 +999,7 @@ end module test_mod
         # Check magnitude function
         magnitude = interface["procedures"]["magnitude"]
         self.assertEqual(magnitude["arguments"], ["v"])
-        self.assertEqual(magnitude["description"], "\nCalculates the magnitude of a vector\n\n")
+        self.assertEqual(magnitude["description"], "Calculates the magnitude of a vector\n\n")
         self.assertEqual(magnitude["in"], {
             "v": {"type": "REAL", 
                   "description": "Input vector", 
@@ -1030,7 +1030,7 @@ end module test_mod
         # Check scale subroutine
         scale = interface["procedures"]["scale"]
         self.assertEqual(scale["arguments"], ["v", "factor"])
-        self.assertEqual(scale["description"], "\nScales a vector by a factor\n\n")
+        self.assertEqual(scale["description"], "Scales a vector by a factor\n\n")
         self.assertEqual(scale["in"], {
             "factor": {"type": "REAL",
                        "description": "Scale factor to apply", 
@@ -1143,7 +1143,7 @@ end module matrix_ops_mod
         self.assertEqual(len(module["interfaces"]), 1)
         interface = module["interfaces"][0]
 
-        self.assertEqual(interface["description"], "\nInterface for matrix operations\nProvides operations for matrix manipulation\n\n")
+        self.assertEqual(interface["description"], "Interface for matrix operations\nProvides operations for matrix manipulation\n")
         self.assertEqual(interface["attributes"], [])
         self.assertEqual(interface["name"], "matrix_ops")
         self.assertIsNone(interface["operator_symbol"])
@@ -1162,7 +1162,7 @@ end module matrix_ops_mod
 
         add = interface["procedures"]["add_matrices"]
         self.assertEqual(add["arguments"], ["a", "b"])
-        self.assertEqual(add["description"], "\nAdds two matrices\n\n")
+        self.assertEqual(add["description"], "Adds two matrices\n\n")
         self.assertEqual(add["in"], {
             "a": {"type": "REAL", 
                   "description": 
@@ -1272,7 +1272,7 @@ end module matrix_ops_mod
         # Check add_vectors function
         add_vectors = interface["procedures"]["add_vectors"]
         self.assertEqual(add_vectors["arguments"], ["a", "b"])
-        self.assertEqual(add_vectors["description"], "\nAdds two vectors of equal size\n\n")
+        self.assertEqual(add_vectors["description"], "Adds two vectors of equal size\n\n")
         self.assertEqual(add_vectors["in"], {
             "a": {"type": "REAL", 
                   "description": "First vector", 
@@ -1316,7 +1316,7 @@ end module matrix_ops_mod
         # Check add_vector_scalar function
         add_vector_scalar = interface["procedures"]["add_vector_scalar"]
         self.assertEqual(add_vector_scalar["arguments"], ["a", "b"])
-        self.assertEqual(add_vector_scalar["description"], "\nAdds a scalar to each element of a vector\n\n")
+        self.assertEqual(add_vector_scalar["description"], "Adds a scalar to each element of a vector\n\n")
         self.assertEqual(add_vector_scalar["in"], {
             "a": {"type": "REAL", 
                   "description": "Input vector", 
@@ -1404,8 +1404,8 @@ end module matrix_ops_mod
         interface = module["interfaces"][0]
         self.assertEqual(
             interface["description"], 
-            "\nInterface for vector addition operations\n"
-            "Provides overloaded + operator for vector-vector and vector-scalar addition\n\n"
+            "Interface for vector addition operations\n"
+            "Provides overloaded + operator for vector-vector and vector-scalar addition\n"
         )
         self.assertEqual(interface["attributes"], [])
         self.assertEqual(interface["operator_symbol"], "+")
@@ -1418,14 +1418,14 @@ end module matrix_ops_mod
         self.assertEqual(add_vectors_proc["name"], "add_vectors")
         self.assertEqual(
             add_vectors_proc["description"],
-            "\nAdds two vectors of equal size\n\n"
+            "Adds two vectors of equal size\n"
         )
         
         add_scalar_proc = interface["module_procedures"]["add_vector_scalar"]
         self.assertEqual(add_scalar_proc["name"], "add_vector_scalar")
         self.assertEqual(
             add_scalar_proc["description"],
-            "\nAdds a scalar to each element of a vector\n\n"
+            "Adds a scalar to each element of a vector\n"
         )
         
         # Check that procedures dictionary is empty (as these are module procedures)
@@ -1468,8 +1468,8 @@ end module matrix_ops_mod
         interface = module["interfaces"][0]
         self.assertEqual(
             interface["description"], 
-            "\nCustom assignment interface for vector types\n"
-            "Allows direct assignment between allocatable and non-allocatable vectors\n\n"
+            "Custom assignment interface for vector types\n"
+            "Allows direct assignment between allocatable and non-allocatable vectors\n"
         )
         self.assertEqual(interface["attributes"], [])
         self.assertEqual(interface["operator_symbol"], "=")
@@ -1482,7 +1482,7 @@ end module matrix_ops_mod
         self.assertEqual(assign_vector_mp["name"], "assign_vector")
         self.assertEqual(
             assign_vector_mp["description"],
-            "\nAssigns values from one vector to another, handling allocation\n\n"
+            "Assigns values from one vector to another, handling allocation\n"
         )
         
         # No explicit procedures in this interface
@@ -1566,8 +1566,8 @@ end module matrix_ops_mod
         # Check .cross. interface properties
         self.assertEqual(
             cross_interface["description"], 
-            "\nUser-defined cross product operator for 3D vectors\n"
-            "Allows syntax like: c = a .cross. b\n\n"
+            "User-defined cross product operator for 3D vectors\n"
+            "Allows syntax like: c = a .cross. b\n"
         )
         self.assertEqual(cross_interface["attributes"], [])
         self.assertEqual(cross_interface["operator_symbol"], ".CROSS.")
@@ -1582,7 +1582,7 @@ end module matrix_ops_mod
         self.assertEqual(cross_func["arguments"], ["a", "b"])
         self.assertEqual(
             cross_func["description"],
-            "\nComputes the cross product of two 3D vectors\n\n"
+            "Computes the cross product of two 3D vectors\n\n"
         )
         self.assertEqual(list(cross_func["in"].keys()), ["a", "b"])
         self.assertEqual(cross_func["in"]["a"]["type"], "vector3d")
@@ -1600,8 +1600,8 @@ end module matrix_ops_mod
         # Check .dot. interface properties
         self.assertEqual(
             dot_interface["description"],
-            "\nUser-defined dot product operator for 3D vectors\n"
-            "Allows syntax like: scalar = a .dot. b\n\n"
+            "User-defined dot product operator for 3D vectors\n"
+            "Allows syntax like: scalar = a .dot. b\n"
         )
         self.assertEqual(dot_interface["attributes"], [])
         self.assertEqual(dot_interface["operator_symbol"], ".DOT.")
@@ -1615,7 +1615,7 @@ end module matrix_ops_mod
         self.assertEqual(dot_mp["name"], "dot_product_3d")
         self.assertEqual(
             dot_mp["description"],
-            "\nComputes the dot product of two 3D vectors\n\n"
+            "Computes the dot product of two 3D vectors\n"
         )
         
         # Check the actual function implementations exist and match expectations
@@ -1758,8 +1758,8 @@ end module matrix_ops_mod
         func_interface = module["interfaces"][0]
         self.assertEqual(
             func_interface["description"], 
-            "\nInterface for numerical function evaluation\n"
-            "Used in integration and other numerical methods\n\n"
+            "Interface for numerical function evaluation\n"
+            "Used in integration and other numerical methods\n"
         )
         self.assertEqual(func_interface["attributes"], ["ABSTRACT"])
         self.assertEqual(func_interface["name"], "")
@@ -1771,7 +1771,7 @@ end module matrix_ops_mod
         
         proc = func_interface["procedures"]["func_interface"]
         self.assertEqual(proc["arguments"], ["x"])
-        self.assertEqual(proc["description"], "\nFunction template for numerical operations\n\n")
+        self.assertEqual(proc["description"], "Function template for numerical operations\n\n")
         self.assertEqual(proc["in"], {
             "x": {"type": "REAL", 
                   "description": "Point at which to evaluate function", 
@@ -1810,17 +1810,17 @@ end module matrix_ops_mod
         self.assertEqual(len(dot_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(
             dot_interface["description"],
-            "\nInterface for dot product operations\n"
-            "Supports both single and double precision vectors\n\n"
+            "Interface for dot product operations\n"
+            "Supports both single and double precision vectors\n"
         )
         
         dot_r = dot_interface["module_procedures"]["dot_product_r"]
         self.assertEqual(dot_r["name"], "dot_product_r")
-        self.assertEqual(dot_r["description"], "\nComputes dot product of two real vectors\n\n")
+        self.assertEqual(dot_r["description"], "Computes dot product of two real vectors\n")
         
         dot_d = dot_interface["module_procedures"]["dot_product_d"]
         self.assertEqual(dot_d["name"], "dot_product_d")
-        self.assertEqual(dot_d["description"], "\nComputes dot product of two double precision vectors\n\n")
+        self.assertEqual(dot_d["description"], "Computes dot product of two double precision vectors\n")
         
         # Verify these functions actually exist in module
         self.assertIn("dot_product_r", module["functions"])
@@ -1835,17 +1835,17 @@ end module matrix_ops_mod
         self.assertEqual(len(assign_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(
             assign_interface["description"],
-            "\nMatrix assignment interface\n"
-            "Handles allocation and assignment for matrices\n\n"
+            "Matrix assignment interface\n"
+            "Handles allocation and assignment for matrices\n"
         )
         
         assign_r = assign_interface["module_procedures"]["assign_matrix_real"]
         self.assertEqual(assign_r["name"], "assign_matrix_real")
-        self.assertEqual(assign_r["description"], "\nAssigns real matrix values with automatic allocation\n\n")
+        self.assertEqual(assign_r["description"], "Assigns real matrix values with automatic allocation\n")
         
         assign_d = assign_interface["module_procedures"]["assign_matrix_double"]
         self.assertEqual(assign_d["name"], "assign_matrix_double")
-        self.assertEqual(assign_d["description"], "\nAssigns double precision matrix values with automatic allocation\n\n")
+        self.assertEqual(assign_d["description"], "Assigns double precision matrix values with automatic allocation\n")
         
         # Verify these subroutines actually exist in module
         self.assertIn("assign_matrix_real", module["subroutines"])
@@ -1860,17 +1860,17 @@ end module matrix_ops_mod
         self.assertEqual(len(norm_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(
             norm_interface["description"],
-            "\nGeneric norm calculation interface\n"
-            "Computes Euclidean norm for vectors and Frobenius norm for matrices\n\n"
+            "Generic norm calculation interface\n"
+            "Computes Euclidean norm for vectors and Frobenius norm for matrices\n"
         )
         
         vector_n = norm_interface["module_procedures"]["vector_norm"]
         self.assertEqual(vector_n["name"], "vector_norm")
-        self.assertEqual(vector_n["description"], "\nComputes the Euclidean norm of a vector\n\n")
+        self.assertEqual(vector_n["description"], "Computes the Euclidean norm of a vector\n")
         
         matrix_n = norm_interface["module_procedures"]["matrix_norm"]
         self.assertEqual(matrix_n["name"], "matrix_norm")
-        self.assertEqual(matrix_n["description"], "\nComputes the Frobenius norm of a matrix\n\n")
+        self.assertEqual(matrix_n["description"], "Computes the Frobenius norm of a matrix\n")
         
         # Verify these functions actually exist in module
         self.assertIn("vector_norm", module["functions"])

@@ -32,7 +32,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_in_annotation"]
-        self.assertEqual(function["description"], "\nA function with @in annotation\n\n")
+        self.assertEqual(function["description"], "A function with @in annotation\n\n")
         inputs = function["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", "description": "", "dimension": None, "enum_type": None, "interface_name": None,                                       "attributes": [],
                                        "default_value": None,
@@ -76,7 +76,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_in_annotation"]
-        self.assertEqual(function["description"], "\nA function with @in annotation\n\n")
+        self.assertEqual(function["description"], "A function with @in annotation\n\n")
         inputs = function["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
                                        "description": "The first argument", 
@@ -195,7 +195,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_out_annotation"]
-        self.assertEqual(function["description"], "\nA function with @out annotation\n\n")
+        self.assertEqual(function["description"], "A function with @out annotation\n\n")
         inputs = function["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
                                        "description": "", 
@@ -294,7 +294,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_inout_annotation"]
-        self.assertEqual(function["description"], "\nA function with @inout annotation\n\n")
+        self.assertEqual(function["description"], "A function with @inout annotation\n\n")
         inputs = function["in"]
         outputs = function["out"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
@@ -390,7 +390,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_return_type"]
-        self.assertEqual(function["description"], "\nA function with return type\n\n")
+        self.assertEqual(function["description"], "A function with return type\n\n")
         inputs = function["in"]
         self.assertEqual(inputs["x"], {"type": "REAL", 
                                        "description": "", 
@@ -499,7 +499,7 @@ class TestFunctionAnnotations(TestCase):
 
         module = result[0]
         function = module["functions"]["test_all_annotations"]
-        self.assertEqual(function["description"], "\nA function with all annotations.\n\n\n")
+        self.assertEqual(function["description"], "A function with all annotations.\n\n")
         inputs = function["in"]
         outputs = function["out"]
         self.assertEqual(inputs["x"], {"type": "REAL", 

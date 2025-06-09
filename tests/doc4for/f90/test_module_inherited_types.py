@@ -128,7 +128,7 @@ end module shapes
         self.assertEqual(rectangle_length["attributes"], [])
         self.assertEqual(rectangle_length["description"], "The length of the rectangle\n")
         self.assertIsNone(rectangle_length["dimension"])
-        self.assertEqual(rectangle["description"], "\nA rectangle\n\n")
+        self.assertEqual(rectangle["description"], "A rectangle\n")
         self.assertEqual(rectangle["generic_interfaces"], {})
         self.assertEqual(rectangle["procedures"], {})
         self.assertEqual(rectangle["extends"], "shape")

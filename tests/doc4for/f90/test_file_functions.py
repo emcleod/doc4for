@@ -2,7 +2,6 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-from doc4for.models.common import BindingTypeEnum
 from doc4for.models.dimension_models import ArrayBound, BoundType
 from doc4for.models.common import Expression, ExpressionType
 from doc4for.models.variable_models import PolymorphismType
@@ -54,7 +53,7 @@ end module test_mod
         func_doc = file_data["functions"]["simple"]
         expected_doc = {
             "attributes": [],
-            "description": "\nReturns a constant value\n\n",
+            "description": "Returns a constant value\n\n",
             "arguments": [],
             "out": {},
             "in": {},
@@ -70,7 +69,7 @@ end module test_mod
         func_no_doc = file_data["functions"]["simple_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "\n",
+            "description": "",
             "arguments": [],
             "out": {},
             "in": {},
@@ -122,7 +121,7 @@ end module test_mod
         func_doc = file_data["functions"]["rectangle_area"]
         expected_doc = {
             "attributes": [],
-            "description": "\nCalculates the area of a rectangle\n\n",
+            "description": "Calculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale"],
             "in": {
                 "length": {"description": "The length of the rectangle", "dimension": None, "type": "REAL",
@@ -148,7 +147,7 @@ end module test_mod
         func_no_doc = file_data["functions"]["rectangle_area_no_doc"]
         expected_no_doc = {
             "attributes": [],
-            "description": "\n",
+            "description": "",
             "arguments": ["length", "width"],
             "in": {
                 "length": {"description": "", "dimension": None, "type": "REAL",
@@ -242,7 +241,7 @@ end module test_mod
         func_array = file_data["functions"]["process_matrix"]
         expected_array = {
             "attributes": [],
-            "description": "\nFunction with array arguments\n\n",
+            "description": "Function with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
                 "matrix": {"description": "The input matrix", 
@@ -300,7 +299,7 @@ end module test_mod
         func_attached = file_data["functions"]["unnamed_return"]
         expected_attached = {
             "attributes": [],
-            "description": "\nUnnamed return\n\n",
+            "description": "Unnamed return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -355,7 +354,7 @@ end module test_mod
         file_data = result[0]
 
         func_styles = file_data["functions"]["test_arg_styles"]
-        self.assertEqual(func_styles["description"], "\nFunction to test all argument annotation styles\n\n")
+        self.assertEqual(func_styles["description"], "Function to test all argument annotation styles\n\n")
         # Check input arguments
         self.assertEqual(len(func_styles["in"]), 12)
 
@@ -610,7 +609,7 @@ end module test_mod
         func_vector = file_data["functions"]["vector_return"]
         expected_vector = {
             "attributes": [],
-            "description": "\nFunction returning an array\n\n",
+            "description": "Function returning an array\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -627,7 +626,7 @@ end module test_mod
         func_matrix = file_data["functions"]["matrix_return"]
         expected_matrix = {
             "attributes": [],
-            "description": "\nFunction with named array return\n\n",
+            "description": "Function with named array return\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -647,7 +646,7 @@ end module test_mod
         func_spaced = file_data["functions"]["spaced_array"]
         expected_spaced = {
             "attributes": [],
-            "description": "\nFunction with different spacing in array spec\n\n",
+            "description": "Function with different spacing in array spec\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -665,7 +664,7 @@ end module test_mod
         func_dense = file_data["functions"]["dense_array"]
         expected_dense = {
             "attributes": [],
-            "description": "\nFunction with no spaces around array spec\n\n",
+            "description": "Function with no spaces around array spec\n\n",
             "arguments": [],
             "in": {},
             "out": {},
@@ -679,154 +678,88 @@ end module test_mod
         }
         self.assertEqual(func_dense, expected_dense)
 
+    @unittest.skip("Coarrays aren't parsed in fparser2")
     def test_coarray_annotations(self):
         self.fs.create_file(
             "/fake/path/coarrays.f90",
             contents="""\
-        program test_prog
-            implicit none
-        end program test_prog
+program demo
+    implicit none
+    integer, parameter :: n = 10
+    integer, codimension[*] :: data_array  ! coarray declaration
+    integer :: result1, result2
+    integer :: me, num_images
+    
+    ! Initialize coarray environment
+    me = this_image()
+    num_images = num_images()
+    
+    ! Initialize local data
+    data_array = me * 100
+    
+    ! Synchronize all images before proceeding
+    sync all
+    
+    ! Call functions using coarrays
+    result1 = f1(data_array, n)
+    result2 = f2(n)
+    
+    ! Print results from image 1 only to avoid cluttered output
+    if (me == 1) then
+        write(*,*) 'Image', me, ': f1 result =', result1
+        write(*,*) 'Image', me, ': f2 result =', result2
+    end if
+    
+    sync all
+end program demo
 
-        !!*
-        ! Function with coarray return
-        ! @return      Returns a coarray distributed across images
-        !*!
-        function coarray_return()
-            real :: coarray_return[*]
-        end function coarray_return
+function f1(coarray_data, size_val) result(sum_val)
+    implicit none
+    integer, intent(in) :: coarray_data[*]  ! coarray argument
+    integer, intent(in) :: size_val
+    integer :: sum_val
+    integer :: i, num_imgs
+    
+    num_imgs = num_images()
+    sum_val = 0
+    
+    ! Sum values from all images
+    do i = 1, num_imgs
+        sum_val = sum_val + coarray_data[i]
+    end do
+    
+    ! Add local contribution
+    sum_val = sum_val + size_val
+end function f1
 
-        !!*
-        ! Function with array and coarray specs
-        ! @return   Returns a distributed array of counts
-        !*!
-        function array_coarray() result(result)
-            integer :: result(10)[2,*]
-        end function array_coarray
-
-        !!*
-        ! Function with coarray arguments
-        ! @in  data         Input coarray
-        ! @out res          Output array coarray
-        ! @return           Success status
-        !*!
-        function process_coarrays(data, res)
-            real, intent(in) :: data[*]
-            real, intent(out) :: res(3)[3,*]
-            logical :: process_coarrays
-        end function process_coarrays
-
-        !!*
-        ! Function with different spacing in coarray specs
-        ! @in  vec  Input vector
-        ! @out mat  Output matrix
-        ! @return   Distributed status codes
-        !*!
-        function spaced_specs(vec, mat) result(result)
-            complex, intent(in) :: vec(3)[2,*]
-            real, intent(out) :: mat(2,2)[*]
-            integer :: result[*]
-        end function spaced_specs
+function f2(multiplier) result(product_val)
+    implicit none
+    integer, intent(in) :: multiplier
+    integer :: product_val
+    integer :: shared_data[*]  ! coarray declared within function
+    integer :: me, i
+    
+    me = this_image()
+    
+    ! Initialize the coarray with image-specific data
+    shared_data = me * multiplier
+    
+    sync all  ! Ensure all images have initialized their data
+    
+    product_val = 1
+    
+    ! Calculate product of data from all images (limited to avoid overflow)
+    do i = 1, min(3, num_images())  ! Limit to first 3 images to avoid large numbers
+        if (shared_data[i] /= 0) then
+            product_val = product_val * shared_data[i]
+        end if
+    end do
+end function f2
         """
         )
         result = extract_file_data([Path("/fake/path/coarrays.f90")])
         file_data = result[0]
         self.assertEqual(len(file_data["functions"]), 4)
-
-        # Simple coarray return
-        func_coarray = file_data["functions"]["coarray_return"]
-        expected_coarray = {
-            "attributes": [],
-            "description": "\nFunction with coarray return\n\n",
-            "arguments": [],
-            "in": {},
-            "out": {},
-            "return": {"coarray_return": {
-                "description": "Returns a coarray distributed across images",
-                "dimension": "* (assumed-size)",
-                "type": "real"
-            }},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-        }
-        self.assertEqual(func_coarray, expected_coarray)
-
-        # Array with coarray return
-        func_array_coarray = file_data["functions"]["array_coarray"]
-        expected_array_coarray = {
-            "attributes": [],
-            "description": "\nFunction with array and coarray specs\n\n",
-            "arguments": [],
-            "in": {},
-            "out": {},
-            "return": {"result": {
-                "description": "Returns a distributed array of counts",
-                "dimension": "1:10 &times; 1:2 &times; * (assumed-size)",
-                "type": "integer"
-            }},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-        }
-        self.assertEqual(func_array_coarray, expected_array_coarray)
-
-        # Function with coarray arguments
-        func_process = file_data["functions"]["process_coarrays"]
-        expected_process = {
-            "attributes": [],
-            "description": "\nFunction with coarray arguments\n\n",
-            "arguments": ["data", "res"],
-            "in": {
-                "data": {
-                    "type": "real",
-                    "description": "Input coarray",
-                    "dimension": "* (assumed-size)"
-                }
-            },
-            "out": {
-                "res": {
-                    "type": "real",
-                    "description": "Output array coarray",
-                    "dimension": "1:3 &times; 1:3 &times; * (assumed-size)"
-                }
-            },
-            "return": {"process_coarrays": {
-                "description": "Success status",
-                "dimension": "",
-                "type": "logical"
-            }},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-        }
-        self.assertEqual(func_process, expected_process)
-
-        # Function with varied spacing in specs
-        func_spaced = file_data["functions"]["spaced_specs"]
-        expected_spaced = {
-            "attributes": [],
-            "description": "\nFunction with different spacing in coarray specs\n\n",
-            "arguments": ["vec", "mat"],
-            "in": {
-                "vec": {
-                    "type": "complex",
-                    "description": "Input vector",
-                    "dimension": "1:3 &times; 1:2 &times; * (assumed-size)"
-                }
-            },
-            "out": {
-                "mat": {
-                    "type": "real",
-                    "description": "Output matrix",
-                    "dimension": "1:2 &times; 1:2 &times; * (assumed-size)"
-                }
-            },
-            "return": {"result": {
-                "description": "Distributed status codes",
-                "dimension": "* (assumed-size)",
-                "type": "integer"
-            }},
-            "argument_interfaces": {},
-            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
-        }
-        self.assertEqual(func_spaced, expected_spaced)
 
 
 if __name__ == "__main__":

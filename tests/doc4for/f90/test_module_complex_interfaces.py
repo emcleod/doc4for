@@ -75,7 +75,7 @@ class TestInterfaces(TestCase):
 
         # Check interface type
         self.assertEqual(interface["name"], "merge_data")
-        self.assertEqual(interface["description"], "\nGeneric interface for merging data\nSupports different merge algorithms\n\n")
+        self.assertEqual(interface["description"], "Generic interface for merging data\nSupports different merge algorithms\n")
         
         # Check module procedures
         self.assertEqual(len(interface["module_procedures"]), 2)

@@ -80,13 +80,13 @@ class TestExternalStatements(TestCase):
         
         # Check module description
         self.assertEqual(module["module_description"], 
-                        "\nModule demonstrating external function declarations\n"
-                        "Shows how to interface with external libraries or legacy code\n\n")
+                        "Module demonstrating external function declarations\n"
+                        "Shows how to interface with external libraries or legacy code\n")
         
         # Check the integrate function
         integrate_func = module["functions"]["integrate"]
         self.assertEqual(integrate_func["description"], 
-                        "\nIntegrates a function using external libraries\n\n")
+                        "Integrates a function using external libraries\n\n")
         
         # Check parameter descriptions
         self.assertEqual(integrate_func["in"]["func"]["description"], "External function to integrate")
@@ -185,13 +185,13 @@ class TestExternalStatements(TestCase):
         
         # Check module description
         self.assertEqual(module["module_description"], 
-                        "\nModule demonstrating mixed external and intrinsic declarations\n"
-                        "Shows how to explicitly declare procedures as external or intrinsic\n\n")
+                        "Module demonstrating mixed external and intrinsic declarations\n"
+                        "Shows how to explicitly declare procedures as external or intrinsic\n")
         
         # Check the process_with_mixed function
         process_func = module["functions"]["process_with_mixed"]
         self.assertEqual(process_func["description"], 
-                        "\nFunction demonstrating explicit intrinsic and external declarations\n\n")
+                        "Function demonstrating explicit intrinsic and external declarations\n\n")
         
         # Check parameter descriptions
         self.assertEqual(process_func["in"]["x"]["description"], "Input value")
@@ -353,19 +353,19 @@ class TestExternalStatements(TestCase):
         
         # Check module description
         self.assertEqual(module["module_description"], 
-                        "\nModule demonstrating complex external interface patterns\n"
-                        "Shows interaction between external declarations and interface blocks\n\n")
+                        "Module demonstrating complex external interface patterns\n"
+                        "Shows interaction between external declarations and interface blocks\n")
         
         # Check interface block
         external_interface = module["interfaces"][0]
         self.assertEqual(external_interface["description"], 
-                        "\nInterface for external optimization library functions\n"
-                        "Defines the expected signature for external optimizers\n\n")
+                        "Interface for external optimization library functions\n"
+                        "Defines the expected signature for external optimizers\n")
         
         # Check the external_minimize subroutin interface
         minimize_sub = external_interface["procedures"]["external_minimize"]
         self.assertEqual(minimize_sub["description"], 
-                        "\nExternal minimization routine interface\n\n")
+                        "External minimization routine interface\n\n")
         
         # Check parameter descriptions
         self.assertEqual(minimize_sub["in"]["func"]["description"], "Function to minimize")

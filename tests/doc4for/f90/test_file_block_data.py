@@ -1,22 +1,22 @@
 import unittest
 from pathlib import Path
-from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.models.common import Expression, ExpressionType, BindingTypeEnum
-from doc4for.models.dimension_models import ArrayBound, BoundType, Dimension
+from doc4for.models.dimension_models import ArrayBound, BoundType
+from doc4for.models.variable_models import PolymorphismType
 
 # Helper function for creating dimension expressions
-def create_dimension_expr(lower, upper):
+def create_fixed_array_bound(lower, upper) -> ArrayBound:
     return ArrayBound(
         bound_type=BoundType.FIXED,
         lower=Expression(expr_type=ExpressionType.LITERAL, value=str(lower), function_name=None, arguments=None),
-        stride=None,
         upper=Expression(expr_type=ExpressionType.LITERAL, value=str(upper), function_name=None, arguments=None)
     )
 
 class TestBlockData(TestCase):
     maxDiff=None
+
     def setUp(self):
         self.setUpPyfakefs()
 
@@ -24,7 +24,7 @@ class TestBlockData(TestCase):
         self.fs.create_file(
             "/fake/path/blockdata.f90",
             contents="""\
-    BLOCK DATA
+    BLOCK DATA 
         COMMON // x, y
         REAL x, y
         DATA x, y/1.0, 2.0/
@@ -36,7 +36,7 @@ class TestBlockData(TestCase):
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['']
+        block_data = file_data["block_data"][""]
         
         expected = {
             "name": "",
@@ -45,106 +45,45 @@ class TestBlockData(TestCase):
                 "": {
                     "name": "",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "x",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                            "binding_type": None,
                         },
                         "y": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "y",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "2.0", 
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                            "binding_type": None 
                         }
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                 "implied_initialisation": "",
                                 "variable": "x",
                                 "value": "1.0"},
-                               {"description": None,
+                               {"description": "",
                                 "implied_initialisation": "",
                                 "variable": "y",
                                 "value": "2.0"}],
             "other_variables": {}
         }
-        self.assertEqual(block_data, expected)
-
-    def test_unnamed_common_block_data_no_comments(self):
-        self.fs.create_file(
-            "/fake/path/blockdata.f90",
-            contents="""\
-BLOCK DATA simple
-    COMMON // x, y
-    REAL x, y
-    DATA x, y/1.0, 2.0/
-END BLOCK DATA simple
-""",
-        )
-        result = extract_file_data([Path("/fake/path/blockdata.f90")])
-        self.assertEqual(len(result), 1)
-        file_data = result[0]
-        self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
-        self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['simple']
-        expected = {
-            "name": "simple",
-            "description": "",
-            "common_blocks": {
-                "": {
-                    "name": "",
-                    "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
-                    "variables": {
-                        "x": {
-                            "description": "",
-                            "type": "real",
-                            "name": "x",
-                            "dimension": None,
-                            "attributes": [],
-                            "kind": None,
-                            "initial_value": "1.0",
-                            "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None }
-                        },
-                        "y": {
-                            "description": "",
-                            "type": "real",
-                            "name": "y",
-                            "dimension": None,
-                            "attributes": [],
-                            "kind": None,
-                            "initial_value": "2.0",
-                            "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None }
-                        }
-                    }
-                }
-            },
-            "data_statements": [{"description": None,
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1.0"},
-                                {"description": None,
-                                 "implied_initialisation": "",
-                                 "variable": "y",
-                                 "value": "2.0"}],
-            "other_variables": {}
-        }        
         self.assertEqual(block_data, expected)
 
     def test_simple_block_data_no_comments(self):
@@ -163,7 +102,7 @@ END BLOCK DATA simple
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['simple']
+        block_data = file_data["block_data"]["simple"]
         expected = {
             "name": "simple",
             "description": "",
@@ -171,38 +110,40 @@ END BLOCK DATA simple
                 "basic": {
                     "name": "basic",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "x",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "y": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "y",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                  "implied_initialisation": "",
                                  "variable": "x",
                                  "value": "1.0"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "y",
                                  "value": "2.0"}],
@@ -227,7 +168,7 @@ END BLOCK DATA simple
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['simple']
+        block_data = file_data["block_data"]["simple"]
         expected = {
             "name": "simple",
             "description": "",
@@ -235,38 +176,40 @@ END BLOCK DATA simple
                 "basic": {
                     "name": "basic",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "x",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "y": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "y",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         }
                     },
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                  "implied_initialisation": "",
                                  "variable": "x",
                                  "value": "1.0"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "y",
                                  "value": "2.0"}],
@@ -291,7 +234,7 @@ END BLOCK DATA simple
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['simple']
+        block_data = file_data["block_data"]["simple"]
         expected = {
             "name": "simple",
             "description": "",
@@ -299,68 +242,72 @@ END BLOCK DATA simple
                 "basic": {
                     "name": "basic",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "x",
                             "dimension": None,
                             "attributes": [],
+                            "polymorphism_type": PolymorphismType.NONE,
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "y": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "y",
                             "dimension": None,
                             "attributes": [],
+                            "polymorphism_type": PolymorphismType.NONE,
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "z": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "z",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "3.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "theta": {
                             "description": "",
-                            "type": "real",
+                            "type": "REAL",
                             "name": "theta",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "0.45",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                  "implied_initialisation": "",
                                  "variable": "y",
                                  "value": "2.0"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "theta",
                                  "value": "0.45"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "z",
                                  "value": "3.0"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "x",
                                  "value": "1.0"}],
@@ -384,7 +331,7 @@ END BLOCK DATA
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['']
+        block_data = file_data["block_data"][""]
         expected = {
             "name": "",
             "description": "",
@@ -392,23 +339,24 @@ END BLOCK DATA
                 "": {
                     "name": "",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "integer",
+                            "type": "INTEGER",
                             "name": "x",
-                            "dimension": {'dimensions': [create_dimension_expr(1, 10)]},
+                            "dimension": {"dimensions": [create_fixed_array_bound(1, 10)]},
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                  "implied_initialisation": "",
                                  "variable": "x",
                                  "value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"}],
@@ -416,7 +364,78 @@ END BLOCK DATA
         }
         self.assertEqual(block_data, expected)
 
-
+    def test_block_data_with_multiple_arrays_no_comments(self):
+        self.fs.create_file(
+            "/fake/path/blockdata_multi.f90",
+            contents="""\
+    BLOCK DATA
+        COMMON // x
+        INTEGER x(10), y(3)
+        DATA x /1, 2, 3, 4, 5, 6, 7, 8, 9, 10/, y/12, 13, 14/
+    END BLOCK DATA
+    """,
+        )
+        result = extract_file_data([Path("/fake/path/blockdata_multi.f90")])
+        self.assertEqual(len(result), 1)
+        file_data = result[0]
+        self.assertEqual(file_data["file_name"], "/fake/path/blockdata_multi.f90")
+        self.assertEqual(len(file_data["block_data"]), 1)
+        block_data = file_data["block_data"][""]
+        expected = {
+            "name": "",
+            "description": "",
+            "common_blocks": {
+                "": {
+                    "name": "",
+                    "description": "",
+                    "binding_type": None,
+                    "variables": {
+                        "x": {
+                            "description": "",
+                            "type": "INTEGER",
+                            "name": "x",
+                            "dimension": {"dimensions": [create_fixed_array_bound(1, 10)]},
+                            "polymorphism_type": PolymorphismType.NONE,
+                            "attributes": [],
+                            "kind": None,
+                            "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
+                            "length": None,
+                            "binding_type": None
+                        },
+                    }
+                }
+            },
+            "data_statements": [
+                {
+                    "description": "",
+                    "implied_initialisation": "",
+                    "variable": "x",
+                    "value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+                },
+                {
+                    "description": "",
+                    "implied_initialisation": "",
+                    "variable": "y",
+                    "value": "12, 13, 14"
+                }
+            ],
+            "other_variables": {
+                "y": {
+                    "description": "",
+                    "type": "INTEGER",
+                    "name": "y",
+                    "dimension": {"dimensions": [create_fixed_array_bound(1, 3)]},
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "attributes": [],
+                    "kind": None,
+                    "initial_value": "12, 13, 14",
+                    "length": None,
+                    "binding_type": None
+                }
+            }
+        }
+        self.assertEqual(block_data, expected)
+        
     def test_block_data_with_multiple_array_no_comments(self):
         self.fs.create_file(
             "/fake/path/blockdata.f90",
@@ -433,7 +452,7 @@ END BLOCK DATA
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['my_block']
+        block_data = file_data["block_data"]["my_block"]
         expected = {
             "name": "my_block",
             "description": "",
@@ -441,45 +460,46 @@ END BLOCK DATA
                 "arrays": {
                     "name": "arrays",
                     "description": "",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
                             "description": "",
-                            "type": "integer",
+                            "type": "INTEGER",
                             "name": "x",
-                            "dimension": {'dimensions': [create_dimension_expr(1, 3)]},
+                            "dimension": {"dimensions": [create_fixed_array_bound(1, 3)]},
                             "attributes": [],
+                            "polymorphism_type": PolymorphismType.NONE,
                             "kind": None,
                             "initial_value": "1, 2, 3",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "y": {
                             "description": "",
-                            "type": "integer",
+                            "type": "INTEGER",
                             "name": "y",
-                            "dimension": {'dimensions': [create_dimension_expr(1, 2)]},
+                            "dimension": {"dimensions": [create_fixed_array_bound(1, 2)]},
                             "attributes": [],
+                            "polymorphism_type": PolymorphismType.NONE,
                             "kind": None,
                             "initial_value": "4, 5",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                "implied_initialisation": "",
                                "variable": "x",
                                "value": "1, 2, 3"},
-                              {"description": None,
+                              {"description": "",
                                "implied_initialisation": "",
                                "variable": "y",
                                "value": "4, 5"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
-
 
     def test_complex_block_data_no_comments(self):
         self.fs.create_file("/fake/path/blockdata.f90",
@@ -525,7 +545,7 @@ END BLOCK DATA
                           7.0, 8.0, 9.0/
 
         ! Initialize strings
-        data model_name, version /'Atmospheric Model   ', 'v1.2.3  '/
+        data model_name, version /"Atmospheric Model   ", "v1.2.3  "/
 
     end block data simulation_data
     """,
@@ -550,62 +570,61 @@ END BLOCK DATA
 
         # Check physics common block
         physics = block_data["common_blocks"]["physics"]["variables"]
-        self.assertEqual(physics["gravity"]["type"], "real")
+        self.assertEqual(physics["gravity"]["type"], "REAL")
         self.assertEqual(physics["gravity"]["kind"], "8")
         self.assertEqual(physics["gravity"]["initial_value"], "9.81d0")
 
-        self.assertEqual(physics["air_density"]["type"], "real")
+        self.assertEqual(physics["air_density"]["type"], "REAL")
         self.assertEqual(physics["air_density"]["kind"], "8")
         self.assertEqual(physics["air_density"]["initial_value"], "1.225d0")
 
-        self.assertEqual(physics["viscosity"]["type"], "real")
+        self.assertEqual(physics["viscosity"]["type"], "REAL")
         self.assertIsNone(physics["viscosity"]["kind"])
         self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
 
         # Check settings common block
         settings = block_data["common_blocks"]["settings"]["variables"]
-        self.assertEqual(settings["max_iterations"]["type"], "integer")
+        self.assertEqual(settings["max_iterations"]["type"], "INTEGER")
         self.assertEqual(settings["max_iterations"]["initial_value"], "1000")
-        self.assertEqual(settings["debug_level"]["type"], "integer")
+        self.assertEqual(settings["debug_level"]["type"], "INTEGER")
         self.assertEqual(settings["debug_level"]["initial_value"], "2")
-        self.assertEqual(settings["use_fast_mode"]["type"], "logical")
+        self.assertEqual(settings["use_fast_mode"]["type"], "LOGICAL")
         self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
 
         # Check tables common block (arrays)
         tables = block_data["common_blocks"]["tables"]["variables"]
-        self.assertEqual(tables["temp_points"]["type"], "real")
-        dimension = cast(Dimension, tables["temp_points"]["dimension"])
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
-        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(tables["temp_points"]["type"], "REAL")
+        dimension = tables["temp_points"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 10))
+        initial_value = tables["temp_points"]["initial_value"]
         self.assertEqual(len(initial_value.split(",")), 10)
 
-        self.assertEqual(tables["pressure_values"]["type"], "real")
-        dimension = cast(Dimension, tables["pressure_values"]["dimension"])
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
-        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(tables["pressure_values"]["type"], "REAL")
+        dimension = tables["pressure_values"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 10))
+        initial_value = tables["temp_points"]["initial_value"]
         self.assertEqual(len(initial_value.split(",")), 10)
 
-        self.assertEqual(tables["coefficients"]["type"], "real")
-        dimension = cast(Dimension, tables["coefficients"]["dimension"])
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
-        initial_value = cast(str, tables["coefficients"]["initial_value"])        
+        self.assertEqual(tables["coefficients"]["type"], "REAL")
+        dimension = tables["coefficients"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_fixed_array_bound(1, 3))
+        initial_value = tables["coefficients"]["initial_value"]
         self.assertEqual(len(initial_value.split(",")), 9)
 
         # Check strings common block
         strings = block_data["common_blocks"]["strings"]["variables"]
-        self.assertEqual(strings["model_name"]["type"], "character")
+        self.assertEqual(strings["model_name"]["type"], "CHARACTER")
         self.assertEqual(strings["model_name"]["length"], "20")
-        self.assertEqual(strings["model_name"]["initial_value"], "'Atmospheric Model   '")
+        self.assertEqual(strings["model_name"]["initial_value"], '"Atmospheric Model   "')
 
-        self.assertEqual(strings["version"]["type"], "character")
+        self.assertEqual(strings["version"]["type"], "CHARACTER")
         self.assertEqual(strings["version"]["length"], "8")
-        self.assertEqual(strings["version"]["initial_value"], "'v1.2.3  '")
+        self.assertEqual(strings["version"]["initial_value"], '"v1.2.3  "')
 
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
-
 
     def test_unnamed_block_data_with_comments(self):
         self.fs.create_file(
@@ -630,48 +649,50 @@ END BLOCK DATA
         self.assertEqual(len(result), 1)
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
-        self.assertEqual(file_data["file_description"], "\nA test file for block data\n\n")
+        self.assertEqual(file_data["file_description"], "A test file for block data\n")
         self.assertEqual(len(file_data["block_data"]), 1)
-        block_data = file_data["block_data"]['']
+        block_data = file_data["block_data"][""]
         expected = {
             "name": "",
-            "description": "\nDefines some constants\n\n",
+            "description": "Defines some constants\n",
             "common_blocks": {
                 "": {
                     "name": "",
                     "description": "Coordinates\n",
-                    "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None },
+                    "binding_type": None,
                     "variables": {
                         "x": {
-                            "description": "Coordinates\n",
-                            "type": "real",
+                            "description": "",
+                            "type": "REAL",
                             "name": "x",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                         "y": {
-                            "description": "Coordinates\n",
-                            "type": "real",
+                            "description": "",
+                            "type": "REAL",
                             "name": "y",
                             "dimension": None,
+                            "polymorphism_type": PolymorphismType.NONE,
                             "attributes": [],
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": { "type": BindingTypeEnum.DEFAULT, "name": None}
+                            "binding_type": None
                         },
                     }
                 }
             },
-            "data_statements": [{"description": None,
+            "data_statements": [{"description": "",
                                  "implied_initialisation": "",
                                  "variable": "x",
                                  "value": "1.0"},
-                                {"description": None,
+                                {"description": "",
                                  "implied_initialisation": "",
                                  "variable": "y",
                                  "value": "2.0"}],
@@ -699,7 +720,11 @@ END BLOCK DATA
 
         !!* Configuration for simulation execution *!
         common /settings/ max_iterations, debug_level, use_fast_mode
-        integer max_iterations, debug_level  ! Regular comment to ignore
+        !!* The maximum number of iterations to perform *!
+        integer max_iterations
+        !!* The debug level *!
+        integer debug_level  ! Regular comment to ignore
+        !!* Use the fast mode or not *!
         logical use_fast_mode
 
         !!*
@@ -708,6 +733,9 @@ END BLOCK DATA
         !*!
         common /tables/ temp_points, pressure_values, coefficients
         real temp_points(10), pressure_values(10)
+        !!* 
+        ! The coefficients 
+        !*!
         real coefficients(3,3)
 
         !!* String identifiers for the simulation *!
@@ -735,7 +763,7 @@ END BLOCK DATA
                         7.0, 8.0, 9.0/
 
         ! Initialize strings
-        data model_name, version /'Atmospheric Model   ', 'v1.2.3  '/
+        data model_name, version /"Atmospheric Model   ", "v1.2.3  "/
 
     end block data simulation_data
     """,
@@ -744,6 +772,7 @@ END BLOCK DATA
         self.assertEqual(len(result), 1)
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/blockdata.f90")
+        self.assertEqual(file_data["file_description"], "Simulations\n")
         self.assertEqual(len(file_data["block_data"]), 1)
 
         block_data = file_data["block_data"]["simulation_data"]
@@ -751,7 +780,7 @@ END BLOCK DATA
         # Check block data basics
         self.assertEqual(block_data["name"], "simulation_data")
         self.assertEqual(block_data["description"],
-                        "\nSimulation data for atmospheric modelling\nContains physics constants and simulation parameters\n\n")
+                        "Simulation data for atmospheric modelling\nContains physics constants and simulation parameters\n")
 
         # Check common blocks exist
         self.assertIn("physics", block_data["common_blocks"])
@@ -760,78 +789,79 @@ END BLOCK DATA
         self.assertIn("strings", block_data["common_blocks"])
 
         # Check physics common block
+        self.assertEqual(block_data["common_blocks"]["physics"]["description"], "Physical constants and properties used in the simulation\n")
         physics = block_data["common_blocks"]["physics"]["variables"]
         self.assertEqual(physics["gravity"]["description"], "Gravitational acceleration and air properties\n")
-        self.assertEqual(physics["gravity"]["type"], "real")
+        self.assertEqual(physics["gravity"]["type"], "REAL")
         self.assertEqual(physics["gravity"]["kind"], "8")
         self.assertEqual(physics["gravity"]["initial_value"], "9.81d0")
 
         self.assertEqual(physics["air_density"]["description"], "Gravitational acceleration and air properties\n")
-        self.assertEqual(physics["air_density"]["type"], "real")
+        self.assertEqual(physics["air_density"]["type"], "REAL")
         self.assertEqual(physics["air_density"]["kind"], "8")
         self.assertEqual(physics["air_density"]["initial_value"], "1.225d0")
 
-        self.assertEqual(physics["viscosity"]["description"], "Physical constants and properties used in the simulation\n")
-        self.assertEqual(physics["viscosity"]["type"], "real")
+        self.assertEqual(physics["viscosity"]["description"], "") # note doc4for comments don't fall through
+        self.assertEqual(physics["viscosity"]["type"], "REAL")
         self.assertIsNone(physics["viscosity"]["kind"])
         self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
 
         # Check settings common block
+        self.assertEqual(block_data["common_blocks"]["settings"]["description"], "Configuration for simulation execution\n")
         settings = block_data["common_blocks"]["settings"]["variables"]
-        self.assertEqual(settings["max_iterations"]["description"], "Configuration for simulation execution\n")
-        self.assertEqual(settings["max_iterations"]["type"], "integer")
+        self.assertEqual(settings["max_iterations"]["description"], "The maximum number of iterations to perform\n")
+        self.assertEqual(settings["max_iterations"]["type"], "INTEGER")
         self.assertEqual(settings["max_iterations"]["initial_value"], "1000")
 
-        self.assertEqual(settings["debug_level"]["description"], "Configuration for simulation execution\n")
-        self.assertEqual(settings["debug_level"]["type"], "integer")
+        self.assertEqual(settings["debug_level"]["description"], "The debug level\n")
+        self.assertEqual(settings["debug_level"]["type"], "INTEGER")
         self.assertEqual(settings["debug_level"]["initial_value"], "2")
 
-        self.assertEqual(settings["use_fast_mode"]["description"], "Configuration for simulation execution\n")
-        self.assertEqual(settings["use_fast_mode"]["type"], "logical")
+        self.assertEqual(settings["use_fast_mode"]["description"], "Use the fast mode or not\n")
+        self.assertEqual(settings["use_fast_mode"]["type"], "LOGICAL")
         self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
 
         # Check tables common block (arrays)
+        expected_tables_description = "Lookup tables for temperature and pressure calculations\nUsed for interpolation in the simulation\n"
+        self.assertEqual(block_data["common_blocks"]["tables"]["description"], expected_tables_description)
         tables = block_data["common_blocks"]["tables"]["variables"]
-        expected_tables_description = "\nLookup tables for temperature and pressure calculations\nUsed for interpolation in the simulation\n\n"
 
-        self.assertEqual(tables["temp_points"]["description"], expected_tables_description)
-        self.assertEqual(tables["temp_points"]["type"], "real")        
-        dimension = cast(Dimension, tables["temp_points"]["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
-        initial_value = cast(str, tables["temp_points"]["initial_value"])        
+        self.assertEqual(tables["temp_points"]["type"], "REAL")        
+        dimension = tables["temp_points"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 10))
+        initial_value = tables["temp_points"]["initial_value"]        
         self.assertEqual(len(initial_value.split(",")), 10)
 
-        self.assertEqual(tables["pressure_values"]["description"], expected_tables_description)
-        self.assertEqual(tables["pressure_values"]["type"], "real")
-        dimension = cast(Dimension, tables["pressure_values"]["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 10))
-        initial_value = cast(str, tables["pressure_values"]["initial_value"])        
+        self.assertEqual(tables["pressure_values"]["description"], "")
+        self.assertEqual(tables["pressure_values"]["type"], "REAL")
+        dimension = tables["pressure_values"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 10))
+        initial_value = tables["pressure_values"]["initial_value"] 
         self.assertEqual(len(initial_value.split(",")), 10)
 
-        self.assertEqual(tables["coefficients"]["description"], expected_tables_description)
-        self.assertEqual(tables["coefficients"]["type"], "real")
-        dimension = cast(Dimension, tables["coefficients"]["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 3))
-        initial_value = cast(str, tables["coefficients"]["initial_value"])                
+        self.assertEqual(tables["coefficients"]["description"], "The coefficients\n")
+        self.assertEqual(tables["coefficients"]["type"], "REAL")
+        dimension = tables["coefficients"]["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 3))
+        self.assertEqual(dimension["dimensions"][1], create_fixed_array_bound(1, 3))
+        initial_value = tables["coefficients"]["initial_value"]
         self.assertEqual(len(initial_value.split(",")), 9)
 
         # Check strings common block
         strings = block_data["common_blocks"]["strings"]["variables"]
         self.assertEqual(strings["model_name"]["description"], "Full model name\n")
-        self.assertEqual(strings["model_name"]["type"], "character")
+        self.assertEqual(strings["model_name"]["type"], "CHARACTER")
         self.assertEqual(strings["model_name"]["length"], "20")
-        self.assertEqual(strings["model_name"]["initial_value"], "'Atmospheric Model   '")
+        self.assertEqual(strings["model_name"]["initial_value"], '"Atmospheric Model   "')
 
         self.assertEqual(strings["version"]["description"], "Version string\n")
-        self.assertEqual(strings["version"]["type"], "character")
+        self.assertEqual(strings["version"]["type"], "CHARACTER")
         self.assertEqual(strings["version"]["length"], "8")
-        self.assertEqual(strings["version"]["initial_value"], "'v1.2.3  '")
+        self.assertEqual(strings["version"]["initial_value"], '"v1.2.3  "')
 
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
-
 
     def test_block_data_edge_cases(self):
         self.fs.create_file("/fake/path/edge_cases.f90",
@@ -864,7 +894,7 @@ BLOCK DATA  ! Unnamed block data
     DATA x1, y1 /1.0, 2.0/
     DATA x2, y2 /3.0, 4.0/
     DATA arr /3*0.0, 2*1.0, 5.0, 4*6.0/
-    DATA str /'ABC'/
+    DATA str /"ABC"/
 
 END BLOCK DATA
 
@@ -891,14 +921,15 @@ END BLOCK DATA other_data
         unnamed_block = file_data["block_data"][""]
         self.assertEqual(len(unnamed_block["common_blocks"]), 4)
 
+        # note that it's taking the doc4for comment immediately before the block data description
         self.assertEqual(unnamed_block["description"],
-                         "Whitespace comment\n\nMultiple\nLines " +
+                         "Multiple\nLines " +
                          "with\nLots of text that goes on and on to" +
                          " make this a very long comment\nthat might" +
                          " cause issues if not handled properly. We want " +
                          "to make sure\nthat the code can handle comments " +
                          "of any reasonable length without\nany problems."
-                         " This is a good test of robustness.\n\n")
+                         " This is a good test of robustness.\n")
 
         # Check variables in different common blocks
         self.assertIn("block1", unnamed_block["common_blocks"])
@@ -918,10 +949,10 @@ END BLOCK DATA other_data
             unnamed_block["common_blocks"]["block2"]["variables"]["x2"]["initial_value"], "3.0")
         # check array initialization (has repeats)
         self.assertEqual(unnamed_block["common_blocks"]["arrays"]["variables"]["arr"]["initial_value"],
-                         "0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 6.0, 6.0, 6.0, 6.0")
+                         "3*0.0, 2*1.0, 5.0, 4*6.0")
         # Check character initialization
         self.assertEqual(
-            unnamed_block["common_blocks"]["strings"]["variables"]["str"]["initial_value"], "'ABC'")
+            unnamed_block["common_blocks"]["strings"]["variables"]["str"]["initial_value"], '"ABC"')
 
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", unnamed_block)
@@ -939,7 +970,6 @@ END BLOCK DATA other_data
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", other_block)
         self.assertIn("other_variables", other_block)
-
 
     def test_block_data_array_initialization_styles(self):
         self.fs.create_file("/fake/path/blockdata.f90",
@@ -983,50 +1013,49 @@ END BLOCK DATA array_init
         
         # Check old style array constructor
         old_style = block_data["common_blocks"]["old_style"]["variables"]["arr1"]
-        self.assertEqual(old_style["type"], "integer")
-        self.assertEqual(old_style["initial_value"], "1, 2, 2, 3, 3")
-        dimension = cast(Dimension, old_style["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        self.assertEqual(old_style["type"], "INTEGER")
+        self.assertEqual(old_style["initial_value"], "1, 2*2, 2*3")
+        dimension = old_style["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 5))
         
         # Check new style array constructor
         new_style = block_data["common_blocks"]["new_style"]["variables"]["arr2"]
-        self.assertEqual(new_style["type"], "integer")
-        self.assertEqual(new_style["initial_value"], "1, 2, 2, 3, 4, 4")
-        dimension = cast(Dimension, new_style["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 6))
+        self.assertEqual(new_style["type"], "INTEGER")
+        self.assertEqual(new_style["initial_value"], "1, 2*2, 3, 2*4")
+        dimension = new_style["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 6))
         
         # Check mixed format
         mixed = block_data["common_blocks"]["mixed"]["variables"]["arr3"]
-        self.assertEqual(mixed["type"], "real")
-        self.assertEqual(mixed["initial_value"], "1.0, 2.0, 2.0, 1.0")
-        dimension = cast(Dimension, mixed["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 4))
+        self.assertEqual(mixed["type"], "REAL")
+        self.assertEqual(mixed["initial_value"], "1.0, 2*2.0, 1.0")
+        dimension = mixed["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 4))
         
         # Check simple repeat
         simple = block_data["common_blocks"]["simple"]["variables"]["arr4"]
-        self.assertEqual(simple["type"], "integer")
-        self.assertEqual(simple["initial_value"], "1, 1, 1")
-        dimension = cast(Dimension, simple["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
+        self.assertEqual(simple["type"], "INTEGER")
+        self.assertEqual(simple["initial_value"], "3*1")
+        dimension = simple["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 3))
         
         # Check F90 sequence constructor
         f90_seq = block_data["common_blocks"]["f90_style"]["variables"]["arr5"]
-        self.assertEqual(f90_seq["type"], "integer")
+        self.assertEqual(f90_seq["type"], "INTEGER")
         self.assertEqual(f90_seq["initial_value"], "1, 2, 3, 4, 5")
-        dimension = cast(Dimension, f90_seq["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = f90_seq["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 5))
         
         # Check F90 arithmetic sequence constructor
         f90_arith = block_data["common_blocks"]["f90_style"]["variables"]["arr6"]
-        self.assertEqual(f90_arith["type"], "integer")
+        self.assertEqual(f90_arith["type"], "INTEGER")
         self.assertEqual(f90_arith["initial_value"], "2, 4, 6, 8, 10")
-        dimension = cast(Dimension, f90_arith["dimension"])        
-        self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 5))
+        dimension = f90_arith["dimension"]
+        self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 5))
         
         # Check data_statements and other_variables fields exist
         self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
-
 
 if __name__ == "__main__":
     unittest.main()

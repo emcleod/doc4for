@@ -59,7 +59,7 @@ end module module2
         modules1 = file_data['modules']['module1']
 #        self.assertEqual(modules1['module_description'], 'This is the first module')
         modules2 = file_data['modules']['module2']
-        self.assertEqual(modules2['module_description'], '\nThis is the second module\n\n')
+        self.assertEqual(modules2['module_description'], 'This is the second module\n')
 
 if __name__ == '__main__':
     unittest.main()

@@ -72,7 +72,7 @@ class TestTypes(TestCase):
         self.assertEqual(type["attributes"], ["PUBLIC"])
         procedures = type["procedures"]["init"]
         self.assertEqual(procedures["name"], "init")
-        self.assertEqual(procedures["description"], "\nA procedure that initialises the type\n\n")
+        self.assertEqual(procedures["description"], "A procedure that initialises the type\n")
         self.assertEqual(procedures["attributes"], ["PUBLIC"])
         self.assertFalse(procedures["is_final"])
         self.assertEqual(procedures["bound_to"], None)
@@ -180,7 +180,7 @@ class TestTypes(TestCase):
         self.assertEqual(procedures["add"]["bound_to"], None)
 
         self.assertEqual(procedures["multiply"]["name"], "multiply")
-        self.assertEqual(procedures["multiply"]["description"], "\nMultiplies two numbers\n\n")
+        self.assertEqual(procedures["multiply"]["description"], "Multiplies two numbers\n")
         self.assertEqual(procedures["multiply"]["attributes"], ["PUBLIC"])
         self.assertFalse(procedures["multiply"]["is_final"])
         self.assertEqual(procedures["multiply"]["bound_to"], None)
@@ -317,39 +317,39 @@ class TestTypes(TestCase):
         hidden_method = type["procedures"]["hidden_method"]
 
         self.assertEqual(init["name"], "init")
-        self.assertEqual(init["description"], "\nInitialises the type\n\n")
+        self.assertEqual(init["description"], "Initialises the type\n")
         self.assertEqual(init["attributes"], ["PUBLIC"])
         self.assertEqual(init["pass_type"], PassType.DEFAULT)
         self.assertIsNone(init["pass_name"])
 
         self.assertEqual(add["name"], "add")
-        self.assertEqual(add["description"], "\nAdds two types together. How this is done depends on the implementation\nin the concrete type.\n\n")
+        self.assertEqual(add["description"], "Adds two types together. How this is done depends on the implementation\nin the concrete type.\n")
         self.assertCountEqual(add["attributes"], ["PUBLIC", "DEFERRED"])
         self.assertEqual(add["pass_type"], PassType.DEFAULT)
         self.assertIsNone(add["pass_name"])
 
         self.assertEqual(multiply["name"], "multiply")
-        self.assertEqual(multiply["description"], "\nAdds two types together. How this is done depends on the implementation\n\
-in the concrete type. Note that procedure does not have access to data\nin the type.\n\n")
+        self.assertEqual(multiply["description"], "Adds two types together. How this is done depends on the implementation\n\
+in the concrete type. Note that procedure does not have access to data\nin the type.\n")
         self.assertCountEqual(multiply["attributes"], ["PUBLIC", "DEFERRED"])
         self.assertEqual(multiply["pass_type"], PassType.NONE)
         self.assertIsNone(multiply["pass_name"])
 
         self.assertEqual(custom_pass["name"], "custom_pass")
-        self.assertEqual(custom_pass["description"], "\nThe procedure argument that accesses this type is called &#x27;obj&#x27;\n\n")
+        self.assertEqual(custom_pass["description"], "The procedure argument that accesses this type is called &#x27;obj&#x27;\n")
         self.assertCountEqual(custom_pass["attributes"], [])
         self.assertEqual(custom_pass["pass_type"], PassType.NAMED)
         self.assertEqual(custom_pass["pass_name"], "obj")
 
         self.assertEqual(hidden_method["name"], "hidden_method")
-        self.assertEqual(hidden_method["description"], "\nA private method\n\n")
+        self.assertEqual(hidden_method["description"], "A private method\n")
         self.assertCountEqual(hidden_method["attributes"], ["PRIVATE"])
         self.assertEqual(hidden_method["pass_type"], PassType.DEFAULT)
         self.assertIsNone(hidden_method["pass_name"])
 
         self.assertFalse(multiply["is_final"])
         self.assertEqual(type["data_components"], {})
-        self.assertEqual(type["description"], "\nBase declaration for a simple type.\n\n")
+        self.assertEqual(type["description"], "Base declaration for a simple type.\n")
         self.assertIsNone(type["extends"])
         self.assertEqual(type["generic_interfaces"], {})
 

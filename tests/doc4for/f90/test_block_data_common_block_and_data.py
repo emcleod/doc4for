@@ -2,15 +2,9 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
-from doc4for.models.common import BindingTypeEnum
+from doc4for.models.variable_models import PolymorphismType
 
 class TestBlockDataParsing(TestCase):
-    #TODO write doc4for comments and check descriptions.
-
-    @classmethod
-    def setUpClass(cls):
-        # Import any additional modules needed
-        pass
 
     def setUp(self):
         self.setUpPyfakefs()
@@ -30,10 +24,7 @@ block data physical_constants_init
   real(kind=8) :: speed_of_light, boltzmann_constant
   character(len=20) :: units_system
   real(kind=4) :: orphan
-  !!* Common block containing
-  ! @data gravity
-  ! @data
-  !*!
+  !!* Common block containing physics constants *!
   common /physical_constants/ gravity, pi, planck_constant, &
                             speed_of_light, boltzmann_constant, units_system
   
@@ -43,7 +34,7 @@ block data physical_constants_init
   data planck_constant /6.62607015E-34/    ! J⋅s
   data speed_of_light /299792458.0/        ! m/s
   data boltzmann_constant /1.380649E-23/   ! J/K
-  data units_system /'SI_MKS'/             ! String identifier for units
+  data units_system /"SI_MKS"/             ! String identifier for units
   
 end block data physical_constants_init
 
@@ -86,16 +77,14 @@ end program physics_simulation
         )
         
         # Extract file data once for all tests
-        self.result = extract_file_data([Path('/fake/path/physics_constants.f90')])
+        self.result = extract_file_data([Path("/fake/path/physics_constants.f90")])
         self.file_data = self.result[0]
     
     def test_file_info(self):
-        """Test basic file information extraction"""
         self.assertEqual(len(self.result), 1)
         self.assertEqual(self.file_data["file_name"], "/fake/path/physics_constants.f90")
         
     def test_block_data(self):
-        """Test block data structure extraction"""
         self.assertIn("block_data", self.file_data)
         block_data = self.file_data["block_data"]
         self.assertEqual(len(block_data), 1)
@@ -114,14 +103,15 @@ end program physics_simulation
         other_variable = constants_block["other_variables"]["orphan"]
         self.assertEqual(other_variable, {
             "description": "",
-            "type": "real",
+            "type": "REAL",
             "name": "orphan",
             "dimension": None,
+            "polymorphism_type": PolymorphismType.NONE,
             "attributes": [],
             "kind": "4",
             "initial_value": None,
             "length": None,
-            "binding_type": {"type": BindingTypeEnum.DEFAULT, "name": None}
+            "binding_type": None
         })
         # Test physical_constants common block
         phys_block = common_blocks["physical_constants"]
@@ -131,7 +121,7 @@ end program physics_simulation
 
         # Check for binding_type (should be DEFAULT in this case)
         self.assertIn("binding_type", phys_block)
-        self.assertEqual(phys_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(phys_block["binding_type"])
 
         # Check variable names
         var_names = variables.keys()
@@ -139,17 +129,16 @@ end program physics_simulation
                          "speed_of_light", "boltzmann_constant", "units_system"]
         self.assertListEqual(sorted(var_names), sorted(expected_names))
         
-        # Test that 'data' statements initialise the common block
+        # Test that "data" statements initialise the common block
         self.assertEqual(variables["gravity"]["initial_value"], "9.80665")
         self.assertEqual(variables["pi"]["initial_value"], "3.14159265358979323846264")
-        self.assertEqual(variables["planck_constant"]["initial_value"], "6.62607015e-34")
+        self.assertEqual(variables["planck_constant"]["initial_value"], "6.62607015E-34")
         self.assertEqual(variables["speed_of_light"]["initial_value"], "299792458.0")
-        self.assertEqual(variables["boltzmann_constant"]["initial_value"], "1.380649e-23")
-        self.assertEqual(variables["units_system"]["initial_value"], "'SI_MKS'")
+        self.assertEqual(variables["boltzmann_constant"]["initial_value"], "1.380649E-23")
+        self.assertEqual(variables["units_system"]["initial_value"], '"SI_MKS"')
 
 
     def test_data_statements(self):
-        """Test data statement extraction and variable initialization"""
         block_data = self.file_data["block_data"]["physical_constants_init"]
         
         # Test 1: Data statements are correctly recorded
@@ -165,7 +154,7 @@ end program physics_simulation
         self.assertEqual(pi_data["value"], "3.14159265358979323846264")
         
         units_data = next(d for d in data_stmts if d["variable"] == "units_system")
-        self.assertEqual(units_data["value"], "'SI_MKS'")
+        self.assertEqual(units_data["value"], '"SI_MKS"')
         
         # Test 2: Initial values are also propagated to the variable descriptions
         common_blocks = block_data["common_blocks"]
@@ -175,16 +164,15 @@ end program physics_simulation
         # Check that initial values match the data statements
         self.assertEqual(variables["gravity"]["initial_value"], "9.80665")
         self.assertEqual(variables["pi"]["initial_value"], "3.14159265358979323846264")
-        self.assertEqual(variables["units_system"]["initial_value"], "'SI_MKS'")
+        self.assertEqual(variables["units_system"]["initial_value"], '"SI_MKS"')
         
         # Verify variable types are preserved
-        self.assertEqual(variables["gravity"]["type"], "real")
+        self.assertEqual(variables["gravity"]["type"], "REAL")
         self.assertEqual(variables["gravity"]["kind"], "8")
-        self.assertEqual(variables["units_system"]["type"], "character")
+        self.assertEqual(variables["units_system"]["type"], "CHARACTER")
         self.assertEqual(variables["units_system"]["length"], "20")   
 
     def test_subroutines(self):
-        """Test subroutine extraction"""
         self.assertIn("subroutines", self.file_data)
         subroutines = self.file_data["subroutines"]
         self.assertEqual(len(subroutines), 1)
@@ -199,21 +187,27 @@ end program physics_simulation
         self.assertEqual(len(args), 3)  
         self.assertListEqual(args, ["mass", "velocity", "kinetic_energy"])
         
-        # Check argument intents - nothing declared so assume inout and can't work out the type
+        # Check argument intents - nothing declared so assume inout and can"t work out the type
         intent_in = calc_energy["in"]
         self.assertEqual(len(intent_in), 3)
-        self.assertEqual(intent_in["mass"], {"type": 'UNKNOWN', "description": "the mass of the object in kilograms", "dimension": ""})
-        self.assertEqual(intent_in["velocity"], {"type": 'UNKNOWN', "description": "the velocity of the object in m/s", "dimension": ""})        
-        self.assertEqual(intent_in["kinetic_energy"], {"type": 'UNKNOWN', "description": "the calculated kinetic energy", "dimension": ""})
+        self.assertEqual(intent_in["mass"]["type"], "INTEGER")
+        self.assertEqual(intent_in["mass"]["description"], "the mass of the object in kilograms")
+        self.assertEqual(intent_in["velocity"]["type"], "REAL")        
+        self.assertEqual(intent_in["velocity"]["description"], "the velocity of the object in m/s")
+        self.assertEqual(intent_in["kinetic_energy"]["type"], "INTEGER")
+        self.assertEqual(intent_in["kinetic_energy"]["description"], "the calculated kinetic energy")
 
         intent_out = calc_energy["out"]
         self.assertEqual(len(intent_out), 3)
-        self.assertEqual(intent_out["mass"], {"type": 'UNKNOWN', "description": "the mass of the object in kilograms", "dimension": ""})
-        self.assertEqual(intent_out["velocity"], {"type": 'UNKNOWN', "description": "the velocity of the object in m/s", "dimension": ""})        
-        self.assertEqual(intent_out["kinetic_energy"], {"type": 'UNKNOWN', "description": "the calculated kinetic energy", "dimension": ""})
+        self.assertEqual(intent_out["mass"]["type"], "INTEGER")
+        self.assertEqual(intent_out["mass"]["description"], "the mass of the object in kilograms")
+        self.assertEqual(intent_out["velocity"]["type"], "REAL")        
+        self.assertEqual(intent_out["velocity"]["description"], "the velocity of the object in m/s")
+        self.assertEqual(intent_out["kinetic_energy"]["type"], "INTEGER")
+        self.assertEqual(intent_out["kinetic_energy"]["description"], "the calculated kinetic energy")
 
         # Check binding type
-        self.assertEqual(calc_energy["binding_type"], {"type": BindingTypeEnum.DEFAULT, "name": None})
+        self.assertIsNone(calc_energy["binding_type"])
 
     def test_program(self):
         """Test program extraction"""

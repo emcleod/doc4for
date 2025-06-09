@@ -105,8 +105,8 @@ class TestImportStatements(TestCase):
         
         # Check module description
         self.assertEqual(module["module_description"], 
-                        "\nModule for optimization algorithms\n"
-                        "Provides interfaces for objective functions, constraints, and optimizers\n\n")
+                        "Module for optimization algorithms\n"
+                        "Provides interfaces for objective functions, constraints, and optimizers\n")
         
         # Check that all interfaces are parsed
         self.assertEqual(len(module["interfaces"]), 3)

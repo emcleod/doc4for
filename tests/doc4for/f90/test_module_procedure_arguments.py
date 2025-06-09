@@ -189,10 +189,10 @@ class TestInterfaces(TestCase):
         module = result[0]
         self.assertEqual(module["module_description"], "")
         interface = module["interfaces"][0]
-        self.assertEqual(interface["description"], "\nDefines an interface for matrix operations that performs two transforms\non the data.\n\n")
+        self.assertEqual(interface["description"], "Defines an interface for matrix operations that performs two transforms\non the data.\n")
         # Check the matrix_ops subroutine
         matrix_ops = interface["procedures"]["matrix_ops"]
-        self.assertEqual(matrix_ops["description"], "\nA function definition\n\n")
+        self.assertEqual(matrix_ops["description"], "A function definition\n\n")
         self.assertEqual(matrix_ops["arguments"], ["transform1", "transform2", "data"])
         
         # Check that both transform arguments reference the matrix_func interface

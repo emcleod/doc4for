@@ -146,7 +146,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(module["functions"]), 1)
         self.assertIn("add_numbers", module["functions"])
         function = module["functions"]["add_numbers"]
-        self.assertEqual(function["description"], "\nA function with return type set in the declaration\n\n")
+        self.assertEqual(function["description"], "A function with return type set in the declaration\n")
         inputs = function["in"]
         outputs = function["out"]
         returns = function["return"]
@@ -157,7 +157,12 @@ class TestFunctionArguments(TestCase):
             "description": "",
             "dimension": None,
             "enum_type": None,
-            "interface_name": None
+            "interface_name": None,
+            "attributes": [],
+            "length": None,
+            "kind": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE
         }
         self.assertEqual(returns, expected_returns)
         self.assertEqual(function["arguments"], ["a", "b"])
@@ -188,7 +193,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(module["functions"]), 1)
         self.assertIn("add_numbers", module["functions"])
         function = module["functions"]["add_numbers"]
-        self.assertEqual(function["description"], "\nA function with scalar arguments\n\n")
+        self.assertEqual(function["description"], "A function with scalar arguments\n")
         inputs = function["in"]
         outputs = function["out"]
         results = function["return"]
@@ -224,7 +229,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(module["functions"]), 1)
         self.assertIn("add_numbers", module["functions"])
         function = module["functions"]["add_numbers"]
-        self.assertEqual(function["description"], "\nA function with scalar arguments\n\n")
+        self.assertEqual(function["description"], "A function with scalar arguments\n")
         inputs = function["in"]
         outputs = function["out"]
         results = function["return"]
@@ -259,7 +264,7 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(len(module["functions"]), 1)
         self.assertIn("add_numbers", module["functions"])
         function = module["functions"]["add_numbers"]
-        self.assertEqual(function["description"], "\nA function with scalar arguments\n\n")
+        self.assertEqual(function["description"], "A function with scalar arguments\n")
         inputs = function["in"]
         outputs = function["out"]
         results = function["return"]

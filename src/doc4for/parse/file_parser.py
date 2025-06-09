@@ -5,7 +5,8 @@ from fparser.two.Fortran2003 import (
   Module,
   Function_Subprogram,
   Subroutine_Subprogram,
-  Main_Program
+  Main_Program,
+  Block_Data
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments, is_end_of_doc4for_comment
@@ -15,7 +16,7 @@ from doc4for.parse.base_parser import (
     handle_module,
     handle_function, 
     handle_subroutine, 
-    # handle_block_data, 
+    handle_block_data, 
     # handle_module, 
     handle_program,
     # handle_use
@@ -38,7 +39,7 @@ def _get_file_handler() -> FileHandler:
         handler.register_handler(Function_Subprogram, handle_function)
         handler.register_handler(Subroutine_Subprogram, handle_subroutine)
         handler.register_handler(Main_Program, handle_program)
-        # handler.register_handler(BlockData, handle_block_data)
+        handler.register_handler(Block_Data, handle_block_data)
         # handler.register_handler(Use, handle_use)
         _file_handler_instance = handler
     return _file_handler_instance
@@ -48,20 +49,17 @@ def parse_file_content(file: Any, file_data: FileDescription) -> None:
     handlers = _get_file_handler()
     visibility: VisibilityState = VisibilityState()
     comment_stack: List[Comment] = []
-    first_non_comment_node: bool = True
-    file_description_set: bool = False
-
+    first_non_comment_node: bool = False
     for child in file.children:
-        if isinstance(child, Comment) and child.item.comment:
+        if isinstance(child, Comment):
             comment_stack.append(child)
-            if is_end_of_doc4for_comment(child) and first_non_comment_node and not file_description_set:
-                if is_doc4for_comment(comment_stack):
-                    file_data['file_description'] = format_comments(
-                        comment_stack)
-                    file_description_set = True
-                    comment_stack.clear()
+            if not file_data["file_description"] and  not first_non_comment_node and is_end_of_doc4for_comment(child):
+                # found the end of the first doc4for comment, so assume it was supposed to be the 
+                # file description
+                file_data["file_description"] = format_comments(comment_stack)
+                comment_stack.clear()
         else:
-            first_non_comment_node = False
+            first_non_comment_node = True
             handler = handlers.get_handler(type(child))
             handler(child, file_data, comment_stack)
             comment_stack.clear()

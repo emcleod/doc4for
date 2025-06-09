@@ -446,7 +446,7 @@ end module shape_module
         self.assertEqual(len(module["subroutines"]), 6)
         self.assertIn("process_shape_polymorphic", module["subroutines"])
         subroutine = module["subroutines"]["process_shape_polymorphic"]
-        self.assertEqual(subroutine["description"], "\nProcedure with polymorphic argument (CLASS)\n\n")
+        self.assertEqual(subroutine["description"], "Procedure with polymorphic argument (CLASS)\n\n")
         expected = {"type": "shape",
                     "description": "The shape",
                     "dimension": None,
@@ -463,7 +463,7 @@ end module shape_module
         self.assertEqual(subroutine["in"]["s"], expected)
         self.assertEqual(subroutine["out"]["s"], expected)
         subroutine = module["subroutines"]["process_shape_monomorphic"]
-        self.assertEqual(subroutine["description"], "\nProcedure with non-polymorphic argument\n\n")
+        self.assertEqual(subroutine["description"], "Procedure with non-polymorphic argument\n\n")
         expected = {"type": "shape",
                       "description": "The shape",
                       "dimension": None,
@@ -480,7 +480,7 @@ end module shape_module
         self.assertEqual(subroutine["in"]["s"], expected)
         self.assertEqual(subroutine["out"]["s"], expected)
         subroutine = module["subroutines"]["process_real_value"]
-        self.assertEqual(subroutine["description"], "\nProcedure with intrinsic type argument\n\n")
+        self.assertEqual(subroutine["description"], "Procedure with intrinsic type argument\n\n")
         expected = {"type": "REAL",
                     "description": "The real value",
                     "dimension": None,
@@ -531,7 +531,7 @@ end module shape_module
         self.assertEqual(subroutine["in"]["this"], expected)
         self.assertEqual(subroutine["out"]["this"], expected)
         subroutine = module["subroutines"]["rectangle_area"]
-        self.assertEqual(subroutine["description"], "\n")
+        self.assertEqual(subroutine["description"], "")
         expected = {"type": "rectangle",
                     "description": "",
                     "dimension": None,
