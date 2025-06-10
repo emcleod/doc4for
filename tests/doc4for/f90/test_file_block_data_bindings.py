@@ -21,7 +21,7 @@ class TestBlockDataBindings(TestCase):
         !!* Physical constants in C-compatible block *!
         real(c_double) :: pi, e, phi
         common /math_constants/ pi, e, phi
-        bind(c, name='c_math_constants') /math_constants/
+        bind(c, name="c_math_constants") /math_constants/
         
         !!* Unit conversion factors *!
         real(c_double) :: inch_to_cm, pound_to_kg, gallon_to_liter
@@ -52,12 +52,12 @@ class TestBlockDataBindings(TestCase):
         !!* Array constants *!
         integer(c_int) :: fibonacci(10)
         common /seq_data/ fibonacci
-        bind  (  c  ,  NAME = 'c_sequences'  )  /seq_data/
+        bind  (  c  ,  NAME = "c_sequences"  )  /seq_data/
         
         !!* Common block with mixed-type binding *!
         real(c_float) :: temps(4)
         common /temp_data/ temps
-        bind(c, name='c_temp_data') /temp_data/
+        bind(c, name="c_temp_data") /temp_data/
         
         data fibonacci /1, 1, 2, 3, 5, 8, 13, 21, 34, 55/
         data temps /0.0, 32.0, 100.0, 212.0/
@@ -65,7 +65,7 @@ class TestBlockDataBindings(TestCase):
     """
         )
         
-        result = extract_file_data([Path('/fake/path/block_data_binding.f90')])
+        result = extract_file_data([Path("/fake/path/block_data_binding.f90")])
         self.assertEqual(len(result), 1)
         file_data = result[0]
         self.assertEqual(file_data["file_name"], "/fake/path/block_data_binding.f90")
@@ -73,29 +73,37 @@ class TestBlockDataBindings(TestCase):
         block_data = file_data["block_data"]
             
         # First block data: c_constants
-        c_constants = block_data['c_constants']
+        c_constants = block_data["c_constants"]
         # Test math_constants block
-        math_block = c_constants['common_blocks']['math_constants']
-        self.assertIn('binding_type', math_block)
-        self.assertEqual(math_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(math_block['binding_type']['name'], 'c_math_constants')
+        math_block = c_constants["common_blocks"]["math_constants"]
+        self.assertIn("binding_type", math_block)
+        self.assertEqual(math_block["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(math_block["binding_type"]["name"], "c_math_constants")
             
         # Test conversion_factors block
-        conv_block = c_constants['common_blocks']['conversion_factors']
-        self.assertIn('binding_type', conv_block)
-        self.assertEqual(conv_block['binding_type']['type'], BindingTypeEnum.BIND_C)
+        conv_block = c_constants["common_blocks"]["conversion_factors"]
+        self.assertIn("binding_type", conv_block)
+        self.assertEqual(conv_block["binding_type"]["type"], BindingTypeEnum.BIND_C)
             
-        sys_block = c_constants['common_blocks']['sys_params']
-        self.assertIn('binding_type', sys_block)
-        self.assertEqual(sys_block['binding_type']['type'], BindingTypeEnum.DEFAULT)
+        sys_block = c_constants["common_blocks"]["sys_params"]
+        self.assertIn("binding_type", sys_block)
+        self.assertEqual(sys_block["binding_type"]["type"], BindingTypeEnum.DEFAULT)
         
         # Second block data: more_constants
-        more_constants = block_data['more_constants']
-        seq_block = more_constants['common_blocks']['seq_data']
-        self.assertIn('binding_type', seq_block)
-        self.assertEqual(seq_block['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(seq_block['binding_type']['name'], 'c_sequences')
+        more_constants = block_data["more_constants"]
+        seq_block = more_constants["common_blocks"]["seq_data"]
+        self.assertIn("binding_type", seq_block)
+        self.assertEqual(seq_block["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(seq_block["binding_type"]["name"], "c_sequences")
                 
 
 if __name__ == "__main__":
     unittest.main()
+
+# TODO note variable is bound as well - probably will compile but not really used
+# block data
+# real(c_double), parameter :: pi = 3.14159265358979d0
+# real(c_double) :: gravity, light_speed
+# common /physics/ gravity, light_speed
+# bind(c, name="c_physics_block") :: /physics/, pi
+#end block data

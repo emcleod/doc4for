@@ -9,16 +9,18 @@ from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
     Common_Stmt,
     Data_Stmt,
-    Implicit_Part
+    Implicit_Part,
+    Bind_Stmt,
+    Language_Binding_Spec,
+    Bind_Entity
 )
 from fparser.two.utils import walk
-from doc4for.models.common import BindingTypeEnum
 from doc4for.models.module_models import BlockDataDescription, DataStatementDescription, CommonBlockDescription
 from doc4for.models.variable_models import VariableDescription
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.models.dimension_models import Dimension
-from doc4for.parse.common_parser import _extract_dimension_info
+from doc4for.parse.common_parser import _extract_dimension_info, _extract_binding_type
 
 from doc4for.logging_config import setup_logging
 
@@ -60,7 +62,7 @@ def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comme
                     "name": common_block_name,
                     "description": format_comments(comment_stack),
                     "variables": variables,
-                    "binding_type": None,  # TODO
+                    "binding_type": None,  
                 }
                 common_blocks[common_block_name] = common_block
     return common_blocks
@@ -94,7 +96,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     # don't want to pick up any comments that aren't in front of common blocks
                     decl_comment_stack.clear()
 
-            # Second pass: process type declarations and data statements
+            # Second pass: process type declarations, c bindings and data statements
             for spec_child in child.children:
                 if isinstance(spec_child, Comment):
                     decl_comment_stack.append(spec_child)
@@ -122,6 +124,23 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     )
                     data_statements.extend(new_data_statements)
                     decl_comment_stack.clear()
+                elif isinstance(spec_child, Bind_Stmt):
+                    binding_type = _extract_binding_type(walk(spec_child, Language_Binding_Spec))
+                    bindings = spec_child.children[1]
+                    for binding in bindings.children:
+                        if isinstance(binding, Name):
+                            # TODO have a binding to a variable which we can't handle now
+                            pass
+                        elif isinstance(binding, Bind_Entity):
+                            binding_name = walk(binding, Name)[0].string
+                            if binding_name in common_blocks:
+                                common_blocks[binding_name]["binding_type"] = binding_type
+                            else:
+                                #TODO something sensible or log
+                                pass
+                        else:
+                            #TODO something sensible or log
+                            pass
                 else:
                     # don't want any comments that aren't immediately before type declarations or data statements
                     decl_comment_stack.clear()

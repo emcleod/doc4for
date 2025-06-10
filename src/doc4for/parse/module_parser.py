@@ -17,11 +17,13 @@ from fparser.two.Fortran2003 import (
     Subroutine_Subprogram,
     Interface_Block,
     Enum_Def,
-    Common_Stmt
+    Common_Stmt,
+    Bind_Stmt,
+    Language_Binding_Spec
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
-from doc4for.parse.common_parser import FortranHandler
+from doc4for.parse.common_parser import FortranHandler, _extract_binding_type
 from doc4for.parse.base_parser import (    
     VisibilityState,
     handle_function,
@@ -80,6 +82,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     parameter_stack: List[Parameter_Stmt] = []
     # keep track of access statements before declaration entity_name -> access
     access_stack: Dict[str, str] = {}
+    # keep track of lone bind statements e.g. for binding a common block
+    bind_stack: Dict[str, str] = {}
     for module_nodes in content:
         for node in module_nodes.children:
             if isinstance(node, Implicit_Part):
@@ -98,7 +102,9 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                     if access_ids:
                         access_stack.update({
                             name.string: access_value for name in walk(access_ids, Name)
-                        })                                                
+                        })  
+                elif isinstance(node, Bind_Stmt):
+                    bind = _extract_binding_type(walk(node, Language_Binding_Spec))                                         
                 else:
                     handler = handlers.get_handler(type(node))
                     if handler:
@@ -115,9 +121,11 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     # common block variables and their type declarations need to be matched
     process_common_block_variables(module_data)
 
-    #TODO post-process to match common block members to variables
-    # have to remember might have found dimension in common block
-    # declaration, so check if they're there before overwriting
+#TODO need to keep track of which variables are SAVEd 
+# On individual variables: save variable_name
+# On common blocks: save /common_block_name/
+# Without arguments: save (saves all variables in the current scope)
+
 def process_parameter_statements(module_data: ModuleDescription, parameter_statements: List[Parameter_Stmt]) -> None:
     for param_stmt in parameter_statements:
         named_def_constants = walk(param_stmt, Named_Constant_Def)
@@ -143,6 +151,7 @@ def process_parameter_statements(module_data: ModuleDescription, parameter_state
             else:
                 logger.warning(f"PARAMETER statement for '{name.string}' but no corresponding variable declaration found")
 
+#TODO need to do the same for bind 
 def process_common_block_variables(module_data: ModuleDescription) -> None:
     common_blocks = module_data["common_blocks"]
     variables = module_data["variables"]

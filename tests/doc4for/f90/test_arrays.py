@@ -1142,7 +1142,7 @@ C     Old-style parameter statement with the type declared elsewhere
         
         ! Arrays in common blocks
         common /data/ arr1(100), arr2(50,50)
-        real :: arr1, arr2
+        real :: arr1, arr2, arr3
         
     end module edge_cases
             """
@@ -1239,6 +1239,7 @@ C     Old-style parameter statement with the type declared elsewhere
         dimension = cast(Dimension, variables["arr2"]["dimension"])
         self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 50))
         self.assertEqual(dimension["dimensions"][1], create_dimension_expr(1, 50))
+        
         
 if __name__ == "__main__":
     unittest.main()
