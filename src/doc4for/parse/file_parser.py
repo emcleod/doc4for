@@ -63,3 +63,4 @@ def parse_file_content(file: Any, file_data: FileDescription) -> None:
             handler = handlers.get_handler(type(child))
             handler(child, file_data, comment_stack)
             comment_stack.clear()
+

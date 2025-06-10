@@ -16,7 +16,8 @@ from fparser.two.Fortran2003 import (
     Function_Subprogram,
     Subroutine_Subprogram,
     Interface_Block,
-    Enum_Def
+    Enum_Def,
+    Common_Stmt
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
@@ -28,9 +29,9 @@ from doc4for.parse.base_parser import (
     handle_type_declaration,
     handle_derived_type,
     handle_interface,
-    handle_enum
+    handle_enum,
     # handle_use,
-    # handle_common_block,
+    handle_common_block,
 #    handle_type
 )
 from doc4for.logging_config import setup_logging
@@ -60,7 +61,7 @@ def _get_module_handler() -> ModuleHandler:
         handler.register_handler(Interface_Block, handle_interface)
         handler.register_handler(Enum_Def, handle_enum)
         # handler.register_handler(Use, handle_use)
-        # handler.register_handler(Common, handle_common_block)
+        handler.register_handler(Common_Stmt, handle_common_block)
         _module_handler_instance = handler
     return _module_handler_instance
 
@@ -111,7 +112,12 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
             process_parameter_statements(module_data, parameter_stack)
     if access_stack:
         process_access_statements(module_data, access_stack)
+    # common block variables and their type declarations need to be matched
+    process_common_block_variables(module_data)
 
+    #TODO post-process to match common block members to variables
+    # have to remember might have found dimension in common block
+    # declaration, so check if they're there before overwriting
 def process_parameter_statements(module_data: ModuleDescription, parameter_statements: List[Parameter_Stmt]) -> None:
     for param_stmt in parameter_statements:
         named_def_constants = walk(param_stmt, Named_Constant_Def)
@@ -136,6 +142,20 @@ def process_parameter_statements(module_data: ModuleDescription, parameter_state
                 module_data["parameters"][name.string] = parameter
             else:
                 logger.warning(f"PARAMETER statement for '{name.string}' but no corresponding variable declaration found")
+
+def process_common_block_variables(module_data: ModuleDescription) -> None:
+    common_blocks = module_data["common_blocks"]
+    variables = module_data["variables"]
+    for _, common_block_description in common_blocks.items():
+        common_block_variables = common_block_description["variables"]
+        for common_block_variable_name, common_block_variable in common_block_variables.items():
+            if common_block_variable_name in variables:
+                variable_description = variables[common_block_variable_name]
+                # see if the dimension was defined in the common block rather than the type declaration
+                if not variable_description["dimension"] and common_block_variable["dimension"]:
+                    variable_description["dimension"] = common_block_variable["dimension"]
+                # replace the variable description in the common block with the full description
+                common_block_variables[common_block_variable_name] = variables[common_block_variable_name]
 
 # Types (derived types)
 # Variables (including parameters)

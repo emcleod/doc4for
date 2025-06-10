@@ -27,6 +27,7 @@ from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
 from doc4for.models.dimension_models import ArrayBound, BoundType, Expression
 from doc4for.models.common import ExpressionType, BindingType, BindingTypeEnum
+from doc4for.models.dimension_models import Dimension
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -196,7 +197,6 @@ def _extract_literal_value(node):
     
     return str(node)
 
-
 def _extract_entity_info(entity_decl):
     """Extract name, dimension, and value from an entity declaration."""
     info = {}
@@ -210,7 +210,7 @@ def _extract_entity_info(entity_decl):
         info["value"] = _extract_value_from_initialization(initialization[0])
     return info
 
-def _extract_dimension_info(shape_spec_list):    
+def _extract_dimension_info(shape_spec_list) -> Dimension:    
     declared_dimensions = walk(shape_spec_list, (Explicit_Shape_Spec, Assumed_Shape_Spec))
     if not declared_dimensions:
         return None

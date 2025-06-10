@@ -35,6 +35,9 @@ def format_comments(comment_stack: List[Comment]) -> str:
     is_inside_doc4for_comment = False
     for comment in comment_stack:
         if comment.item.comment:
+            if comment.item.comment.startswith("C     "):
+                # don't handle old-style comments
+                continue
             # get rid of the initial ! but keep everything after including !
             content = comment.item.comment.split("!", 1)[1].strip() 
             if "!*" in content:            

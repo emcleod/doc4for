@@ -18,7 +18,7 @@ CommonBlockDescription = TypedDict(
     "CommonBlockDescription",
     {
         "name": str,
-        "variables": Dict[str, VariableDescription],
+        "variables": Dict[str, VariableDescription], #TODO this should be ordered 
         "description": str,
         "binding_type": Optional[BindingType]
     },

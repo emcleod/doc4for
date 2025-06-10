@@ -13,14 +13,57 @@ from fparser.two.Fortran2003 import (
 )
 from fparser.two.utils import walk
 from doc4for.models.common import BindingTypeEnum
-from doc4for.models.module_models import BlockDataDescription, DataStatementDescription
+from doc4for.models.module_models import BlockDataDescription, DataStatementDescription, CommonBlockDescription
+from doc4for.models.variable_models import VariableDescription
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_variable
+from doc4for.models.dimension_models import Dimension
+from doc4for.parse.common_parser import _extract_dimension_info
 
 from doc4for.logging_config import setup_logging
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comment]) -> Dict[str, CommonBlockDescription]:
+    common_blocks = {}
+    for child in common_block_stmt.children:
+        common_block_name = None
+        variables = {}
+        for block in child:
+            common_block_decl, declarations = block
+            common_block_name = common_block_decl.string if common_block_decl else ""
+            variables = {}
+            for declaration in declarations.children:
+                name = declaration.children[0].string if declaration.children else declaration.string
+                dimension: Dimension = None
+                if len(declaration.children) > 1:
+                    dimension = _extract_dimension_info(declaration.children[1])
+                # just get the dimensions - the post-processing step will
+                # match up the remainder of the fields
+                variable_description: VariableDescription = {
+                    "description": "",
+                    "type": "",
+                    "name": name,
+                    "dimension": dimension,
+                    "polymorphism_type": None,
+                    "attributes": [],
+                    "kind": "",
+                    "initial_value": "",
+                    "length": "",
+                    "binding_type": None
+                }        
+                variables[name] = variable_description
+            if common_block_name in common_blocks:
+                common_blocks[common_block_name]["variables"].update(variables)
+            else:
+                common_block = {
+                    "name": common_block_name,
+                    "description": format_comments(comment_stack),
+                    "variables": variables,
+                    "binding_type": None,  # TODO
+                }
+                common_blocks[common_block_name] = common_block
+    return common_blocks
 
 def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tuple[str, BlockDataDescription]:
     block_data_decl = walk(block_data, Block_Data_Stmt)
@@ -41,22 +84,11 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                 elif isinstance(spec_child, Implicit_Part):
                     decl_comment_stack.extend(walk(spec_child, Comment))
                 elif isinstance(spec_child, Common_Stmt):
-                    for common_decl_children in spec_child.children:
-                        for common_decl_child in common_decl_children:
-                            common_block_name = common_decl_child[0].string if common_decl_child[0] else ""
-                            variable_names = [var_name.string for var_name in common_decl_child[1].children]
-                            
-                            # Map each variable to its common block
-                            for var_name in variable_names:
-                                variable_to_common_block[var_name] = common_block_name
-
-                            common_block = {
-                                "name": common_block_name,
-                                "description": format_comments(decl_comment_stack),
-                                "variables": {},
-                                "binding_type": None,  # TODO
-                            }
-                            common_blocks[common_block_name] = common_block
+                    common_blocks_desc = parse_common_block(spec_child, decl_comment_stack)
+                    for common_block_name, common_block in common_blocks_desc.items():
+                        for variable in common_block["variables"]:
+                            variable_to_common_block[variable] = common_block_name
+                    common_blocks.update(common_blocks_desc)
                     decl_comment_stack.clear()
                 else:
                     # don't want to pick up any comments that aren't in front of common blocks
@@ -102,12 +134,6 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
         "other_variables": other_variables,
     }
 
-# def parse_save_statement():
-#     pass #TODO
-
-# def parse_equivalence_statement():
-#     pass #TODO
-
 
 def parse_data_statement(data_stmt: Data_Stmt, comment_stack: List[Comment]) -> List[DataStatementDescription]:
     # Since we don't have the context of common blocks and other variables,
@@ -131,7 +157,6 @@ def _update_variable_initial_value(
     common_blocks: Dict[str, Any],
     other_variables: Dict[str, Any]
 ) -> None:
-    """Update the initial value for a variable in the appropriate location."""
     if variable_name in variable_to_common_block:
         common_block_name = variable_to_common_block[variable_name]
         if (common_block_name in common_blocks and 
@@ -215,94 +240,10 @@ def _process_data_statement(
                 )
     
     return data_statements
-# def _process_data_statement(
-#     data_stmt: Data_Stmt, 
-#     comment_stack: List[Comment],
-#     variable_to_common_block: Dict[str, str],
-#     common_blocks: Dict[str, Any],
-#     other_variables: Dict[str, Any]
-# ) -> List[DataStatementDescription]:
-#     data_statements = []
-    
-#     # Get the description from any preceding comments
-#     data_description = format_comments(comment_stack)
-#     # A Data_Stmt can contain multiple Data_Stmt_Set objects
-#     data_stmt_sets = [child for child in data_stmt.children]
 
-#     for data_set in data_stmt_sets:
-#         if len(data_set.children) >= 2:
-#             var_names = data_set.children[0]  # Data_Stmt_Object_List
-#             var_values = data_set.children[1]  # Data_Stmt_Value_List
+# def parse_save_statement():
+#     pass #TODO
 
-#             # TODO check if this is an implied DO loop or other complex initialization
-#             implied_init = ""
-
-#             # Get all variable names and all values
-#             var_name_list = [var.string for var in var_names.children]
-#             value_list = [val.string for val in var_values.children]
-
-#             # Distribute values among variables based on their array sizes
-#             value_index = 0
-
-#             for var_name_str in var_name_list:
-#                 # Find the variable to get its size
-#                 var_info = None
-#                 target_common_block = None
-                
-#                 # Look for the variable in the appropriate common block
-#                 if var_name_str in variable_to_common_block:
-#                     common_block_name = variable_to_common_block[var_name_str]
-#                     if common_block_name in common_blocks:
-#                         target_common_block = common_blocks[common_block_name]
-#                         if var_name_str in target_common_block["variables"]:
-#                             var_info = target_common_block["variables"][var_name_str]
-#                 elif var_name_str in other_variables:
-#                     var_info = other_variables[var_name_str]
-
-#                 # Determine how many values this variable needs
-#                 if var_info and var_info.get("dimension") and var_info["dimension"].get("dimensions"):                                
-#                     # Calculate total array size
-#                     array_size = 1
-#                     for dim in var_info["dimension"]["dimensions"]:
-#                         if hasattr(dim, "upper") and hasattr(dim, "lower"):
-#                             upper_val = int(dim.upper.value)
-#                             lower_val = int(dim.lower.value)
-#                             array_size *= upper_val - lower_val + 1
-#                 else:
-#                     # Scalar variable
-#                     array_size = 1
-
-#                 # Extract the values for this variable
-#                 if value_index + array_size <= len(value_list):
-#                     var_values_for_this_var = value_list[
-#                         value_index : value_index + array_size
-#                     ]
-#                     var_value_str = ", ".join(var_values_for_this_var)
-#                     value_index += array_size
-#                 else:
-#                     # Not enough values left - this might be an error in the Fortran code
-#                     # but we'll handle it gracefully
-#                     remaining_values = value_list[value_index:]
-#                     var_value_str = ", ".join(remaining_values)
-#                     value_index = len(value_list)
-
-#                 # Create data statement entry
-#                 data_stmt_entry = {
-#                     "variable": var_name_str,
-#                     "value": var_value_str,
-#                     "description": data_description,
-#                     "implied_initialisation": implied_init,
-#                 }
-#                 data_statements.append(data_stmt_entry)
-
-#                 # Update the variable's initial_value in the correct location
-#                 if target_common_block and var_name_str in target_common_block["variables"]:
-#                     target_common_block["variables"][var_name_str]["initial_value"] = var_value_str
-#                 elif var_name_str in other_variables:
-#                     other_variables[var_name_str]["initial_value"] = var_value_str
-    
-#     return data_statements
-
-
-
+# def parse_equivalence_statement():
+#     pass #TODO
 
