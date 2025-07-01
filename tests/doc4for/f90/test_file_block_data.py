@@ -58,6 +58,7 @@ class TestBlockData(TestCase):
                             "initial_value": "1.0",
                             "length": None,
                             "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -69,7 +70,8 @@ class TestBlockData(TestCase):
                             "kind": None,
                             "initial_value": "2.0", 
                             "length": None,
-                            "binding_type": None 
+                            "binding_type": None,
+                            "is_saved": False
                         }
                     }
                 }
@@ -122,7 +124,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -134,7 +137,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                     }
                 }
@@ -188,7 +192,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -200,7 +205,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         }
                     },
                 }
@@ -254,7 +260,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -266,7 +273,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "z": {
                             "description": "",
@@ -278,7 +286,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "3.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "theta": {
                             "description": "",
@@ -290,7 +299,8 @@ END BLOCK DATA simple
                             "kind": None,
                             "initial_value": "0.45",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                     }
                 }
@@ -351,7 +361,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                     }
                 }
@@ -400,7 +411,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                     }
                 }
@@ -430,7 +442,8 @@ END BLOCK DATA
                     "kind": None,
                     "initial_value": "12, 13, 14",
                     "length": None,
-                    "binding_type": None
+                    "binding_type": None,
+                    "is_saved": False
                 }
             }
         }
@@ -472,7 +485,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "1, 2, 3",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -484,7 +498,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "4, 5",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,   
+                            "is_saved": False
                         },
                     }
                 }
@@ -671,7 +686,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "1.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                         "y": {
                             "description": "",
@@ -683,7 +699,8 @@ END BLOCK DATA
                             "kind": None,
                             "initial_value": "2.0",
                             "length": None,
-                            "binding_type": None
+                            "binding_type": None,
+                            "is_saved": False
                         },
                     }
                 }

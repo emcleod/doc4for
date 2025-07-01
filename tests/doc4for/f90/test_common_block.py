@@ -4,6 +4,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_file_tree import extract_file_data
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.common import BindingTypeEnum
+from doc4for.models.dimension_models import BoundType
 
 class TestCommonBlockDeclarations(TestCase):
 
@@ -185,7 +186,7 @@ end module
         # Physics common block with BIND(C)
         physics_block = module["common_blocks"]["physics"]
         self.assertEqual(physics_block["name"], "physics")
-        self.assertEqual(physics_block["description"], "Common block with explicit C binding and name")
+        self.assertEqual(physics_block["description"], "Common block with explicit C binding and name\n")
         self.assertEqual(physics_block["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertEqual(physics_block["binding_type"]["name"], "c_physics_block")
         self.assertEqual(len(physics_block["variables"]), 3)
@@ -193,7 +194,7 @@ end module
         # Solver params common block with BIND(C) and default name
         solver_block = module["common_blocks"]["solver_params"]
         self.assertEqual(solver_block["name"], "solver_params")
-        self.assertEqual(solver_block["description"], "Common block with C binding but default name")
+        self.assertEqual(solver_block["description"], "Common block with C binding but default name\n")
         self.assertEqual(solver_block["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(solver_block["binding_type"]["name"])
         self.assertEqual(len(solver_block["variables"]), 3)
@@ -341,22 +342,24 @@ end module
         # Check blank common block
         blank_common = module["common_blocks"][""]
         self.assertEqual(blank_common["name"], "")
-        self.assertEqual(blank_common["description"], "Blank common block")
+        self.assertEqual(blank_common["description"], "Blank common block\n")
         self.assertIsNone(blank_common["binding_type"])
-        self.assertEqual(len(blank_common["variables"]), 5)
+        self.assertEqual(len(blank_common["variables"]), 7)
         self.assertIn("a", blank_common["variables"])
+        self.assertIn("b", blank_common["variables"])
+        self.assertIn("c", blank_common["variables"])
+        self.assertIn("i", blank_common["variables"])
         self.assertIn("j", blank_common["variables"])
+        # Blank common should also have p and q from the second line
+        self.assertIn("p", blank_common["variables"])
+        self.assertIn("q", blank_common["variables"])
         
         # Check named block and trailing blank common on same line
         named_block = module["common_blocks"]["named"]
         self.assertEqual(named_block["name"], "named")
         self.assertEqual(len(named_block["variables"]), 3)
         
-        # Blank common should also have p and q from the second line
-        self.assertIn("p", blank_common["variables"])
-        self.assertIn("q", blank_common["variables"])
-
-    def test_save_attribute_in_module(self):
+    def test_save_single_variable(self):
         self.fs.create_file(
             "/fake/path/save_common_module.f90",
             contents="""\
@@ -366,7 +369,86 @@ module save_test_module
     !!* Counter variables that persist between calls *!
     integer :: call_count, error_count
     real :: total_time
+    save total_time
+
+    !!* Stateful counters in common block *!
+    common /counters/ call_count, error_count, total_time
     
+    !!* Another stateful block with inline save *!
+    real :: state_values(10)
+    common /state/ state_values
+
+contains
+    subroutine increment_counter()
+        call_count = call_count + 1
+    end subroutine
+end module
+"""
+        )
+        
+        result = extract_file_data([Path('/fake/path/save_common_module.f90')])
+        file_data = result[0]
+        module = file_data["modules"]["save_test_module"]
+   
+        variables = module["variables"]
+        for name, desc in variables.items():
+            if name == "total_time":
+                self.assertTrue(desc["is_saved"])
+            else:
+                self.assertFalse(desc["is_saved"])
+
+    def test_save_common_block(self):
+        self.fs.create_file(
+            "/fake/path/save_common_module.f90",
+            contents="""\
+module save_test_module
+    implicit none
+    
+    !!* Counter variables that persist between calls *!
+    integer :: call_count, error_count
+    real :: total_time
+
+    !!* Stateful counters in common block *!
+    common /counters/ call_count, error_count, total_time
+    save /counters/
+
+    !!* Another stateful block with inline save *!
+    real :: state_values(10)
+    common /state/ state_values
+
+contains
+    subroutine increment_counter()
+        call_count = call_count + 1
+    end subroutine
+end module
+"""
+        )
+        
+        result = extract_file_data([Path('/fake/path/save_common_module.f90')])
+        file_data = result[0]
+        module = file_data["modules"]["save_test_module"]
+
+        variables_in_counters = ["call_count, error_count", "total_time"]
+        variables_in_state = ["state_values"]
+
+        variables = module["variables"]
+        for name, desc in variables.items():
+            if name in variables_in_counters:
+                self.assertTrue(desc["is_saved"])
+            elif name in variables_in_state:
+                self.assertFalse(desc["is_saved"])
+
+    def test_save_module(self):
+        self.fs.create_file(
+            "/fake/path/save_common_module.f90",
+            contents="""\
+module save_test_module
+    implicit none
+    
+    !!* Counter variables that persist between calls *!
+    integer :: call_count, error_count
+    real :: total_time
+
     !!* Stateful counters in common block *!
     common /counters/ call_count, error_count, total_time
     save /counters/  ! SAVE attribute applied to common block
@@ -386,483 +468,699 @@ end module
         result = extract_file_data([Path('/fake/path/save_common_module.f90')])
         file_data = result[0]
         module = file_data["modules"]["save_test_module"]
-        
-        # Check SAVE attribute for counters block
-        counters_block = module["common_blocks"]["counters"]
-        self.assertIn("has_save_attribute", counters_block)
-        self.assertTrue(counters_block["has_save_attribute"])
-        
-        # Check SAVE attribute for state block (from module-level save)
-        state_block = module["common_blocks"]["state"]
-        self.assertIn("has_save_attribute", state_block)
-        self.assertTrue(state_block["has_save_attribute"])
-    
-    def test_save_attribute_in_block_data(self):
+                
+        variables = module["variables"]
+        for _, desc in variables.items():
+            self.assertTrue(desc["is_saved"])
+
+    def test_save_in_block_data(self):
         self.fs.create_file(
             "/fake/path/save_common_block_data.f90",
             contents="""\
-!!* Global persistent storage *!
-block data persistence
-    implicit none
-    
-    !!* Game state variables *!
-    integer :: score, lives, level
-    real :: elapsed_time
-    
-    !!* Persistent game state *!
-    common /game_state/ score, lives, level, elapsed_time
-    save /game_state/
-    
-    data score /0/
-    data lives /3/
-    data level /1/
-    data elapsed_time /0.0/
-end block data
-"""
+    !!* Global persistent storage *!
+    block data persistence
+        implicit none
+        
+        !!* Game state variables *!
+        integer :: score, lives, level
+        real :: elapsed_time
+        
+        !!* Persistent game state *!
+        common /game_state/ score, lives, level, elapsed_time
+        save /game_state/
+        
+        data score /0/
+        data lives /3/
+        data level /1/
+        data elapsed_time /0.0/
+    end block data
+    """
         )
         
         result = extract_file_data([Path('/fake/path/save_common_block_data.f90')])
         file_data = result[0]
         block_data = file_data["block_data"]["persistence"]
         
-        # Check SAVE attribute for game_state block
+        # Check that all variables in the game_state common block are saved
         game_state_block = block_data["common_blocks"]["game_state"]
-        self.assertIn("has_save_attribute", game_state_block)
-        self.assertTrue(game_state_block["has_save_attribute"])
-    
-    def test_equivalence_with_common_in_module(self):
-        self.fs.create_file(
-            "/fake/path/equivalence_common_module.f90",
-            contents="""\
-module equivalence_test
-    implicit none
-    
-    !!* Buffer that can be viewed as different types *!
-    real :: buffer(100)
-    integer :: int_view(100)
-    character(len=400) :: char_view
-    real :: first_element, last_element
-    
-    !!* Make variables share same memory *!
-    equivalence (buffer, int_view, char_view)
-    equivalence (buffer(1), first_element)
-    equivalence (buffer(100), last_element)
-    
-    !!* Common block containing the shared memory *!
-    common /shared_buffer/ buffer
-contains
-    subroutine write_string(text)
-        character(len=*), intent(in) :: text
-        char_view(1:len(text)) = text
-    end subroutine
-end module
-"""
-        )
+        variables_in_game_state = ["score", "lives", "level", "elapsed_time"]
         
-        result = extract_file_data([Path('/fake/path/equivalence_common_module.f90')])
-        file_data = result[0]
-        module = file_data["modules"]["equivalence_test"]
-        
-        # Check equivalence relationships in common block
-        buffer_block = module["common_blocks"]["shared_buffer"]
-        self.assertIn("equivalence_relationships", buffer_block)
-        
-        # Should have 3 equivalence relationships
-        self.assertEqual(len(buffer_block["equivalence_relationships"]), 3)
-        
-        # Check first relationship (buffer = int_view = char_view)
-        first_equiv = buffer_block["equivalence_relationships"][0]
-        self.assertEqual(first_equiv["base_variable"], "buffer")
-        self.assertIn("int_view", first_equiv["equivalent_variables"])
-        self.assertIn("char_view", first_equiv["equivalent_variables"])
-        
-        # Check that variables in equivalence are marked
-        self.assertTrue(buffer_block["variables"]["buffer"]["has_equivalence"])
-    
-    def test_equivalence_with_common_in_block_data(self):
-        self.fs.create_file(
-            "/fake/path/equivalence_common_block_data.f90",
-            contents="""\
-block data equiv_data
-    implicit none
-    
-    !!* Union-like structure using equivalence *!
-    integer :: int_array(25)
-    real :: real_array(25)
-    complex :: complex_array(12)
-    character(len=100) :: string_view
-    
-    !!* Create union-like memory sharing *!
-    equivalence (int_array, real_array, complex_array, string_view)
-    
-    !!* Common block containing the shared memory *!
-    common /union_data/ int_array
-    
-    data int_array /25*0/
-end block data
-"""
-        )
-        
-        result = extract_file_data([Path('/fake/path/equivalence_common_block_data.f90')])
-        file_data = result[0]
-        block_data = file_data["block_data"]["equiv_data"]
-        
-        # Check equivalence relationships in common block
-        union_block = block_data["common_blocks"]["union_data"]
-        self.assertIn("equivalence_relationships", union_block)
-        
-        # Should have 1 equivalence relationship with 4 variables
-        self.assertEqual(len(union_block["equivalence_relationships"]), 1)
-        
-        equiv = union_block["equivalence_relationships"][0]
-        self.assertEqual(equiv["base_variable"], "int_array") 
-        self.assertEqual(len(equiv["equivalent_variables"]), 3)
-        self.assertIn("string_view", equiv["equivalent_variables"])
-    
-    def test_save_and_equivalence_combined(self):
-        self.fs.create_file(
-            "/fake/path/save_equivalence_combined.f90",
-            contents="""\
-module combined_features
-    implicit none
-    
-    !!* Persistent buffer with multiple views *!
-    real :: buffer(100)
-    integer :: int_buffer(100)
-    character(len=400) :: string_buffer
-    
-    equivalence (buffer, int_buffer, string_buffer)
-    
-    !!* Common block with both save and equivalenced variables *!
-    common /persistent_buffer/ buffer
-    save /persistent_buffer/
-contains
-    subroutine process_data()
-        buffer(1) = buffer(1) + 1.0
-    end subroutine
-end module
-"""
-        )
-        
-        result = extract_file_data([Path('/fake/path/save_equivalence_combined.f90')])
-        file_data = result[0]
-        module = file_data["modules"]["combined_features"]
-        
-        # Check both features in the same common block
-        buffer_block = module["common_blocks"]["persistent_buffer"]
-        self.assertIn("has_save_attribute", buffer_block)
-        self.assertTrue(buffer_block["has_save_attribute"])
-        
-        self.assertIn("equivalence_relationships", buffer_block)
-        self.assertEqual(len(buffer_block["equivalence_relationships"]), 1)
-        
-        # Check that the buffer variable has both attributes
-        self.assertTrue(buffer_block["variables"]["buffer"]["has_equivalence"])
-        self.assertTrue(buffer_block["variables"]["buffer"]["is_saved"])
-    
-    def test_partial_equivalence_with_common(self):
-        self.fs.create_file(
-            "/fake/path/partial_equivalence.f90",
-            contents="""\
-module partial_equiv_test
-    implicit none
-    
-    !!* Common block with array variables *!
-    real :: full_array(100)
-    real :: first_half(50), second_half(50)
-    real :: first_element, last_element
-    
-    !!* Partial equivalence with sections of array *!
-    equivalence (full_array(1), first_half(1))
-    equivalence (full_array(51), second_half(1))
-    equivalence (full_array(1), first_element)
-    equivalence (full_array(100), last_element)
-    
-    common /array_data/ full_array
-contains
-    subroutine update_halves()
-        first_half = first_half * 2.0
-        second_half = second_half + 1.0
-        ! full_array is automatically updated due to equivalence
-    end subroutine
-end module
-"""
-        )
-        
-        result = extract_file_data([Path('/fake/path/partial_equivalence.f90')])
-        file_data = result[0]
-        module = file_data["modules"]["partial_equiv_test"]
-        
-        # Check array subsection equivalence
-        array_block = module["common_blocks"]["array_data"]
-        self.assertIn("equivalence_relationships", array_block)
-        self.assertEqual(len(array_block["equivalence_relationships"]), 4)
-        
-        # Check first relationship with offset info
-        first_relation = array_block["equivalence_relationships"][0]
-        self.assertEqual(first_relation["base_variable"], "full_array")
-        self.assertEqual(first_relation["base_offset"], 0)  # 1-indexed in Fortran
-        self.assertEqual(first_relation["equivalent_variables"][0], "first_half")
-        self.assertEqual(first_relation["equivalent_offsets"][0], 0)
-        
-        # Check second relationship with offset info
-        second_relation = array_block["equivalence_relationships"][1]  
-        self.assertEqual(second_relation["base_variable"], "full_array")
-        self.assertEqual(second_relation["base_offset"], 50)  # 1-indexed in Fortran
-        self.assertEqual(second_relation["equivalent_variables"][0], "second_half")
-        self.assertEqual(second_relation["equivalent_offsets"][0], 0)
+        # Variables are stored within the common block itself
+        for var_name in variables_in_game_state:
+            self.assertIn(var_name, game_state_block["variables"])
+            var_desc = game_state_block["variables"][var_name]
+            self.assertTrue(var_desc["is_saved"])
 
-    def test_common_block_with_save(self):
-        """Test that SAVE attribute is properly captured for COMMON blocks."""
+    def test_multiple_common_blocks_single_statement(self):
         self.fs.create_file(
-            "/fake/path/common_with_save.f90",
+            "/fake/path/multiple_commons.f90",
             contents="""\
-module saved_data
-    implicit none
-    
-    !!* Constants that should persist between calls *!
-    real :: constants(5)
-    integer :: config_values(10)
-    
-    !!* Common block with SAVE attribute *!
-    common /persisted_values/ constants, config_values
-    save /persisted_values/
-    
-    !!* Another style: blanket SAVE declaration *!
-    real :: temp_history(100)
-    integer :: counter
-    common /history_data/ temp_history, counter
-    save                ! Covers all variables and common blocks
-    
-    !!* COMMON with selective SAVE *!
-    real :: calibration(3), measurements(500)
-    common /sensor_data/ calibration, measurements
-    save :: calibration  ! Only specific variables saved
-contains
-    subroutine initialize()
-        constants = [3.14159, 2.71828, 1.41421, 1.73205, 2.23607]
-        config_values = 0
-    end subroutine
-end module
-"""
+    module multiple_commons
+        implicit none
+        
+        !!* First block with scalars.
+        ! Second block with array 
+        ! Third block with single variable 
+        !*!
+        common /block1/ var1, var2 /block2/ var3, var4(10) /block3/ var5
+        real :: var1, var2, var3, var4, var5
+        
+    end module
+    """
         )
         
-        result = extract_file_data([Path('/fake/path/common_with_save.f90')])
-        self.assertEqual(len(result), 1)
+        result = extract_file_data([Path('/fake/path/multiple_commons.f90')])
         file_data = result[0]
-        module = file_data["modules"]["saved_data"]
+        module = file_data["modules"]["multiple_commons"]
         
-        # Check explicit SAVE for COMMON block
-        persisted_block = module["common_blocks"]["persisted_values"]
-        self.assertIn("has_save_attribute", persisted_block)
-        self.assertTrue(persisted_block["has_save_attribute"])
+        # Check all three common blocks exist
+        self.assertEqual(len(module["common_blocks"]), 3)
         
-        # Check blanket SAVE
-        history_block = module["common_blocks"]["history_data"]
-        self.assertIn("has_save_attribute", history_block)
-        self.assertTrue(history_block["has_save_attribute"])
+        # Block1 - two scalars
+        block1 = module["common_blocks"]["block1"]
+        self.assertEqual(block1["description"], "First block with scalars.\nSecond block with array\nThird block with single variable\n")
+        self.assertEqual(len(block1["variables"]), 2)
+        self.assertIn("var1", block1["variables"])
+        self.assertIn("var2", block1["variables"])
+        self.assertIsNone(block1["variables"]["var1"]["dimension"])
+        self.assertIsNone(block1["variables"]["var2"]["dimension"])
         
-        # Check selective SAVE (should capture that the common block is partially saved)
-        sensor_block = module["common_blocks"]["sensor_data"]
-        self.assertIn("has_save_attribute", sensor_block)
-        self.assertTrue(sensor_block["has_save_attribute"])
-        self.assertIn("partially_saved", sensor_block)
-        self.assertTrue(sensor_block["partially_saved"])
-        self.assertIn("saved_variables", sensor_block)
-        self.assertIn("calibration", sensor_block["saved_variables"])
-        self.assertNotIn("measurements", sensor_block["saved_variables"])
+        # Block2 - one scalar and one array
+        block2 = module["common_blocks"]["block2"]
+        self.assertEqual(block2["description"], "First block with scalars.\nSecond block with array\nThird block with single variable\n")
+        self.assertEqual(len(block2["variables"]), 2)
+        self.assertIn("var3", block2["variables"])
+        self.assertIn("var4", block2["variables"])
+        self.assertIsNone(block2["variables"]["var3"]["dimension"])
+        
+        # Check var4 array dimension
+        var4_dim = block2["variables"]["var4"]["dimension"]
+        self.assertIsNotNone(var4_dim)
+        self.assertEqual(len(var4_dim["dimensions"]), 1)
+        self.assertEqual(var4_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(var4_dim["dimensions"][0].upper.value, "10")
+        
+        # Block3 - single variable
+        block3 = module["common_blocks"]["block3"]
+        self.assertEqual(block3["description"], "First block with scalars.\nSecond block with array\nThird block with single variable\n")
+        self.assertEqual(len(block3["variables"]), 1)
+        self.assertIn("var5", block3["variables"])
 
-    def test_common_block_with_equivalence(self):
-        """Test that EQUIVALENCE relationships are properly captured."""
+    def test_mixed_named_and_blank_common_with_arrays(self):
         self.fs.create_file(
-            "/fake/path/common_with_equivalence.f90",
+            "/fake/path/mixed_commons.f90",
             contents="""\
-module shared_memory
-    implicit none
-    
-    !!* Multi-view data buffer *!
-    real :: data_buffer(1000)
-    integer :: int_view(1000)
-    character(len=4000) :: char_view
-    
-    !!* Common block containing data buffer *!
-    common /data_storage/ data_buffer
-    
-    !!* Make multiple views equivalent to the buffer *!
-    equivalence (data_buffer, int_view, char_view)
-    
-    !!* Partial equivalence for subarray *!
-    real :: header(10), body(990)
-    equivalence (data_buffer, header), (data_buffer(11), body)
-    
-    !!* Another common block with equivalenced members *!
-    complex :: complex_data(50)
-    real :: real_parts(50), imag_parts(50)
-    common /complex_storage/ complex_data
-    equivalence (complex_data, real_parts), (complex_data(1), imag_parts)
-end module
-"""
+    module mixed_commons
+        implicit none
+        
+        !!* Named data block followed by blank common
+        ! with 2D array
+        !*!
+        common /data/ x, y // z, w(5,5)
+        real :: x, y, z, w
+        
+    end module
+    """
         )
         
-        result = extract_file_data([Path('/fake/path/common_with_equivalence.f90')])
-        self.assertEqual(len(result), 1)
+        result = extract_file_data([Path('/fake/path/mixed_commons.f90')])
         file_data = result[0]
-        module = file_data["modules"]["shared_memory"]
+        module = file_data["modules"]["mixed_commons"]
         
-        # Check equivalence relationships for data_storage
-        data_block = module["common_blocks"]["data_storage"]
-        self.assertIn("equivalence_relationships", data_block)
+        # Check two common blocks exist (named and blank)
+        self.assertEqual(len(module["common_blocks"]), 2)
         
-        # Check main equivalence relationship
-        self.assertGreaterEqual(len(data_block["equivalence_relationships"]), 1)
-        main_equiv = data_block["equivalence_relationships"][0]
-        self.assertEqual(main_equiv["base_variable"], "data_buffer")
-        self.assertIn("equivalent_variables", main_equiv)
-        equivalent_vars = main_equiv["equivalent_variables"]
-        self.assertIn("int_view", equivalent_vars)
-        self.assertIn("char_view", equivalent_vars)
+        # Named block
+        data_block = module["common_blocks"]["data"]
+        self.assertEqual(data_block["description"], "Named data block followed by blank common\nwith 2D array\n")
+        self.assertEqual(len(data_block["variables"]), 2)
+        self.assertIn("x", data_block["variables"])
+        self.assertIn("y", data_block["variables"])
         
-        # Check partial equivalence
-        self.assertIn("header", [rel.get("base_variable") for rel in data_block["equivalence_relationships"]])
+        # Blank block with 2D array
+        blank_block = module["common_blocks"][""]
+        self.assertEqual(len(blank_block["variables"]), 2)
+        self.assertIn("z", blank_block["variables"])
+        self.assertIn("w", blank_block["variables"])
         
-        # Check another common block with equivalence
-        complex_block = module["common_blocks"]["complex_storage"]
-        self.assertIn("equivalence_relationships", complex_block)
-        self.assertGreaterEqual(len(complex_block["equivalence_relationships"]), 1)
-        
-    def test_combined_save_and_equivalence(self):
-        """Test SAVE and EQUIVALENCE used together with COMMON blocks."""
-        self.fs.create_file(
-            "/fake/path/combined_features.f90",
-            contents="""\
-module advanced_data_store
-    implicit none
-    
-    !!* Persistent data buffer with multiple views *!
-    real :: buffer(500)
-    integer :: int_buffer(500)
-    character(len=2000) :: char_buffer
-    
-    common /multi_view_data/ buffer
-    equivalence (buffer, int_buffer, char_buffer)
-    save /multi_view_data/
-    
-    !!* Partial SAVE with EQUIVALENCE *!
-    real :: raw_readings(200), processed_readings(200)
-    integer :: status_flags(200)
-    
-    common /sensor_readings/ raw_readings, processed_readings
-    equivalence (raw_readings, status_flags)
-    save :: raw_readings  ! Only raw readings are saved
-contains
-    subroutine update_data(new_value)
-        real, intent(in) :: new_value
-        integer :: i
-        
-        ! Shift values and add new one
-        do i = 499, 1, -1
-            buffer(i+1) = buffer(i)
-        end do
-        buffer(1) = new_value
-    end subroutine
-end module
-"""
-        )
-        
-        result = extract_file_data([Path('/fake/path/combined_features.f90')])
-        self.assertEqual(len(result), 1)
-        file_data = result[0]
-        module = file_data["modules"]["advanced_data_store"]
-        
-        # Check SAVE and EQUIVALENCE together
-        multi_view_block = module["common_blocks"]["multi_view_data"]
-        self.assertIn("has_save_attribute", multi_view_block)
-        self.assertTrue(multi_view_block["has_save_attribute"])
-        self.assertIn("equivalence_relationships", multi_view_block)
-        self.assertGreaterEqual(len(multi_view_block["equivalence_relationships"]), 1)
-        
-        # Check complex case: partial SAVE with EQUIVALENCE
-        sensor_block = module["common_blocks"]["sensor_readings"]
-        self.assertIn("has_save_attribute", sensor_block)
-        self.assertTrue(sensor_block["has_save_attribute"])
-        self.assertIn("partially_saved", sensor_block)
-        self.assertTrue(sensor_block["partially_saved"])
-        self.assertIn("saved_variables", sensor_block)
-        self.assertIn("raw_readings", sensor_block["saved_variables"])
-        
-        # Check that equivalenced variables inherit SAVE status
-        self.assertIn("equivalence_relationships", sensor_block)
-        relations = sensor_block["equivalence_relationships"]
-        for relation in relations:
-            if relation["base_variable"] == "raw_readings":
-                self.assertIn("inherits_save_status", relation)
-                self.assertTrue(relation["inherits_save_status"])
-                self.assertIn("status_flags", relation["equivalent_variables"])
+        # Check 2D array dimensions
+        w_dim = blank_block["variables"]["w"]["dimension"]
+        self.assertIsNotNone(w_dim)
+        self.assertEqual(len(w_dim["dimensions"]), 2)
+        self.assertEqual(w_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(w_dim["dimensions"][0].upper.value, "5")
+        self.assertEqual(w_dim["dimensions"][1].bound_type, BoundType.FIXED)
+        self.assertEqual(w_dim["dimensions"][1].upper.value, "5")
 
-    def test_save_in_block_data(self):
-        """Test that SAVE in block data is properly captured."""
+    def test_array_bound_variations(self):
         self.fs.create_file(
-            "/fake/path/block_data_with_save.f90",
+            "/fake/path/bound_variations.f90",
             contents="""\
-block data constants_init
-    implicit none
-    
-    real :: math_constants(5)
-    integer :: converter_values(10)
-    
-    common /constants/ math_constants, converter_values
-    save /constants/
-    
-    data math_constants /3.14159, 2.71828, 1.41421, 1.73205, 2.23607/
-    data converter_values /1024, 1000, 60, 60, 24, 7, 365, 100, 1000, 1000000/
-end block data
-"""
+    module bound_variations
+        implicit none
+        
+        !!* Various array bound specifications
+        !*!
+        common /bounds/ arr1(0:99), arr2(-5:5,1:10), arr3(100), arr4(50)
+        real :: arr1, arr2, arr3, arr4
+        
+    end module
+    """
         )
         
-        result = extract_file_data([Path('/fake/path/block_data_with_save.f90')])
-        self.assertEqual(len(result), 1)
+        result = extract_file_data([Path('/fake/path/bound_variations.f90')])
         file_data = result[0]
-        block_data = file_data["block_data"]["constants_init"]
+        module = file_data["modules"]["bound_variations"]
         
-        # Check SAVE in block data
-        constants_block = block_data["common_blocks"]["constants"]
-        self.assertIn("has_save_attribute", constants_block)
-        self.assertTrue(constants_block["has_save_attribute"])
+        bounds_block = module["common_blocks"]["bounds"]
+        self.assertEqual(bounds_block["description"], "Various array bound specifications\n")
+        
+        # arr1(0:99) - explicit bounds
+        arr1_dim = bounds_block["variables"]["arr1"]["dimension"]
+        self.assertEqual(len(arr1_dim["dimensions"]), 1)
+        self.assertEqual(arr1_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(arr1_dim["dimensions"][0].lower.value, "0")
+        self.assertEqual(arr1_dim["dimensions"][0].upper.value, "99")
+        
+        # arr2(-5:5,1:10) - 2D with explicit bounds
+        arr2_dim = bounds_block["variables"]["arr2"]["dimension"]
+        self.assertEqual(len(arr2_dim["dimensions"]), 2)
+        self.assertEqual(arr2_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(arr2_dim["dimensions"][0].lower.value, "-5")
+        self.assertEqual(arr2_dim["dimensions"][0].upper.value, "5")
+        self.assertEqual(arr2_dim["dimensions"][1].bound_type, BoundType.FIXED)
+        self.assertEqual(arr2_dim["dimensions"][1].lower.value, "1")
+        self.assertEqual(arr2_dim["dimensions"][1].upper.value, "10")
+        
+        # arr3(100) - simple fixed size
+        arr3_dim = bounds_block["variables"]["arr3"]["dimension"]
+        self.assertEqual(len(arr3_dim["dimensions"]), 1)
+        self.assertEqual(arr3_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(arr3_dim["dimensions"][0].upper.value, "100")
+        
+        # arr4(50) - simple fixed size
+        arr4_dim = bounds_block["variables"]["arr4"]["dimension"]
+        self.assertEqual(len(arr4_dim["dimensions"]), 1)
+        self.assertEqual(arr4_dim["dimensions"][0].bound_type, BoundType.FIXED)
+        self.assertEqual(arr4_dim["dimensions"][0].upper.value, "50")
 
-    def test_equivalence_in_block_data(self):
-        """Test that EQUIVALENCE in block data is properly captured."""
+    def test_character_arrays_in_common(self):
         self.fs.create_file(
-            "/fake/path/block_data_with_equivalence.f90",
+            "/fake/path/character_arrays.f90",
             contents="""\
-block data converter_init
-    implicit none
-    
-    real :: table(100)
-    integer :: lookup_codes(100)
-    character(len=400) :: error_messages
-    
-    common /lookup_data/ table
-    equivalence (table, lookup_codes, error_messages)
-    
-    data table /100*0.0/
-    data lookup_codes /100*-1/
-    data error_messages /'No errors'/
-end block data
-"""
+    module character_arrays
+        implicit none
+        
+        ! Regular comment - not part of description
+        !!* Character variables and arrays with different length specs
+        !*!
+        common /chars/ str1, str_array, regular_char
+        character(len=10) :: str1
+        character(len=20) :: str_array(100)
+        character(len=5) :: regular_char
+        
+    end module
+    """
         )
         
-        result = extract_file_data([Path('/fake/path/block_data_with_equivalence.f90')])
-        self.assertEqual(len(result), 1)
+        result = extract_file_data([Path('/fake/path/character_arrays.f90')])
         file_data = result[0]
-        block_data = file_data["block_data"]["converter_init"]
+        module = file_data["modules"]["character_arrays"]
         
-        # Check EQUIVALENCE in block data
-        lookup_block = block_data["common_blocks"]["lookup_data"]
-        self.assertIn("equivalence_relationships", lookup_block)
-        self.assertGreaterEqual(len(lookup_block["equivalence_relationships"]), 1)
-        self.assertEqual(lookup_block["equivalence_relationships"][0]["base_variable"], "table")
-        self.assertIn("lookup_codes", lookup_block["equivalence_relationships"][0]["equivalent_variables"])
-        self.assertIn("error_messages", lookup_block["equivalence_relationships"][0]["equivalent_variables"])
+        chars_block = module["common_blocks"]["chars"]
+        self.assertEqual(chars_block["description"], "Character variables and arrays with different length specs\n")
+        
+        # str1 - character with length in type declaration
+        str1 = chars_block["variables"]["str1"]
+        self.assertEqual(str1["type"], "CHARACTER")
+        self.assertEqual(str1["length"], "10")
+        self.assertIsNone(str1["dimension"])
+        
+        # str_array - character array with length and dimension
+        str_array = chars_block["variables"]["str_array"]
+        self.assertEqual(str_array["type"], "CHARACTER")
+        self.assertEqual(str_array["length"], "20")
+        self.assertIsNotNone(str_array["dimension"])
+        self.assertEqual(len(str_array["dimension"]["dimensions"]), 1)
+        self.assertEqual(str_array["dimension"]["dimensions"][0].upper.value, "100")
+        
+        # regular_char - character with length
+        regular_char = chars_block["variables"]["regular_char"]
+        self.assertEqual(regular_char["type"], "CHARACTER")
+        self.assertEqual(regular_char["length"], "5")
+        self.assertIsNone(regular_char["dimension"])
+
+    def test_multidimensional_arrays_in_common(self):
+        self.fs.create_file(
+            "/fake/path/multidim_arrays.f90",
+            contents="""\
+    module standard_arrays
+        implicit none
+        
+        !!* Common block with various dimensional arrays
+        ! including 1D, 2D and 3D arrays
+        !*!
+        common /data/ simple_var, array1d(100), array2d(50,50), array3d(10,10,10)
+        real :: simple_var, array1d, array2d, array3d
+        
+    end module
+    """
+        )
+        
+        result = extract_file_data([Path('/fake/path/multidim_arrays.f90')])
+        file_data = result[0]
+        module = file_data["modules"]["standard_arrays"]
+        
+        data_block = module["common_blocks"]["data"]
+        self.assertEqual(data_block["description"], "Common block with various dimensional arrays\nincluding 1D, 2D and 3D arrays\n")
+        
+        # Scalar
+        self.assertIsNone(data_block["variables"]["simple_var"]["dimension"])
+        
+        # 1D array
+        array1d_dim = data_block["variables"]["array1d"]["dimension"]
+        self.assertEqual(len(array1d_dim["dimensions"]), 1)
+        self.assertEqual(array1d_dim["dimensions"][0].upper.value, "100")
+        
+        # 2D array
+        array2d_dim = data_block["variables"]["array2d"]["dimension"]
+        self.assertEqual(len(array2d_dim["dimensions"]), 2)
+        self.assertEqual(array2d_dim["dimensions"][0].upper.value, "50")
+        self.assertEqual(array2d_dim["dimensions"][1].upper.value, "50")
+        
+        # 3D array
+        array3d_dim = data_block["variables"]["array3d"]["dimension"]
+        self.assertEqual(len(array3d_dim["dimensions"]), 3)
+        self.assertEqual(array3d_dim["dimensions"][0].upper.value, "10")
+        self.assertEqual(array3d_dim["dimensions"][1].upper.value, "10")
+        self.assertEqual(array3d_dim["dimensions"][2].upper.value, "10")
+
+#     def test_equivalence_with_common_in_module(self):
+#         self.fs.create_file(
+#             "/fake/path/equivalence_common_module.f90",
+#             contents="""\
+# module equivalence_test
+#     implicit none
+    
+#     !!* Buffer that can be viewed as different types *!
+#     real :: buffer(100)
+#     integer :: int_view(100)
+#     character(len=400) :: char_view
+#     real :: first_element, last_element
+    
+#     !!* Make variables share same memory *!
+#     equivalence (buffer, int_view, char_view)
+#     equivalence (buffer(1), first_element)
+#     equivalence (buffer(100), last_element)
+    
+#     !!* Common block containing the shared memory *!
+#     common /shared_buffer/ buffer
+# contains
+#     subroutine write_string(text)
+#         character(len=*), intent(in) :: text
+#         char_view(1:len(text)) = text
+#     end subroutine
+# end module
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/equivalence_common_module.f90')])
+#         file_data = result[0]
+#         module = file_data["modules"]["equivalence_test"]
+        
+#         # Check equivalence relationships in common block
+#         buffer_block = module["common_blocks"]["shared_buffer"]
+#         self.assertIn("equivalence_relationships", buffer_block)
+        
+#         # Should have 3 equivalence relationships
+#         self.assertEqual(len(buffer_block["equivalence_relationships"]), 3)
+        
+#         # Check first relationship (buffer = int_view = char_view)
+#         first_equiv = buffer_block["equivalence_relationships"][0]
+#         self.assertEqual(first_equiv["base_variable"], "buffer")
+#         self.assertIn("int_view", first_equiv["equivalent_variables"])
+#         self.assertIn("char_view", first_equiv["equivalent_variables"])
+        
+#         # Check that variables in equivalence are marked
+#         self.assertTrue(buffer_block["variables"]["buffer"]["has_equivalence"])
+    
+#     def test_equivalence_with_common_in_block_data(self):
+#         self.fs.create_file(
+#             "/fake/path/equivalence_common_block_data.f90",
+#             contents="""\
+# block data equiv_data
+#     implicit none
+    
+#     !!* Union-like structure using equivalence *!
+#     integer :: int_array(25)
+#     real :: real_array(25)
+#     complex :: complex_array(12)
+#     character(len=100) :: string_view
+    
+#     !!* Create union-like memory sharing *!
+#     equivalence (int_array, real_array, complex_array, string_view)
+    
+#     !!* Common block containing the shared memory *!
+#     common /union_data/ int_array
+    
+#     data int_array /25*0/
+# end block data
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/equivalence_common_block_data.f90')])
+#         file_data = result[0]
+#         block_data = file_data["block_data"]["equiv_data"]
+        
+#         # Check equivalence relationships in common block
+#         union_block = block_data["common_blocks"]["union_data"]
+#         self.assertIn("equivalence_relationships", union_block)
+        
+#         # Should have 1 equivalence relationship with 4 variables
+#         self.assertEqual(len(union_block["equivalence_relationships"]), 1)
+        
+#         equiv = union_block["equivalence_relationships"][0]
+#         self.assertEqual(equiv["base_variable"], "int_array") 
+#         self.assertEqual(len(equiv["equivalent_variables"]), 3)
+#         self.assertIn("string_view", equiv["equivalent_variables"])
+    
+#     def test_save_and_equivalence_combined(self):
+#         self.fs.create_file(
+#             "/fake/path/save_equivalence_combined.f90",
+#             contents="""\
+# module combined_features
+#     implicit none
+    
+#     !!* Persistent buffer with multiple views *!
+#     real :: buffer(100)
+#     integer :: int_buffer(100)
+#     character(len=400) :: string_buffer
+    
+#     equivalence (buffer, int_buffer, string_buffer)
+    
+#     !!* Common block with both save and equivalenced variables *!
+#     common /persistent_buffer/ buffer
+#     save /persistent_buffer/
+# contains
+#     subroutine process_data()
+#         buffer(1) = buffer(1) + 1.0
+#     end subroutine
+# end module
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/save_equivalence_combined.f90')])
+#         file_data = result[0]
+#         module = file_data["modules"]["combined_features"]
+        
+#         # Check both features in the same common block
+#         buffer_block = module["common_blocks"]["persistent_buffer"]
+#         self.assertIn("has_save_attribute", buffer_block)
+#         self.assertTrue(buffer_block["has_save_attribute"])
+        
+#         self.assertIn("equivalence_relationships", buffer_block)
+#         self.assertEqual(len(buffer_block["equivalence_relationships"]), 1)
+        
+#         # Check that the buffer variable has both attributes
+#         self.assertTrue(buffer_block["variables"]["buffer"]["has_equivalence"])
+#         self.assertTrue(buffer_block["variables"]["buffer"]["is_saved"])
+    
+#     def test_partial_equivalence_with_common(self):
+#         self.fs.create_file(
+#             "/fake/path/partial_equivalence.f90",
+#             contents="""\
+# module partial_equiv_test
+#     implicit none
+    
+#     !!* Common block with array variables *!
+#     real :: full_array(100)
+#     real :: first_half(50), second_half(50)
+#     real :: first_element, last_element
+    
+#     !!* Partial equivalence with sections of array *!
+#     equivalence (full_array(1), first_half(1))
+#     equivalence (full_array(51), second_half(1))
+#     equivalence (full_array(1), first_element)
+#     equivalence (full_array(100), last_element)
+    
+#     common /array_data/ full_array
+# contains
+#     subroutine update_halves()
+#         first_half = first_half * 2.0
+#         second_half = second_half + 1.0
+#         ! full_array is automatically updated due to equivalence
+#     end subroutine
+# end module
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/partial_equivalence.f90')])
+#         file_data = result[0]
+#         module = file_data["modules"]["partial_equiv_test"]
+        
+#         # Check array subsection equivalence
+#         array_block = module["common_blocks"]["array_data"]
+#         self.assertIn("equivalence_relationships", array_block)
+#         self.assertEqual(len(array_block["equivalence_relationships"]), 4)
+        
+#         # Check first relationship with offset info
+#         first_relation = array_block["equivalence_relationships"][0]
+#         self.assertEqual(first_relation["base_variable"], "full_array")
+#         self.assertEqual(first_relation["base_offset"], 0)  # 1-indexed in Fortran
+#         self.assertEqual(first_relation["equivalent_variables"][0], "first_half")
+#         self.assertEqual(first_relation["equivalent_offsets"][0], 0)
+        
+#         # Check second relationship with offset info
+#         second_relation = array_block["equivalence_relationships"][1]  
+#         self.assertEqual(second_relation["base_variable"], "full_array")
+#         self.assertEqual(second_relation["base_offset"], 50)  # 1-indexed in Fortran
+#         self.assertEqual(second_relation["equivalent_variables"][0], "second_half")
+#         self.assertEqual(second_relation["equivalent_offsets"][0], 0)
+
+    # def test_common_block_with_save(self):
+    #     self.fs.create_file(
+    #         "/fake/path/common_with_save.f90",
+    #         contents="""\
+    # module saved_data
+    #     implicit none
+        
+    #     !!* Constants that should persist between calls *!
+    #     real :: constants(5)
+    #     integer :: config_values(10)
+        
+    #     !!* Common block with SAVE attribute *!
+    #     common /persisted_values/ constants, config_values
+    #     save /persisted_values/
+        
+    #     real :: temp_history(100)
+    #     integer :: counter
+    #     !!* Another common block without explicit save *!
+    #     common /history_data/ temp_history, counter
+        
+    #     real :: calibration(3), measurements(500)
+    #     !!* COMMON with selective SAVE using :: syntax *!
+    #     common /sensor_data/ calibration, measurements
+    #     save :: calibration  ! Only calibration variable saved, not measurements
+    # contains
+    #     subroutine initialize()
+    #         constants = [3.14159, 2.71828, 1.41421, 1.73205, 2.23607]
+    #         config_values = 0
+    #     end subroutine
+    # end module
+    # """
+    #     )
+        
+    #     result = extract_file_data([Path('/fake/path/common_with_save.f90')])
+    #     self.assertEqual(len(result), 1)
+    #     file_data = result[0]
+    #     module = file_data["modules"]["saved_data"]
+        
+    #     persisted_values = module["common_blocks"]["persisted_values"]
+    #     self.assertEqual(persisted_values["description"], "Common block with SAVE attribute\n")
+    #     history_data = module["common_blocks"]["history_data"]
+    #     self.assertEqual(history_data["description"], "Another common block without explicit save\n")
+    #     sensor_data = module["common_blocks"]["sensor_data"]
+    #     self.assertEqual(sensor_data["description"], "COMMON with selective SAVE using :: syntax\n")
+
+    #     # Variables that should be saved
+    #     saved_variables = ["constants", "config_values", "calibration"]
+    #     # Variables that should NOT be saved
+    #     unsaved_variables = ["temp_history", "counter", "measurements"]
+        
+    #     variables = module["variables"]
+        
+    #     # Check saved variables
+    #     for var_name in saved_variables:
+    #         self.assertIn(var_name, variables)
+    #         self.assertTrue(variables[var_name]["is_saved"])
+        
+    #     # Check unsaved variables
+    #     for var_name in unsaved_variables:
+    #         self.assertIn(var_name, variables)
+    #         self.assertFalse(variables[var_name]["is_saved"])
+
+#     def test_common_block_with_equivalence(self):
+#         """Test that EQUIVALENCE relationships are properly captured."""
+#         self.fs.create_file(
+#             "/fake/path/common_with_equivalence.f90",
+#             contents="""\
+# module shared_memory
+#     implicit none
+    
+#     !!* Multi-view data buffer *!
+#     real :: data_buffer(1000)
+#     integer :: int_view(1000)
+#     character(len=4000) :: char_view
+    
+#     !!* Common block containing data buffer *!
+#     common /data_storage/ data_buffer
+    
+#     !!* Make multiple views equivalent to the buffer *!
+#     equivalence (data_buffer, int_view, char_view)
+    
+#     !!* Partial equivalence for subarray *!
+#     real :: header(10), body(990)
+#     equivalence (data_buffer, header), (data_buffer(11), body)
+    
+#     !!* Another common block with equivalenced members *!
+#     complex :: complex_data(50)
+#     real :: real_parts(50), imag_parts(50)
+#     common /complex_storage/ complex_data
+#     equivalence (complex_data, real_parts), (complex_data(1), imag_parts)
+# end module
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/common_with_equivalence.f90')])
+#         self.assertEqual(len(result), 1)
+#         file_data = result[0]
+#         module = file_data["modules"]["shared_memory"]
+        
+#         # Check equivalence relationships for data_storage
+#         data_block = module["common_blocks"]["data_storage"]
+#         self.assertIn("equivalence_relationships", data_block)
+        
+#         # Check main equivalence relationship
+#         self.assertGreaterEqual(len(data_block["equivalence_relationships"]), 1)
+#         main_equiv = data_block["equivalence_relationships"][0]
+#         self.assertEqual(main_equiv["base_variable"], "data_buffer")
+#         self.assertIn("equivalent_variables", main_equiv)
+#         equivalent_vars = main_equiv["equivalent_variables"]
+#         self.assertIn("int_view", equivalent_vars)
+#         self.assertIn("char_view", equivalent_vars)
+        
+#         # Check partial equivalence
+#         self.assertIn("header", [rel.get("base_variable") for rel in data_block["equivalence_relationships"]])
+        
+#         # Check another common block with equivalence
+#         complex_block = module["common_blocks"]["complex_storage"]
+#         self.assertIn("equivalence_relationships", complex_block)
+#         self.assertGreaterEqual(len(complex_block["equivalence_relationships"]), 1)
+        
+#     def test_combined_save_and_equivalence(self):
+#         """Test SAVE and EQUIVALENCE used together with COMMON blocks."""
+#         self.fs.create_file(
+#             "/fake/path/combined_features.f90",
+#             contents="""\
+# module advanced_data_store
+#     implicit none
+    
+#     !!* Persistent data buffer with multiple views *!
+#     real :: buffer(500)
+#     integer :: int_buffer(500)
+#     character(len=2000) :: char_buffer
+    
+#     common /multi_view_data/ buffer
+#     equivalence (buffer, int_buffer, char_buffer)
+#     save /multi_view_data/
+    
+#     !!* Partial SAVE with EQUIVALENCE *!
+#     real :: raw_readings(200), processed_readings(200)
+#     integer :: status_flags(200)
+    
+#     common /sensor_readings/ raw_readings, processed_readings
+#     equivalence (raw_readings, status_flags)
+#     save :: raw_readings  ! Only raw readings are saved
+# contains
+#     subroutine update_data(new_value)
+#         real, intent(in) :: new_value
+#         integer :: i
+        
+#         ! Shift values and add new one
+#         do i = 499, 1, -1
+#             buffer(i+1) = buffer(i)
+#         end do
+#         buffer(1) = new_value
+#     end subroutine
+# end module
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/combined_features.f90')])
+#         self.assertEqual(len(result), 1)
+#         file_data = result[0]
+#         module = file_data["modules"]["advanced_data_store"]
+        
+#         # Check SAVE and EQUIVALENCE together
+#         multi_view_block = module["common_blocks"]["multi_view_data"]
+#         self.assertIn("has_save_attribute", multi_view_block)
+#         self.assertTrue(multi_view_block["has_save_attribute"])
+#         self.assertIn("equivalence_relationships", multi_view_block)
+#         self.assertGreaterEqual(len(multi_view_block["equivalence_relationships"]), 1)
+        
+#         # Check complex case: partial SAVE with EQUIVALENCE
+#         sensor_block = module["common_blocks"]["sensor_readings"]
+#         self.assertIn("has_save_attribute", sensor_block)
+#         self.assertTrue(sensor_block["has_save_attribute"])
+#         self.assertIn("partially_saved", sensor_block)
+#         self.assertTrue(sensor_block["partially_saved"])
+#         self.assertIn("saved_variables", sensor_block)
+#         self.assertIn("raw_readings", sensor_block["saved_variables"])
+        
+#         # Check that equivalenced variables inherit SAVE status
+#         self.assertIn("equivalence_relationships", sensor_block)
+#         relations = sensor_block["equivalence_relationships"]
+#         for relation in relations:
+#             if relation["base_variable"] == "raw_readings":
+#                 self.assertIn("inherits_save_status", relation)
+#                 self.assertTrue(relation["inherits_save_status"])
+#                 self.assertIn("status_flags", relation["equivalent_variables"])
+
+
+#     def test_equivalence_in_block_data(self):
+#         """Test that EQUIVALENCE in block data is properly captured."""
+#         self.fs.create_file(
+#             "/fake/path/block_data_with_equivalence.f90",
+#             contents="""\
+# block data converter_init
+#     implicit none
+    
+#     real :: table(100)
+#     integer :: lookup_codes(100)
+#     character(len=400) :: error_messages
+    
+#     common /lookup_data/ table
+#     equivalence (table, lookup_codes, error_messages)
+    
+#     data table /100*0.0/
+#     data lookup_codes /100*-1/
+#     data error_messages /'No errors'/
+# end block data
+# """
+#         )
+        
+#         result = extract_file_data([Path('/fake/path/block_data_with_equivalence.f90')])
+#         self.assertEqual(len(result), 1)
+#         file_data = result[0]
+#         block_data = file_data["block_data"]["converter_init"]
+        
+#         # Check EQUIVALENCE in block data
+#         lookup_block = block_data["common_blocks"]["lookup_data"]
+#         self.assertIn("equivalence_relationships", lookup_block)
+#         self.assertGreaterEqual(len(lookup_block["equivalence_relationships"]), 1)
+#         self.assertEqual(lookup_block["equivalence_relationships"][0]["base_variable"], "table")
+#         self.assertIn("lookup_codes", lookup_block["equivalence_relationships"][0]["equivalent_variables"])
+#         self.assertIn("error_messages", lookup_block["equivalence_relationships"][0]["equivalent_variables"])
 
 if __name__ == "__main__":
     unittest.main()
@@ -885,118 +1183,5 @@ if __name__ == "__main__":
 # equivalence (data_buffer, int_view)
 # save :: data_buffer
 
-# {
-#     "name": "data_block",
-#     "variables": {...},
-#     "description": "...",
-#     "binding_type": {...},
-#     "has_save_attribute": True,
-#     "partially_saved": True,
-#     "saved_variables": ["data_buffer"],
-#     "equivalence_relationships": [
-#         {
-#             "base_variable": "data_buffer",
-#             "equivalent_variables": ["int_view"],
-#             "inherits_save_status": True
-#         }
-#     ]
-# }
 
 
-
-# module multiple_commons
-#     implicit none
-    
-#     ! Multiple common blocks in single statement
-#     common /block1/ var1, var2 /block2/ var3, var4(10) /block3/ var5
-#     real :: var1, var2, var3, var4, var5
-    
-# end module multiple_commons
-
-
-
-# module mixed_commons
-#     implicit none
-    
-#     ! Named block followed by blank common
-#     common /data/ x, y // z, w(5,5)
-#     real :: x, y, z, w
-    
-# end module mixed_commons
-
-
-
-
-# module blank_commons
-#     implicit none
-    
-#     ! Blank common can appear multiple times
-#     common // a, b /named/ c // d, e
-#     real :: a, b, c, d, e
-    
-# end module blank_commons
-
-
-
-# program complex_common
-#     implicit none
-    
-#     ! Multiple blocks with arrays and scalars
-#     common /arrays/ matrix1(100,100), vector1(50) /scalars/ temp, pressure /more_arrays/ cube(10,10,10)
-#     real :: matrix1, vector1, temp, pressure, cube
-    
-# end program complex_common
-
-
-
-# module standard_arrays
-#     implicit none
-    
-#     common /data/ simple_var, array1d(100), array2d(50,50), array3d(10,10,10)
-#     real :: simple_var, array1d, array2d, array3d
-    
-# end module standard_arrays
-
-
-
-
-# module bound_variations
-#     implicit none
-    
-#     ! Various array bound specifications
-#     common /bounds/ arr1(0:99), arr2(-5:5,1:10), arr3(*), arr4(1:*)
-#     real :: arr1, arr2, arr3, arr4
-    
-# end module bound_variations
-
-
-
-# module character_arrays
-#     implicit none
-    
-#     ! Character variables and arrays
-#     common /chars/ str1*10, str_array(100)*20, regular_char
-#     character :: str1, str_array, regular_char*5
-    
-# end module character_arrays
-
-
-# module mixed_variables
-#     implicit none
-    
-#     ! Mix of scalars and arrays
-#     common /mixed/ scalar1, array1(100), scalar2, array2(50,50), scalar3
-#     real :: scalar1, array1, scalar2, array2, scalar3
-    
-# end module mixed_variables
-
-
-
-# module scalar_only
-#     implicit none
-    
-#     ! Only scalar variables
-#     common /scalars/ var1, var2, var3, var4
-#     real :: var1, var2, var3, var4
-    
-# end module scalar_only

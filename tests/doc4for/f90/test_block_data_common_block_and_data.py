@@ -111,7 +111,8 @@ end program physics_simulation
             "kind": "4",
             "initial_value": None,
             "length": None,
-            "binding_type": None
+            "binding_type": None,
+            "is_saved": False
         })
         # Test physical_constants common block
         phys_block = common_blocks["physical_constants"]

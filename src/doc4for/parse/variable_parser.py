@@ -56,7 +56,8 @@ def parse_variable(
             "kind": type_info.get("kind"),
             "initial_value": variable_info.get("value"),
             "length": type_info.get("length"),
-            "binding_type": type_info.get("binding_type")
+            "binding_type": type_info.get("binding_type"),
+            "is_saved": False
         }        
         variable_descriptions.append(variable_description)
 

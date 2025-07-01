@@ -12,7 +12,9 @@ from fparser.two.Fortran2003 import (
     Implicit_Part,
     Bind_Stmt,
     Language_Binding_Spec,
-    Bind_Entity
+    Bind_Entity,
+    Save_Stmt,
+    Saved_Entity
 )
 from fparser.two.utils import walk
 from doc4for.models.module_models import BlockDataDescription, DataStatementDescription, CommonBlockDescription
@@ -52,9 +54,19 @@ def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comme
                     "kind": "",
                     "initial_value": "",
                     "length": "",
-                    "binding_type": None
+                    "binding_type": None,
+                    "is_saved": False
                 }        
                 variables[name] = variable_description
+            if common_block_name in common_blocks:
+                common_blocks[common_block_name]["variables"].update(variables)
+                # Merge descriptions
+                existing_desc = common_blocks[common_block_name]["description"]
+                new_desc = format_comments(comment_stack)
+                if existing_desc and new_desc:
+                    common_blocks[common_block_name]["description"] = f"{existing_desc}\n{new_desc}"
+                elif new_desc:  # Only new description exists
+                    common_blocks[common_block_name]["description"] = new_desc                
             if common_block_name in common_blocks:
                 common_blocks[common_block_name]["variables"].update(variables)
             else:
@@ -76,6 +88,11 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
     data_statements = []
     other_variables = {}
     variable_to_common_block = {}  # Map variable names to their common block names
+    
+    # Add save tracking
+    save_variables: List[str] = []
+    save_common_blocks: List[str] = []
+    save_all: bool = False
 
     for child in block_data.children:
         if isinstance(child, Specification_Part):
@@ -91,6 +108,24 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                         for variable in common_block["variables"]:
                             variable_to_common_block[variable] = common_block_name
                     common_blocks.update(common_blocks_desc)
+                    decl_comment_stack.clear()
+                elif isinstance(spec_child, Save_Stmt):
+                    # Process SAVE statements
+                    _, saved_entity_list = spec_child.children
+                    if saved_entity_list is None:
+                        # Blanket save - saves everything
+                        save_all = True
+                    else:
+                        # Process each saved entity
+                        for saved_entity in saved_entity_list.children:
+                            if isinstance(saved_entity, Saved_Entity):
+                                # Common block format: Saved_Entity('/', Name('counters'), '/')
+                                if len(saved_entity.children) == 3 and saved_entity.children[0] == '/' and saved_entity.children[2] == '/':
+                                    common_name = saved_entity.children[1].string
+                                    save_common_blocks.append(common_name)
+                            elif isinstance(saved_entity, Name):
+                                # Regular variable
+                                save_variables.append(saved_entity.string)
                     decl_comment_stack.clear()
                 else:
                     # don't want to pick up any comments that aren't in front of common blocks
@@ -145,13 +180,146 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     # don't want any comments that aren't immediately before type declarations or data statements
                     decl_comment_stack.clear()
 
-    return name, {
+    block_data_desc: BlockDataDescription = {
         "name": name,
         "description": format_comments(comment_stack),
         "common_blocks": common_blocks,
         "data_statements": data_statements,
         "other_variables": other_variables,
     }
+    
+    # Process save statements using the same function as modules
+    if save_all or save_variables or save_common_blocks:
+        process_save_statements_block_data(block_data_desc, save_variables, save_common_blocks, save_all)
+    
+    return name, block_data_desc
+
+
+def process_save_statements_block_data(block_data: BlockDataDescription, 
+                                      save_variables: List[str], 
+                                      save_common_blocks: List[str], 
+                                      save_all: bool) -> None:
+    """Process SAVE statements and mark variables as saved in block data."""
+    
+    if save_all:
+        # Mark all variables as saved (both in common blocks and other_variables)
+        for common_block in block_data.get("common_blocks", {}).values():
+            for var_desc in common_block["variables"].values():
+                var_desc["is_saved"] = True
+        for var_desc in block_data.get("other_variables", {}).values():
+            var_desc["is_saved"] = True
+    else:
+        # Process explicit variable saves
+        for var_name in save_variables:
+            # Check in common blocks
+            found = False
+            for common_block in block_data.get("common_blocks", {}).values():
+                if var_name in common_block["variables"]:
+                    common_block["variables"][var_name]["is_saved"] = True
+                    found = True
+                    break
+            # Check in other_variables
+            if not found and var_name in block_data.get("other_variables", {}):
+                block_data["other_variables"][var_name]["is_saved"] = True
+                found = True
+            if not found:
+                logger.warning(f"SAVE statement for variable '{var_name}' but variable not found in block data")
+        
+        # Process common block saves (mark all variables in the common block as saved)
+        for common_name in save_common_blocks:
+            if common_name in block_data.get("common_blocks", {}):
+                common_block = block_data["common_blocks"][common_name]
+                # Mark all variables in this common block as saved
+                for var_desc in common_block["variables"].values():
+                    var_desc["is_saved"] = True
+            else:
+                logger.warning(f"SAVE statement for common block '/{common_name}/' but common block not found in block data")
+
+# def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tuple[str, BlockDataDescription]:
+#     block_data_decl = walk(block_data, Block_Data_Stmt)
+#     block_data_names = walk(block_data_decl, Name)
+#     name = block_data_names[0].string if block_data_names else ""
+#     decl_comment_stack = []
+#     common_blocks = {}
+#     data_statements = []
+#     other_variables = {}
+#     variable_to_common_block = {}  # Map variable names to their common block names
+
+#     for child in block_data.children:
+#         if isinstance(child, Specification_Part):
+#             # First pass: collect comments, common block declarations and variable mappings
+#             for spec_child in child.children:
+#                 if isinstance(spec_child, Comment):
+#                     decl_comment_stack.append(spec_child)
+#                 elif isinstance(spec_child, Implicit_Part):
+#                     decl_comment_stack.extend(walk(spec_child, Comment))
+#                 elif isinstance(spec_child, Common_Stmt):
+#                     common_blocks_desc = parse_common_block(spec_child, decl_comment_stack)
+#                     for common_block_name, common_block in common_blocks_desc.items():
+#                         for variable in common_block["variables"]:
+#                             variable_to_common_block[variable] = common_block_name
+#                     common_blocks.update(common_blocks_desc)
+#                     decl_comment_stack.clear()
+#                 else:
+#                     # don't want to pick up any comments that aren't in front of common blocks
+#                     decl_comment_stack.clear()
+
+#             # Second pass: process type declarations, c bindings and data statements
+#             for spec_child in child.children:
+#                 if isinstance(spec_child, Comment):
+#                     decl_comment_stack.append(spec_child)
+#                 elif isinstance(spec_child, Implicit_Part):
+#                     decl_comment_stack.extend(walk(spec_child, Comment))
+#                 elif isinstance(spec_child, Type_Declaration_Stmt):
+#                     # get the type data from the declaration
+#                     variable_descs = parse_variable(spec_child, decl_comment_stack, [])
+#                     for variable_desc in variable_descs:
+#                         variable_name = variable_desc["name"]
+#                         # Find which common block this variable belongs to
+#                         if variable_name in variable_to_common_block:
+#                             common_block_name = variable_to_common_block[variable_name]
+#                             common_blocks[common_block_name]["variables"][variable_name] = variable_desc
+#                         else:
+#                             other_variables[variable_name] = variable_desc
+#                     decl_comment_stack.clear()
+#                 elif isinstance(spec_child, Data_Stmt):
+#                     new_data_statements = _process_data_statement(
+#                         spec_child, 
+#                         decl_comment_stack, 
+#                         variable_to_common_block, 
+#                         common_blocks, 
+#                         other_variables
+#                     )
+#                     data_statements.extend(new_data_statements)
+#                     decl_comment_stack.clear()
+#                 elif isinstance(spec_child, Bind_Stmt):
+#                     binding_type = _extract_binding_type(walk(spec_child, Language_Binding_Spec))
+#                     bindings = spec_child.children[1]
+#                     for binding in bindings.children:
+#                         if isinstance(binding, Name):
+#                             # TODO have a binding to a variable which we can't handle now
+#                             pass
+#                         elif isinstance(binding, Bind_Entity):
+#                             binding_name = walk(binding, Name)[0].string
+#                             if binding_name in common_blocks:
+#                                 common_blocks[binding_name]["binding_type"] = binding_type
+#                             else:
+#                                 #TODO something sensible or log
+#                                 pass
+#                         else:
+#                             #TODO something sensible or log
+#                             pass
+#                 else:
+#                     # don't want any comments that aren't immediately before type declarations or data statements
+#                     decl_comment_stack.clear()
+
+#     return name, {
+#         "name": name,
+#         "description": format_comments(comment_stack),
+#         "common_blocks": common_blocks,
+#         "data_statements": data_statements,
+#         "other_variables": other_variables,
+#     }
 
 
 def parse_data_statement(data_stmt: Data_Stmt, comment_stack: List[Comment]) -> List[DataStatementDescription]:

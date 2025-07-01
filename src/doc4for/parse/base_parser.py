@@ -83,10 +83,6 @@ def handle_enum(item: Enum_Def, data: T, comment_stack: List[Comment], **kwargs:
     enumerator_name, enumerator_description = parse_enum(item, comment_stack)
     data["enums"][enumerator_name] = enumerator_description
 
-def handle_module(item: Module, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    module_description = initialise_module_description(item, comment_stack, data["file_name"])
-    data["modules"][module_description["module_name"]] = module_description
-
 def handle_program(item: Main_Program, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
     name, program_description = parse_program(item, comment_stack, data["file_name"])
     data["programs"][name] = program_description
@@ -98,7 +94,21 @@ def handle_block_data(item: Block_Data, data: T, comment_stack: List[Comment], *
 def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
     common_block_dicts = parse_common_block(item, comment_stack)
     for name, common_block in common_block_dicts.items():
-        data["common_blocks"][name] = common_block
+        if name in data["common_blocks"]:
+            # Common block already exists - merge variables and preserve first description
+            existing_block = data["common_blocks"][name]
+            existing_block["variables"].update(common_block["variables"])
+            # Keep the first description (don't overwrite with empty descriptions)
+            if not existing_block["description"] and common_block["description"]:
+                existing_block["description"] = common_block["description"]
+        else:
+            # New common block
+            data["common_blocks"][name] = common_block
+            
+# def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+#     common_block_dicts = parse_common_block(item, comment_stack)
+#     for name, common_block in common_block_dicts.items():
+#         data["common_blocks"][name] = common_block
 
 
 #------------------------------------------- old stuff to be replaced

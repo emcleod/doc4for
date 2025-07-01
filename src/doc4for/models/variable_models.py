@@ -35,7 +35,8 @@ VariableDescription = TypedDict(
         "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
         "initial_value": Optional[str],
         "length": Optional[str],  # for character lengths
-        "binding_type": Optional[BindingType]
+        "binding_type": Optional[BindingType],
+        "is_saved": bool
     },
 )
 

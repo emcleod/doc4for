@@ -35,7 +35,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -63,7 +64,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -91,7 +93,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -103,7 +106,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -131,7 +135,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -143,7 +148,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "z": {
                 "description": "",
@@ -155,7 +161,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -183,7 +190,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "10",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -211,7 +219,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "1.4",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -239,7 +248,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "10",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -251,7 +261,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "20",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -279,7 +290,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "2",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -291,7 +303,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "4",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "z": {
                 "description": "",
@@ -303,7 +316,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "49",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -332,7 +346,8 @@ class TestBasicDeclarations(TestCase):
                     "kind": None,
                     "initial_value": None,
                     "length": None,
-                    "binding_type": None
+                    "binding_type": None,
+                    "is_saved": False
                 }
             }
             self.assertEqual(variables, expected)
@@ -360,7 +375,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": None,
                 "initial_value": "(1.0, 2.0)",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -411,7 +427,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": "c_int",
                 "initial_value": None,
                 "length": None,
-                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": None }
+                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": None },
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -440,7 +457,8 @@ class TestBasicDeclarations(TestCase):
                 "kind": "c_double",
                 "initial_value": None,
                 "length": None,
-                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": "my_c_var"}
+                "binding_type": {"type": BindingTypeEnum.BIND_C, "name": "my_c_var"},
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)

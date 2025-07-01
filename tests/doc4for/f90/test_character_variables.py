@@ -36,7 +36,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -64,7 +65,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "10",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -92,7 +94,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "20",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -120,7 +123,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": "'Hello, World!'",
                 "length": "1", # correct - it's a character so truncated to 1
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -148,7 +152,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": "'Hello'",
                 "length": "10",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -176,7 +181,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "n",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -204,7 +210,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "*",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -232,7 +239,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "10",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "str2": {
                 "description": "",
@@ -244,7 +252,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "10",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -272,7 +281,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
                 "length": "20",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -300,7 +310,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
                 "length": "20",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -328,7 +339,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "selected_char_kind('ASCII')",
                 "initial_value": None,
                 "length": "30",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -356,7 +368,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None, # note that the first value is assumed to be the length
                 "initial_value": None,
                 "length": "selected_char_kind('ASCII')",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -384,7 +397,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "selected_char_kind('ISO_10646')",
                 "initial_value": None,
                 "length": "1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -412,7 +426,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "4",
                 "initial_value": None,
                 "length": "1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -440,12 +455,13 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "char_kind",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
 
-#    @unittest.skip("fparser doesn't interpret selected_char_kind('ASCII') as number so it fails")
+    @unittest.skip("fparser doesn't interpret selected_char_kind('ASCII') as number so it fails")
     def test_character_kind_complex_expression(self):
         self.fs.create_file(
             "/fake/path/test.f90",
@@ -497,7 +513,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "ascii_kind",
                 "initial_value": None,
                 "length": "1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -533,7 +550,8 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "30",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -561,7 +579,8 @@ class TestCharacterVariables(TestCase):
                 "kind": "1",
                 "initial_value": None,
                 "length": "1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -589,38 +608,40 @@ class TestCharacterVariables(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": "2*n+1",
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
 
-    # def test_character_complex_kind_and_length(self):
-    #     self.fs.create_file(
-    #         "/fake/path/test.f90",
-    #         contents="""\
-    # module test_module
-    #     character(len=2*n+1, kind=merge(ascii, utf8, use_ascii)) :: str
-    # end module test_module
-    # """,
-    #     )
-    #     result = extract_module_data([Path("/fake/path/test.f90")])
-    #     module = result[0]
-    #     variables = module["variables"]
-    #     expected = {
-    #         "str": {
-    #             "description": "",
-    #             "type": "CHARACTER",
-    #             "name": "str",
-    #             "dimension": None,
-    #             "polymorphism_type": PolymorphismType.NONE,
-    #             "attributes": [],
-    #             "kind": "merge(ascii, utf8, use_ascii)",
-    #             "initial_value": None,
-    #             "length": "2*n+1",
-    #             "binding_type": None
-    #         }
-    #     }
-    #     self.assertEqual(variables, expected)
+    def test_character_complex_kind_and_length(self):
+        self.fs.create_file(
+            "/fake/path/test.f90",
+            contents="""\
+    module test_module
+        character(len=2*n+1, kind=merge(ascii, utf8, use_ascii)) :: str
+    end module test_module
+    """,
+        )
+        result = extract_module_data([Path("/fake/path/test.f90")])
+        module = result[0]
+        variables = module["variables"]
+        expected = {
+            "str": {
+                "description": "",
+                "type": "CHARACTER",
+                "name": "str",
+                "dimension": None,
+                "polymorphism_type": PolymorphismType.NONE,
+                "attributes": [],
+                "kind": "merge(ascii, utf8, use_ascii)",
+                "initial_value": None,
+                "length": "2*n+1",
+                "binding_type": None,
+                "is_saved": False
+            }
+        }
+        self.assertEqual(variables, expected)
 
 
 if __name__ == "__main__":

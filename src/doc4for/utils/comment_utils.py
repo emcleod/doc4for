@@ -30,6 +30,13 @@ def is_doc4for_comment(comment_stack: List[Comment]) -> bool:
             return True
     return False
 
+#TODO
+#        !!* First block with scalars.
+#        !!* Second block with array 
+#        !!* Third block with single variable 
+#        !*!
+# should be parsed as a single comment - need to continue until we 
+# hit the closing statement
 def format_comments(comment_stack: List[Comment]) -> str:
     formatted_comments = []
     is_inside_doc4for_comment = False

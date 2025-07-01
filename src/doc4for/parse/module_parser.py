@@ -19,11 +19,15 @@ from fparser.two.Fortran2003 import (
     Enum_Def,
     Common_Stmt,
     Bind_Stmt,
-    Language_Binding_Spec
+    Language_Binding_Spec,
+    Save_Stmt,
+    Saved_Entity
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
 from doc4for.parse.common_parser import FortranHandler, _extract_binding_type
+from doc4for.models.common import BindingType
+
 from doc4for.parse.base_parser import (    
     VisibilityState,
     handle_function,
@@ -83,13 +87,18 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     # keep track of access statements before declaration entity_name -> access
     access_stack: Dict[str, str] = {}
     # keep track of lone bind statements e.g. for binding a common block
-    bind_stack: Dict[str, str] = {}
+    bind_stack: Dict[str, BindingType] = {}
+    # keep track of save statements
+    save_variables: List[str] = []
+    save_common_blocks: List[str] = []
+    save_all: bool = False
+    
     for module_nodes in content:
         for node in module_nodes.children:
             if isinstance(node, Implicit_Part):
-                # we don"t have any object we"re going to parse, so collect up the comments
+                # we don't have any object we're going to parse, so collect up the comments
                 for subnode in node.children:
-                    if isinstance(subnode, Comment) and hasattr(subnode, "items") and subnode.items[0]: # it"s not empty                  
+                    if isinstance(subnode, Comment) and hasattr(subnode, "items") and subnode.items[0]: # it's not empty                  
                         comment_stack.append(subnode)
                     elif isinstance(subnode, Parameter_Stmt):
                         parameter_stack.append(subnode)
@@ -98,13 +107,40 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                     dimension_stack.append(node)
                 elif isinstance(node, Access_Stmt):
                     access_value, access_ids = node.children    
-                    # If access_ids is None, it"s a global access statement like "private"
+                    # If access_ids is None, it's a global access statement like "private"
                     if access_ids:
                         access_stack.update({
                             name.string: access_value for name in walk(access_ids, Name)
                         })  
                 elif isinstance(node, Bind_Stmt):
-                    bind = _extract_binding_type(walk(node, Language_Binding_Spec))                                         
+                    # Extract binding info during parsing (like access_stack does)
+                    binding_info = _extract_binding_type(walk(node, Language_Binding_Spec))
+                    # Get the target entities
+                    _, entity_list = node.children
+                    if entity_list:
+                        for entity in walk(entity_list, Name):
+                            entity_name = entity.string
+                            # Handle common blocks by stripping slashes
+                            if entity_name.startswith('/') and entity_name.endswith('/'):
+                                entity_name = entity_name[1:-1]  # Strip slashes for common blocks
+                            bind_stack[entity_name] = binding_info
+                elif isinstance(node, Save_Stmt):
+                    # Handle save statements
+                    _, saved_entity_list = node.children
+                    if saved_entity_list is None:
+                        # Bare 'save' - saves everything
+                        save_all = True
+                    else:
+                        # Process the saved entities
+                        for entity in saved_entity_list.children:
+                            if isinstance(entity, Saved_Entity):
+                                # It's a common block: save /block_name/
+                                # Saved_Entity has structure: ('/', Name, '/')
+                                _, name_node, _ = entity.children
+                                save_common_blocks.append(name_node.string)
+                            elif isinstance(entity, Name):
+                                # It's a variable name
+                                save_variables.append(entity.string)
                 else:
                     handler = handlers.get_handler(type(node))
                     if handler:
@@ -112,12 +148,17 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                         comment_stack.clear()
                     else:
                         logger.warning(f"Did not find a handler for {type(node)}")
-        # post-process - if there"s anything in the parameter stack, look at the variables,
-        # convert them to parameters and add the initial value
-        if parameter_stack:
-            process_parameter_statements(module_data, parameter_stack)
+    
+    # post-process - if there's anything in the parameter stack, look at the variables,
+    # convert them to parameters and add the initial value
+    if parameter_stack:
+        process_parameter_statements(module_data, parameter_stack)
     if access_stack:
         process_access_statements(module_data, access_stack)
+    if bind_stack:
+        process_bind_statements(module_data, bind_stack)
+    if save_all or save_variables or save_common_blocks:
+        process_save_statements(module_data, save_variables, save_common_blocks, save_all)
     # common block variables and their type declarations need to be matched
     process_common_block_variables(module_data)
 
@@ -151,7 +192,6 @@ def process_parameter_statements(module_data: ModuleDescription, parameter_state
             else:
                 logger.warning(f"PARAMETER statement for '{name.string}' but no corresponding variable declaration found")
 
-#TODO need to do the same for bind 
 def process_common_block_variables(module_data: ModuleDescription) -> None:
     common_blocks = module_data["common_blocks"]
     variables = module_data["variables"]
@@ -184,3 +224,84 @@ def process_access_statements(module_data: ModuleDescription, access_stack: Dict
         for name, desc in module_data["types"].items()
         if name in access_stack
     }
+
+def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str, BindingType]) -> None:
+    """Process BIND statements and attach them to the appropriate entities."""
+    
+    # Check common blocks
+    for common_name, common_block in module_data.get("common_blocks", {}).items():
+        if common_name in bind_stack:
+            common_block["binding_type"] = bind_stack[common_name]
+    
+    # Check procedures
+    for func_name, func_desc in module_data.get("functions", {}).items():
+        if func_name in bind_stack:
+            func_desc["binding_type"] = bind_stack[func_name]
+    
+    for sub_name, sub_desc in module_data.get("subroutines", {}).items():
+        if sub_name in bind_stack:
+            sub_desc["binding_type"] = bind_stack[sub_name]
+    
+    # Check variables
+    for var_name, var_desc in module_data.get("variables", {}).items():
+        if var_name in bind_stack:
+            var_desc["binding_type"] = bind_stack[var_name]
+    
+    # Check derived types
+    for type_name, type_desc in module_data.get("types", {}).items():
+        if type_name in bind_stack:
+            type_desc["binding_type"] = bind_stack[type_name]
+        
+    #TODO test this
+    # Check enumerations
+    for enum_name, enum_desc in module_data.get("enums", {}).items():
+        if enum_name in bind_stack:
+            enum_desc["binding_type"] = bind_stack[enum_name]
+
+    #TODO
+    # # Check interfaces 
+    # for interface_name, interface_desc in module_data.get("interfaces", {}).items():
+    #     if interface_name in bind_stack:
+    #         interface_desc["binding_type"] = bind_stack[interface_name]    
+
+    # Log any unmatched bind statements (similar to parameter processing)
+    matched_entities = set()
+    for collection in ["common_blocks", "functions", "subroutines", "variables", "types", "enums"]:
+        matched_entities.update(module_data.get(collection, {}).keys())
+    
+    #TODO
+    # # Handle interfaces separately since they're stored as a list
+    # interfaces = module_data.get("interfaces", [])
+    # for interface in interfaces:
+    #     if isinstance(interface, dict) and "name" in interface:
+    #         matched_entities.add(interface["name"])
+ 
+    for bind_target in bind_stack:
+        if bind_target not in matched_entities:
+            logger.warning(f"BIND statement for '{bind_target}' but no matching entity found")
+
+
+def process_save_statements(module_data: ModuleDescription, save_variables: List[str], save_common_blocks: List[str], 
+                           save_all: bool) -> None:    
+    if save_all:
+        # Mark all variables as saved
+        for var_name, var_desc in module_data.get("variables", {}).items():
+            var_desc["is_saved"] = True
+    else:
+        # Process explicit variable saves
+        for var_name in save_variables:
+            if var_name in module_data.get("variables", {}):
+                module_data["variables"][var_name]["is_saved"] = True
+            else:
+                logger.warning(f"SAVE statement for variable '{var_name}' but variable not found")
+        
+        # Process common block saves (mark all variables in the common block as saved)
+        for common_name in save_common_blocks:
+            if common_name in module_data.get("common_blocks", {}):
+                common_block = module_data["common_blocks"][common_name]
+                # Mark all variables in this common block as saved
+                for var_name in common_block["variables"]:
+                    if var_name in module_data.get("variables", {}):
+                        module_data["variables"][var_name]["is_saved"] = True
+            else:
+                logger.warning(f"SAVE statement for common block '/{common_name}/' but common block not found")

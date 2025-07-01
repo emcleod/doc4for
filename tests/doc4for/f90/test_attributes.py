@@ -65,7 +65,8 @@ class TestAttributes(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -93,7 +94,8 @@ class TestAttributes(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -121,7 +123,8 @@ class TestAttributes(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -151,7 +154,8 @@ class TestAttributes(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -216,7 +220,8 @@ class TestAttributes(TestCase):
                     "kind": None,
                     "initial_value": None,
                     "length": None,
-                    "binding_type": None
+                    "binding_type": None,
+                    "is_saved": False
                 }
             }
             self.assertEqual(variables, expected)

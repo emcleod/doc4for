@@ -35,7 +35,8 @@ class TestKindSpecifications(TestCase):
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -63,7 +64,8 @@ class TestKindSpecifications(TestCase):
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -91,7 +93,8 @@ class TestKindSpecifications(TestCase):
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -135,7 +138,8 @@ class TestKindSpecifications(TestCase):
                 "kind": 'dp',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(parameters, expected_parameters)
@@ -164,7 +168,8 @@ class TestKindSpecifications(TestCase):
                 "kind": 'selected_real_kind(15)',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -192,7 +197,8 @@ class TestKindSpecifications(TestCase):
                 "kind": '8',
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
             for name in ['x', 'y', 'z']
         }
@@ -221,7 +227,8 @@ class TestKindSpecifications(TestCase):
                 "kind": '8',
                 "initial_value": "1.0D0",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -249,7 +256,8 @@ class TestKindSpecifications(TestCase):
                 "kind": 'selected_char_kind(\'ASCII\')',
                 "initial_value": None,
                 "length": "1",  # Default character length is 1
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)

@@ -46,7 +46,8 @@ class TestComplexCases(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -58,7 +59,8 @@ class TestComplexCases(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "z": {
                 "description": "",
@@ -70,7 +72,8 @@ class TestComplexCases(TestCase):
                 "kind": None,
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -98,7 +101,8 @@ class TestComplexCases(TestCase):
                 "kind": '8',
                 "initial_value": "0.0",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -206,7 +210,8 @@ class TestComplexCases(TestCase):
                 "kind": None,
                 "initial_value": "2.0 * SIN(3.14159 / 2.0) ** 2",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -292,7 +297,8 @@ class TestComplexCases(TestCase):
                 "kind": 'selected_real_kind(15)',
                 "initial_value": "RESHAPE([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [10])",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -323,7 +329,8 @@ class TestComplexCases(TestCase):
                 "kind": "8",
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "y": {
                 "description": "",
@@ -337,7 +344,8 @@ class TestComplexCases(TestCase):
                 "kind": "8",
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             },
             "z": {
                 "description": "",
@@ -349,7 +357,8 @@ class TestComplexCases(TestCase):
                 "kind": "8",
                 "initial_value": "1.0",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
@@ -377,7 +386,8 @@ class TestComplexCases(TestCase):
                 "kind": "8",
                 "initial_value": None,
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
+                "is_saved": False
             }
         }
         self.assertEqual(variables, expected)
