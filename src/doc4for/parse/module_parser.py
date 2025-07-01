@@ -21,7 +21,8 @@ from fparser.two.Fortran2003 import (
     Bind_Stmt,
     Language_Binding_Spec,
     Save_Stmt,
-    Saved_Entity
+    Saved_Entity,
+    Equivalence_Stmt
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
@@ -38,6 +39,7 @@ from doc4for.parse.base_parser import (
     handle_enum,
     # handle_use,
     handle_common_block,
+    handle_equivalence
 #    handle_type
 )
 from doc4for.logging_config import setup_logging
@@ -68,6 +70,7 @@ def _get_module_handler() -> ModuleHandler:
         handler.register_handler(Enum_Def, handle_enum)
         # handler.register_handler(Use, handle_use)
         handler.register_handler(Common_Stmt, handle_common_block)
+        handler.register_handler(Equivalence_Stmt, handle_equivalence)
         _module_handler_instance = handler
     return _module_handler_instance
 
@@ -161,11 +164,6 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
         process_save_statements(module_data, save_variables, save_common_blocks, save_all)
     # common block variables and their type declarations need to be matched
     process_common_block_variables(module_data)
-
-#TODO need to keep track of which variables are SAVEd 
-# On individual variables: save variable_name
-# On common blocks: save /common_block_name/
-# Without arguments: save (saves all variables in the current scope)
 
 def process_parameter_statements(module_data: ModuleDescription, parameter_statements: List[Parameter_Stmt]) -> None:
     for param_stmt in parameter_statements:

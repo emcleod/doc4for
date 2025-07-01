@@ -3,11 +3,7 @@ from fparser.two.Fortran2003 import (
     Comment, 
     Module
 )
-from fparser.one.block_statements import (
-    Program,
-    Use
-)
-from doc4for.models.module_models import ModuleDescription, ProgramDescription
+from doc4for.models.module_models import ModuleDescription
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
 # TODO move these to separate parsers like type_parser
@@ -29,6 +25,7 @@ def initialise_module_description(
         "common_blocks": {},
         "file_name": file_name,
         "module_description": "",
+        "equivalence": None
     }
     if is_doc4for_comment(comment_stack):
         module_data["module_description"] = format_comments(comment_stack)

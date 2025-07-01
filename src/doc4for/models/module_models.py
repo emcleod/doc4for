@@ -2,7 +2,7 @@ from typing import TypedDict, Dict, List, Optional
 from doc4for.models.variable_models import VariableDescription, ParameterDescription
 from doc4for.models.procedure_models import FunctionDescription, InterfaceDescription, SubroutineDescription
 from doc4for.models.type_models import TypeDescription
-from doc4for.models.common import EnumDescription, Uses, BindingType
+from doc4for.models.common import EnumDescription, Uses, BindingType, EquivalenceRelationship
 
 DataStatementDescription = TypedDict(
     "DataStatementDescription",
@@ -50,6 +50,7 @@ ModuleDescription = TypedDict(
         "types": Dict[str, TypeDescription],
         "uses": Dict[str, Uses], 
         "common_blocks": Dict[str, CommonBlockDescription],
+        "equivalence": Optional[List[EquivalenceRelationship]], # optional because this is obsolete
         "file_name": str,
         "module_description": str,
     },

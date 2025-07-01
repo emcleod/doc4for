@@ -38,7 +38,6 @@ logger: logging.Logger = logging.getLogger(__name__)
 def parse_interface(
     interface: Interface_Block, comment_stack: List[Comment]
 ) -> Tuple[str, InterfaceDescription]:
-    """Parse an interface block and return interface name and description."""
     description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
     
     # Extract basic interface information

@@ -77,3 +77,13 @@ Uses = TypedDict(
         "description": Optional[str]
     }
 )
+
+EquivalenceRelationship = TypedDict(
+    "EquivalenceRelationship",
+    {
+        "variables": List[str],  # Names of all variables in this equivalence group
+        "description": Optional[str], 
+        "offsets": Dict[str, int],  # Variable name -> byte offset from start of group
+                                    # e.g., {"buffer": 0, "int_view": 0, "header": 0, "body": 40}
+    }
+)

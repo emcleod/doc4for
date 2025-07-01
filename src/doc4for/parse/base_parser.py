@@ -1,12 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import TypeVar, List, Any
-from fparser.one.block_statements import (
-    ModuleProcedure,
-    Type as FortranType,
-)
 from fparser.two.Fortran2003 import (
-    Module,
     Type_Declaration_Stmt,
     Derived_Type_Def,
     Function_Subprogram,
@@ -16,12 +11,15 @@ from fparser.two.Fortran2003 import (
     Enum_Def,
     Main_Program,
     Block_Data,
-    Common_Stmt
+    Common_Stmt,
+    Equivalence_Stmt,
+    Equivalence_Set,
+    Equivalence_Object,
+    Name
 )
-from doc4for.models.file_models import FileDescription
-from doc4for.models.module_models import ModuleDescription
+from fparser.two.utils import walk
 from doc4for.models.type_models import TypeDescription
-from doc4for.models.procedure_models import ProcedureDescription
+from doc4for.models.common import EquivalenceRelationship
 from doc4for.parse.parameter_parser import parse_parameter
 from doc4for.parse.function_parser import parse_function
 from doc4for.parse.subroutine_parser import parse_subroutine
@@ -31,9 +29,8 @@ from doc4for.parse.shared_data_parser import parse_block_data, parse_common_bloc
 from doc4for.parse.program_parser import parse_program
 from doc4for.parse.type_parser import handle_type_definition
 from doc4for.parse.variable_parser import parse_variable
-from doc4for.f90.populate_data_models import initialise_module_description
-from doc4for.utils.comment_utils import get_formatted_description
 from doc4for.utils.attribute_utils import has_attribute
+from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -105,11 +102,43 @@ def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment]
             # New common block
             data["common_blocks"][name] = common_block
             
-# def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-#     common_block_dicts = parse_common_block(item, comment_stack)
-#     for name, common_block in common_block_dicts.items():
-#         data["common_blocks"][name] = common_block
+def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    equivalence_relationship = parse_equivalence(item, comment_stack)
+    
+    # Initialize the equivalence list if it doesn't exist
+    if "equivalence" not in data or data["equivalence"] is None:
+        data["equivalence"] = []
+    
+    data["equivalence"].append(equivalence_relationship)
 
+
+def parse_equivalence(equivalence_stmt: Equivalence_Stmt, comment_stack: List[Comment]) -> EquivalenceRelationship:
+    # Get description from comment stack
+    description = format_comments(comment_stack)
+    
+    # Extract variable names from the equivalence statement
+    # Equivalence_Stmt contains Equivalence_Set objects
+    variables = []
+    
+    for equiv_set in walk(equivalence_stmt, Equivalence_Set):
+        # Each Equivalence_Set contains the variables in parentheses
+        for equiv_object in walk(equiv_set, Equivalence_Object):
+            # Equivalence_Object can be a simple Name or an array reference
+            if hasattr(equiv_object, 'children') and equiv_object.children:
+                # Handle array references like buffer(51)
+                name_part = equiv_object.children[0]
+                if hasattr(name_part, 'string'):
+                    variables.append(name_part.string)
+            else:
+                # Simple variable name
+                for name in walk(equiv_object, Name):
+                    variables.append(name.string)
+    
+    return EquivalenceRelationship({
+        "variables": variables,
+        "description": description,
+        "offsets": {}  # TODO: Calculate offsets if needed for documentation
+    })
 
 #------------------------------------------- old stuff to be replaced
 

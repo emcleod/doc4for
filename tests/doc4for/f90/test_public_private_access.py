@@ -447,12 +447,13 @@ end module shapes
 #       type(hidden) :: h
 #       h%value = 42
 #    end function
-# 1) You could have a public function that returns TYPE(derived)
-# 2) You could have a public variable of TYPE(derived)
-# In this case, get_hidden() is public, but it returns a private type. A user of your module could:
-# • Call get_hidden()   (✅ allowed!)  
-# • Print the result    (❌ Not allowed!)  
-# • Access any methods  (❌ Not allowed!)  
+
+# 1) Could have a public function that returns TYPE(derived)
+# 2) Could have a public variable of TYPE(derived)
+# In this case, get_hidden() is public, but it returns a private type. A user of the module could:
+# • Call get_hidden()   allowed
+# • Print the result    not allowed 
+# • Access any methods  not allowed 
 # 1) Report derived%b%x as private (100% safe, but loses information)
 # 2) Report derived%b%x as public  (100% correct, but requires module-level analysis)
 # 3) Report derived%b%x as "conditionally public" (most correct, most complex) 
