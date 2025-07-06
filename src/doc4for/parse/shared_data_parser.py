@@ -164,8 +164,17 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     bindings = spec_child.children[1]
                     for binding in bindings.children:
                         if isinstance(binding, Name):
-                            # TODO have a binding to a variable which we can't handle now
-                            pass
+                            # Binding to a variable
+                            var_name = binding.string
+                            if var_name in other_variables:
+                                other_variables[var_name]["binding_type"] = binding_type
+                            else:
+                                # Check if it's in a common block
+                                if var_name in variable_to_common_block:
+                                    common_block_name = variable_to_common_block[var_name]
+                                    common_blocks[common_block_name]["variables"][var_name]["binding_type"] = binding_type
+                                else:
+                                    logger.warning(f"BIND statement for variable '{var_name}' but variable not found")
                         elif isinstance(binding, Bind_Entity):
                             binding_name = walk(binding, Name)[0].string
                             if binding_name in common_blocks:

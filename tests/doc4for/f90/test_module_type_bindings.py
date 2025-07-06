@@ -2,217 +2,189 @@ import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
-from doc4for.models.common import BindingTypeEnum, BindingType
+from doc4for.models.common import BindingTypeEnum
+from doc4for.models.procedure_models import PassType
 
 class TestTypeBindingProcedures(TestCase):
 
     def setUp(self):
         self.setUpPyfakefs()
-    
+
     def test_type_bound_procedure_binding(self):
         self.fs.create_file(
             "/fake/path/type_bound_proc_binding.f90",
             contents="""\
-module type_bound_proc_binding_mod
-    use iso_c_binding
-    implicit none
+    module type_bound_proc_binding_mod
+        use iso_c_binding
+        implicit none
 
-    !!* Basic shape type with C-bound method *!
-    type :: shape
-        real(c_double) :: area
-    contains
-        !!* Calculate area using C binding *!
-        procedure, bind(c), nopass :: calculate => calculate_shape_area
+        !!* Basic shape type with C-bound method *!
+        type :: shape
+            real(c_double) :: area
+        contains
+            !!* Calculate area using C binding *!
+            procedure, nopass :: calculate => calculate_shape_area
+            
+            !!* Regular method *!
+            procedure :: regular_method => regular_impl
+        end type shape
         
-        !!* Regular method without binding *!
-        procedure :: regular_method => regular_impl
-    end type shape
-    
-    !!* Complex shape with named binding *!
-    type :: complex_shape
-    contains
-        !!* Area calculation with custom name binding *!
-        procedure, bind(c, name="complex_area_calc") :: area => complex_area
-    end type complex_shape
-    
-    !!* Type with unusual binding syntax *!
-    type :: weird_shape
-    contains
-        !!* Method with unusual binding syntax *!
-        procedure, BIND  (  C  ) :: weird_method => weird_impl
-    end type weird_shape
-    
-    !!* Type with binding syntax variations *!
-    type :: binding_variations
-    contains
-        !!* Mixed case binding *!
-        procedure, Bind(C), pass(self) :: method1 => impl1
+        !!* Complex shape *!
+        type :: complex_shape
+        contains
+            !!* Area calculation with custom name binding *!
+            procedure :: area => complex_area
+        end type complex_shape
         
-        !!* Binding with other attributes *!
-        procedure, public, bind(c) :: method2 => impl2
+        !!* Type *!
+        type :: weird_shape
+        contains
+            procedure :: weird_method => weird_impl
+        end type weird_shape
         
-        !!* Double quotes in name *!
-        procedure, bind(c, name="quoted_name") :: method3 => impl3
-    end type binding_variations
+        !!* Type with binding syntax variations *!
+        type :: methods
+        contains
+            procedure, pass(self) :: method1 => impl1
+            
+            procedure, public :: method2 => impl2
+            
+            procedure :: method3 => impl3
+        end type methods
 
-contains
-    
-    !!* Implementation with its own binding *!
-    function calculate_shape_area(s) bind(c, name="c_shape_area") result(a)
-        type(shape), intent(in) :: s
-        real(c_double) :: a
-        a = s%area
-    end function
-    
-    !!* Regular implementation without binding *!
-    function regular_impl(this) result(res)
-        class(shape), intent(in) :: this
-        real :: res
-        res = this%area
-    end function
-    
-    !!* Implementation with binding matching its type-bound declaration *!
-    function complex_area(this) bind(c) result(a)
-        class(complex_shape), intent(in) :: this
-        real(c_double) :: a
-        a = 0.0  ! Placeholder
-    end function
-    
-    !!* Implementation with unusual binding syntax *!
-    subroutine weird_impl(this) bind  (  C  )
-        class(weird_shape), intent(inout) :: this
-        ! Empty implementation
-    end subroutine
-    
-    !!* Mixed case binding implementation *!
-    function impl1(self) Bind(C) result(res)
-        class(binding_variations), intent(in) :: self
-        integer(c_int) :: res
-        res = 1
-    end function
-    
-    !!* Implementation with other attributes *!
-    function impl2(this) bind(c) result(res)
-        class(binding_variations), intent(in) :: this
-        integer(c_int) :: res
-        res = 2
-    end function
-    
-    !!* Implementation with quoted name *!
-    function impl3(this) bind(c, name="different_quoted_name") result(res)
-        class(binding_variations), intent(in) :: this
-        integer(c_int) :: res
-        res = 3
-    end function
+    contains
+        
+        !!* Implementation with its own binding *!
+        function calculate_shape_area(s) bind(c, name="c_shape_area") result(a)
+            type(shape), intent(in) :: s
+            real(c_double) :: a
+            a = s%area
+        end function
+        
+        !!* Regular implementation without binding *!
+        function regular_impl(this) result(res)
+            class(shape), intent(in) :: this
+            real :: res
+            res = this%area
+        end function
+        
+        !!* Implementation with binding matching its type-bound declaration *!
+        function complex_area(this) bind(c) result(a)
+            class(complex_shape), intent(in) :: this
+            real(c_double) :: a
+            a = 0.0  ! Placeholder
+        end function
+        
+        !!* Implementation with unusual binding syntax *!
+        subroutine weird_impl(this) bind  (  C  )
+            class(weird_shape), intent(inout) :: this
+            ! Empty implementation
+        end subroutine
+        
+        !!* Mixed case binding implementation *!
+        function impl1(self) Bind(C) result(res)
+            class(methods), intent(in) :: self
+            integer(c_int) :: res
+            res = 1
+        end function
+        
+        !!* Implementation with other attributes *!
+        function impl2(this) bind(c) result(res)
+            class(methods), intent(in) :: this
+            integer(c_int) :: res
+            res = 2
+        end function
+        
+        !!* Implementation with quoted name *!
+        function impl3(this) bind(c, name="different_quoted_name") result(res)
+            class(methods), intent(in) :: this
+            integer(c_int) :: res
+            res = 3
+        end function
 
-end module type_bound_proc_binding_mod
-"""
+    end module type_bound_proc_binding_mod
+    """
         )
         result = extract_module_data([Path("/fake/path/type_bound_proc_binding.f90")])
         module = result[0]
         
-        # Check binding in basic type-bound procedure specification
+        # Check type-bound procedures 
         shape_type = module["types"]["shape"]
         
-        # Check C-bound procedure
+        # Check procedure attributes
         calculate_proc = shape_type["procedures"]["calculate"]
-        self.assertIn("binding_type", calculate_proc)
-        binding_type = calculate_proc["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(binding_type["name"])
-        self.assertIn("nopass", calculate_proc["attributes"])
+        self.assertEqual(calculate_proc["pass_type"], PassType.NONE)
         
         # Check regular procedure without binding
         regular_proc = shape_type["procedures"]["regular_method"]
-        self.assertIn("binding_type", regular_proc)
-        binding_type = regular_proc["binding_type"]
-        self.assertIsNone(binding_type)
+        self.assertEqual(regular_proc["pass_type"], PassType.DEFAULT)
         
-        # Check binding with custom name
+        # Check complex type procedures
         complex_type = module["types"]["complex_shape"]
         area_proc = complex_type["procedures"]["area"]
-        self.assertIn("binding_type", area_proc)
-        binding_type = area_proc["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertEqual(binding_type["name"], "complex_area_calc")
+        self.assertEqual(area_proc["pass_type"], PassType.DEFAULT)
         
-        # Check unusual binding syntax
+        # Check weird type procedures
         weird_type = module["types"]["weird_shape"]
         weird_proc = weird_type["procedures"]["weird_method"]
-        self.assertIn("binding_type", weird_proc)
-        binding_type = weird_proc["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(binding_type["name"])
+        self.assertEqual(weird_proc["pass_type"], PassType.DEFAULT)
         
-        # Check binding variations
-        var_type = module["types"]["binding_variations"]
+        # Check methods type procedures
+        var_type = module["types"]["methods"]
         
-        # Mixed case
+        # Method with pass(self)
         method1 = var_type["procedures"]["method1"]
-        self.assertIn("binding_type", method1)
-        binding_type = method1["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(binding_type["name"])
-        self.assertIn("pass(self)", method1["attributes"])
-        
-        # With other attributes
+        self.assertEqual(method1["pass_type"], PassType.NAMED)
+        self.assertEqual(method1["pass_name"], "self")
+
+        # Method with public attribute
         method2 = var_type["procedures"]["method2"]
-        self.assertIn("binding_type", method2)
-        binding_type = method2["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(binding_type["name"])
-        self.assertIn("public", method2["attributes"])
+        self.assertIn("PUBLIC", method2["attributes"])
         
-        # Double quotes
+        # Regular method
         method3 = var_type["procedures"]["method3"]
-        self.assertIn("binding_type", method3)
-        binding_type = method3["binding_type"]
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
-        self.assertEqual(binding_type["name"], "quoted_name")
-        
-        # Check function implementations
-        
-        # Implementation with binding
+        self.assertEqual(method3["pass_type"], PassType.DEFAULT)
+                
+        # Implementation with binding and custom name
         calculate_impl = module["functions"]["calculate_shape_area"]
         self.assertIn("binding_type", calculate_impl)
         self.assertEqual(calculate_impl["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertEqual(calculate_impl["binding_type"]["name"], "c_shape_area")
         
-        # Regular implementation
+        # Regular implementation without binding
         regular_impl = module["functions"]["regular_impl"]
         self.assertIn("binding_type", regular_impl)
         self.assertIsNone(regular_impl["binding_type"])
         
-        # Complex implementation with binding
+        # Complex implementation with default binding
         complex_impl = module["functions"]["complex_area"]
         self.assertIn("binding_type", complex_impl)
         self.assertEqual(complex_impl["binding_type"]["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(complex_impl["binding_type"]["name"])
+        self.assertIsNone(complex_impl["binding_type"]["name"])  # No explicit name
         
-        # Weird implementation
+        # Weird implementation with unusual spacing
         weird_impl = module["subroutines"]["weird_impl"]
         self.assertIn("binding_type", weird_impl)
         self.assertEqual(weird_impl["binding_type"]["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(weird_impl["binding_type"]["name"])
+        self.assertIsNone(weird_impl["binding_type"]["name"])  # No explicit name
         
-        # Mixed case implementation
+        # Mixed case binding implementation
         impl1 = module["functions"]["impl1"]
         self.assertIn("binding_type", impl1)
         self.assertEqual(impl1["binding_type"]["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(impl1["binding_type"]["name"])
+        self.assertIsNone(impl1["binding_type"]["name"])  # No explicit name
         
-        # Implementation with other attributes
+        # Implementation with binding
         impl2 = module["functions"]["impl2"]
         self.assertIn("binding_type", impl2)
         self.assertEqual(impl2["binding_type"]["type"], BindingTypeEnum.BIND_C)
-        self.assertIsNone(impl2["binding_type"]["name"])
+        self.assertIsNone(impl2["binding_type"]["name"])  # No explicit name
         
-        # Implementation with quoted name
+        # Implementation with quoted name binding
         impl3 = module["functions"]["impl3"]
         self.assertIn("binding_type", impl3)
         self.assertEqual(impl3["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertEqual(impl3["binding_type"]["name"], "different_quoted_name")
-
 
     def test_generic_binding_with_bind_c(self):
         self.fs.create_file(
@@ -224,8 +196,8 @@ end module type_bound_proc_binding_mod
         
         type :: numeric_ops
         contains
-            !!* Generic add operation with C binding *!
-            generic, bind(c, name="c_add") :: add => add_int, add_real
+            !!* Generic add operation *!
+            generic :: add => add_int, add_real
             
             !!* Specific implementations for different types *!
             procedure :: add_int
@@ -240,7 +212,7 @@ end module type_bound_proc_binding_mod
         contains
         
         !!* Add integers with C binding *!
-        function add_int(this, a, b) bind(c) result(res)
+        function add_int(this, a, b) bind(c, name="add_int_c") result(res)
             class(numeric_ops), intent(in) :: this
             integer(c_int), value :: a, b
             integer(c_int) :: res
@@ -248,7 +220,7 @@ end module type_bound_proc_binding_mod
         end function
         
         !!* Add reals with C binding *!
-        function add_real(this, a, b) bind(c) result(res)
+        function add_real(this, a, b) bind(c, name="add_real_c") result(res)
             class(numeric_ops), intent(in) :: this
             real(c_double), value :: a, b
             real(c_double) :: res
@@ -280,29 +252,32 @@ end module type_bound_proc_binding_mod
         # Check type with generic bindings
         num_ops = module["types"]["numeric_ops"]
         
-        # Check generic binding with C interoperability
+        # Check generic interface for add (no binding on generic itself)
         add_generic = num_ops["generic_interfaces"]["add"]
-        self.assertIn("binding_type", add_generic)
-        self.assertIsNone(add_generic["binding_type"]) # because fparser doesn"t handle it
-        # self.assertEqual(add_generic["binding_type"]["type"], BindingTypeEnum.BIND_C)
-        # self.assertEqual(add_generic["binding_type"]["name"], "c_add")
         self.assertEqual(add_generic["specific_procedures"], ["add_int", "add_real"])
         
-        # Check generic binding without C interoperability
+        # Check generic interface for subtract (no binding on generic itself)
         subtract_generic = num_ops["generic_interfaces"]["subtract"]
-        self.assertIn("binding_type", subtract_generic)
-        self.assertIsNone(subtract_generic["binding_type"]) # see above
-        # self.assertEqual(subtract_generic["binding_type"]["type"], BindingTypeEnum.DEFAULT)
-        # self.assertIsNone(subtract_generic["binding_type"]["name"])
         self.assertEqual(subtract_generic["specific_procedures"], ["subtract_int", "subtract_real"])
         
-        # Check specific procedures have correct binding
+        # Check specific procedure implementations have correct binding
         add_int = module["functions"]["add_int"]
+        self.assertIn("binding_type", add_int)
         self.assertEqual(add_int["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(add_int["binding_type"]["name"], "add_int_c")
+        
+        add_real = module["functions"]["add_real"]
+        self.assertIn("binding_type", add_real)
+        self.assertEqual(add_real["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        self.assertEqual(add_real["binding_type"]["name"], "add_real_c")
         
         subtract_int = module["functions"]["subtract_int"]
-        self.assertEqual(subtract_int["binding_type"]["type"], BindingTypeEnum.DEFAULT)
-
+        self.assertIn("binding_type", subtract_int)
+        self.assertIsNone(subtract_int["binding_type"])  # No binding
+        
+        subtract_real = module["functions"]["subtract_real"]
+        self.assertIn("binding_type", subtract_real)
+        self.assertIsNone(subtract_real["binding_type"])  # No binding
 
     def test_final_binding_with_bind_c(self):
         self.fs.create_file(
