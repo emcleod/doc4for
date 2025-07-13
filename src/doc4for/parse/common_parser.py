@@ -24,7 +24,8 @@ from fparser.two.Fortran2003 import (
     Suffix,
     Component_Decl,
     Component_Initialization,
-    Deferred_Shape_Spec
+    Deferred_Shape_Spec,
+    Part_Ref
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
@@ -260,7 +261,7 @@ def _extract_dimension_info(shape_spec_list) -> Dimension:
                 upper_expr: Expression = None
                 bound_type: BoundType = None
                 # this is not nice - it depends on the order if the if-else statement
-                if walk(declared_dimension, Name):   
+                if walk(declared_dimension, (Name, Intrinsic_Function_Reference)):   
                     bound_type = BoundType.VARIABLE
                 elif walk(declared_dimension, Int_Literal_Constant):
                     bound_type = BoundType.FIXED
@@ -277,6 +278,39 @@ def _node_to_expression(node: Any) -> Expression:
     if node is None:
         return None
     
+    # Handle functions
+    if isinstance(node, (Intrinsic_Function_Reference, Part_Ref)):
+        return Expression(expr_type=ExpressionType.FUNCTION_CALL,
+                          value=node.string)
+        #TODO actually parse to produce output like
+        # Expression(
+        #     expr_type=ExpressionType.FUNCTION_CALL,
+        #     value="SIZE",
+        #     args=["x", "1"]
+        # )
+        # e.g.
+        # if isinstance(node, Intrinsic_Function_Reference):
+        #     # Extract function name
+        #     func_name = node.children[0].string.upper()
+            
+        #     # Extract arguments
+        #     args = []
+        #     if len(node.children) > 1:
+        #         arg_list = node.children[1]
+        #         for arg in arg_list.children:
+        #             if isinstance(arg, Name):
+        #                 args.append(arg.string)
+        #             elif hasattr(arg, 'string'):
+        #                 args.append(arg.string)
+        #             else:
+        #                 args.append(parse_expression(arg))
+            
+        #     return Expression(
+        #         expr_type=ExpressionType.FUNCTION_CALL,
+        #         value=func_name,
+        #         args=args
+        #     )
+
     # Handle unary expressions (like negative numbers)
     if isinstance(node, Level_2_Unary_Expr):
         # node.children should be (operator, operand)

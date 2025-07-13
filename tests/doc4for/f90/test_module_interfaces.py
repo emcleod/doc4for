@@ -986,7 +986,7 @@ end module test_mod
             "description": "Normalized vector", 
             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE, 
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
-                                                    Expression(expr_type=ExpressionType.LITERAL, value="SIZE(v)"))]},
+                                                    Expression(expr_type=ExpressionType.FUNCTION_CALL, value="size(v)"))]},
             "interface_name": None,
             "enum_type": None,
                   "attributes": [],
@@ -1194,10 +1194,10 @@ end module matrix_ops_mod
             "description": "Sum of matrices", 
             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
                                                     Expression(ExpressionType.LITERAL, value="1"),
-                                                    Expression(ExpressionType.LITERAL, value="SIZE(a, 1)")),
+                                                    Expression(ExpressionType.FUNCTION_CALL, value="size(a,1)")),
                                         ArrayBound(BoundType.VARIABLE,
                                                    Expression(ExpressionType.LITERAL, value="1"),
-                                                   Expression(ExpressionType.LITERAL, value="SIZE(a, 2)"))]},
+                                                   Expression(ExpressionType.FUNCTION_CALL, value="size(a,2)"))]},
             "interface_name": None,
             "enum_type": None,
             "attributes": [],
@@ -1303,7 +1303,7 @@ end module matrix_ops_mod
             "description": "Sum of vectors", 
             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
-                                                    Expression(expr_type=ExpressionType.LITERAL, value='SIZE(a)'))]},
+                                                    Expression(expr_type=ExpressionType.FUNCTION_CALL, value="size(a)"))]},
             "interface_name": None,
             "enum_type": None,
             "attributes": [],
@@ -1347,7 +1347,7 @@ end module matrix_ops_mod
             "description": "Scaled vector", 
             "dimension": {"dimensions": [ArrayBound(BoundType.VARIABLE,
                                                     Expression(expr_type=ExpressionType.LITERAL, value="1"),
-                                                    Expression(expr_type=ExpressionType.LITERAL, value="SIZE(a)"))]},
+                                                    Expression(expr_type=ExpressionType.FUNCTION_CALL, value="size(a)"))]},
             "interface_name": None,
             "enum_type": None,
             "attributes": [],
@@ -2039,7 +2039,7 @@ end module matrix_ops_mod
         self.assertEqual(basic_import["items"], [{"local_name": "basic_integrate", "original_name": "integrate"}])
         
         self.assertEqual(advanced_import["type"], "all")
-        self.assertEqual(advanced_import["items"], [])  # Empty for 'use module' without only
+        self.assertEqual(advanced_import["items"], [])  # Empty for "use module" without only
         
         # Check that interfaces have different signatures (same name, different args)
         basic_integrate_proc = math_basic["interfaces"][0]["procedures"]["integrate"]

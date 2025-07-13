@@ -25,7 +25,7 @@ class Expression:
     expr_type: ExpressionType
     value: str
     function_name: Optional[str] = None
-    arguments: Optional[List['Expression']] = None
+    arguments: Optional[List["Expression"]] = None
 
     def __str__(self):
         return f"Expression({self.expr_type}, {self.value}, {self.function_name if self.function_name else ''}, {self.arguments if self.arguments else ''})"
