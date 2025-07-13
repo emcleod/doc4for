@@ -19,7 +19,7 @@ from doc4for.models.dimension_models import ArrayBound, BoundType
 from doc4for.models.variable_models import PolymorphismType
 if TYPE_CHECKING:
     from doc4for.models.dimension_models import Dimension
-from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info, _extract_length_and_kind
+from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info
 
 logger: logging.Logger = logging.getLogger(__name__)
 

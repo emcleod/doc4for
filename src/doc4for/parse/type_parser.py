@@ -18,16 +18,17 @@ from fparser.two.Fortran2003 import (
     Final_Binding,
     Generic_Binding,
     Generic_Spec,
-    Dtio_Generic_Spec
+    Dtio_Generic_Spec,
+    Component_Attr_Spec
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import DataComponent
 from doc4for.models.type_models import TypeDescription, GenericInterface
 from doc4for.models.procedure_models import ProcedureDescription, PassType
 from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
-from doc4for.parse.common_parser import (FortranHandler, _extract_kind, _extract_char_length,
-                                         _extract_literal_value, _extract_type,
-                                         _extract_dimension_info)
+from doc4for.parse.common_parser import (_extract_literal_value, _extract_type,
+                                         _extract_dimension_info, _extract_type_info
+                                        )
 from doc4for.models.dimension_models import Dimension
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -83,15 +84,17 @@ def handle_data_component(data_component: Component_Part,
     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
         #TODO not sure this is handling comments correctly 
         data_type, polymorphism_type = _extract_type(def_stmt)
-        kind: str = _extract_kind(def_stmt)
         description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
         dimension: Dimension = _extract_dimension_info(def_stmt)
-        length: str = _extract_char_length(def_stmt)
-        attributes: List[str] = []
+        attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
+                                 if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
+        type_info: Dict[str, str] = _extract_type_info(def_stmt)
+        kind = type_info["kind"]
+        length = type_info["length"]
         declarations = walk(def_stmt, Component_Decl)
         for declaration in declarations:
             name: str = walk(declaration, Name)[0].string
-            initial_value: str = _extract_literal_value(def_stmt)
+            initial_value: str = _extract_literal_value(declaration)
             component: DataComponent = {
                 "name": name,
                 "type": data_type,
@@ -126,6 +129,7 @@ def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part)
             pass_type = (PassType.NONE if "NOPASS" in binding_types 
                          else PassType.NAMED if pass_name 
                          else PassType.DEFAULT)
+            binding_type = None #TODO    
             procedure_description: ProcedureDescription = {
                 "name": name,
                 "description": description,
@@ -134,11 +138,13 @@ def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part)
                 "bound_to": bound_to,
                 "pass_type": pass_type,
                 "pass_name": pass_name,
-                "implementation": implementation
+                "implementation": implementation,
+                "binding_type": binding_type
             }
             procedures[name] = procedure_description
             comment_stack.clear()
         elif isinstance(node, Final_Binding):
+            binding_type = None
             description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""            
             for name in walk(node, Name):
                 procedure_description: ProcedureDescription = {
@@ -149,7 +155,8 @@ def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part)
                     "bound_to": None,
                     "pass_type": None,
                     "pass_name": None,
-                    "implementation": None
+                    "implementation": None,
+                    "binding_type": binding_type
                 }
                 procedures[name.string] = procedure_description
             comment_stack.clear()

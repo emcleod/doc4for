@@ -7,10 +7,10 @@ from doc4for.models.common import Expression
 class BoundType(Enum):
     FIXED = "fixed",
     VARIABLE = "variable",
-    ASSUMED_SHAPE = "assumed shape"
+    ASSUMED_SHAPE = "assumed shape",
     ASSUMED_SIZE = "assumed size",
-    ASSUMED_RANK = "assumed rank"
-
+    ASSUMED_RANK = "assumed rank",
+    DEFERRED = "deferred"
 
 @dataclass
 class ArrayBound:
@@ -21,6 +21,8 @@ class ArrayBound:
     def __str__(self):
         if self.bound_type == BoundType.ASSUMED_SIZE:
             return "* (assumed size)"
+        elif self.bound_type == BoundType.DEFERRED:
+            return ": (deferred)"
         elif self.bound_type == BoundType.ASSUMED_SHAPE:
             return ": (assumed shape)"
         elif self.bound_type == BoundType.ASSUMED_RANK:

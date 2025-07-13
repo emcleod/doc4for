@@ -65,7 +65,7 @@ DataComponent = TypedDict(
         "name": str,
         "initial_value": Optional[str],
         "dimension": Optional[Dimension],
-        "polymorphism_type": Optional[str], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
+        "polymorphism_type": PolymorphismType,
         "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
         "len": Optional[str],
         "attributes": List[str],

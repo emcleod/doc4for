@@ -21,7 +21,10 @@ from fparser.two.Fortran2003 import (
     Intrinsic_Function_Reference,
     Char_Selector,
     Level_2_Expr,
-    Suffix
+    Suffix,
+    Component_Decl,
+    Component_Initialization,
+    Deferred_Shape_Spec
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
@@ -179,23 +182,48 @@ def _extract_type_info(declaration) -> Dict[str, str]:
     return info
 
 def _extract_literal_value(node):
-    """Extract the string representation from any literal type."""
+    # If it's a Component_Decl, look for Component_Initialization
+    if isinstance(node, Component_Decl):
+        initializations = walk(node, Component_Initialization)
+        if initializations:
+            # Extract the value from the initialization (skip the '=' at children[0])
+            init_value = initializations[0].children[1] if len(initializations[0].children) > 1 else None
+            if init_value:
+                # Recursively process the value
+                return _extract_literal_value(init_value)
+        return None
+    
     # Handle unary expressions (like negative numbers)
     if isinstance(node, Level_2_Unary_Expr):
-        # node.children should be (operator, operand)
         operator = str(node.children[0])
         operand = node.children[1]
         
-        # If it's a negative literal, combine the operator with the value
         if operator == '-' and isinstance(operand, (Int_Literal_Constant, Real_Literal_Constant)):
             value = str(operand.children[0]) if operand.children else str(operand)
-            return f'-{value}'  # Combine the minus with the literal value
+            return f'-{value}'
     
     # Check if it's a literal constant
     if isinstance(node, (Int_Literal_Constant, Real_Literal_Constant)):
         return str(node.children[0]) if node.children else str(node)
     
     return str(node)
+# def _extract_literal_value(node):
+#     # Handle unary expressions (like negative numbers)
+#     if isinstance(node, Level_2_Unary_Expr):
+#         # node.children should be (operator, operand)
+#         operator = str(node.children[0])
+#         operand = node.children[1]
+        
+#         # If it's a negative literal, combine the operator with the value
+#         if operator == '-' and isinstance(operand, (Int_Literal_Constant, Real_Literal_Constant)):
+#             value = str(operand.children[0]) if operand.children else str(operand)
+#             return f'-{value}'  # Combine the minus with the literal value
+    
+#     # Check if it's a literal constant
+#     if isinstance(node, (Int_Literal_Constant, Real_Literal_Constant)):
+#         return str(node.children[0]) if node.children else str(node)
+    
+#     return str(node)
 
 def _extract_entity_info(entity_decl):
     """Extract name, dimension, and value from an entity declaration."""
@@ -211,32 +239,37 @@ def _extract_entity_info(entity_decl):
     return info
 
 def _extract_dimension_info(shape_spec_list) -> Dimension:    
-    declared_dimensions = walk(shape_spec_list, (Explicit_Shape_Spec, Assumed_Shape_Spec))
-    if not declared_dimensions:
-        return None
-    
     dimensions = []
-    bound_type: BoundType = None
-    # find the bound type first
-    for declared_dimension in declared_dimensions:
-        # we have an assumed shape
-        if isinstance(declared_dimension, Assumed_Shape_Spec):
-            dimensions.append(ArrayBound(BoundType.ASSUMED_SHAPE))
-        else:
-            lower_expr: Expression = None
-            upper_expr: Expression = None
-            bound_type: BoundType = None
-            # this is not nice - it depends on the order if the if-else statement
-            if walk(declared_dimension, Name):   
-                bound_type = BoundType.VARIABLE
-            elif walk(declared_dimension, Int_Literal_Constant):
-                bound_type = BoundType.FIXED
-            lower_expr = _node_to_expression(declared_dimension.children[0])
-            if not lower_expr:
-                # nothing declared so default to 1
-                lower_expr = Expression(ExpressionType.LITERAL, '1')
-            upper_expr = _node_to_expression(declared_dimension.children[1])
-            dimensions.append(ArrayBound(bound_type, lower_expr, upper_expr))
+    declared_dimensions = walk(shape_spec_list, Deferred_Shape_Spec)
+    if declared_dimensions:
+        for declared_dimension in declared_dimensions:
+            dimensions.append(ArrayBound(BoundType.DEFERRED))
+    else:    
+        declared_dimensions = walk(shape_spec_list, (Explicit_Shape_Spec, Assumed_Shape_Spec))
+        if not declared_dimensions:
+            return None
+        
+        bound_type: BoundType = None
+        # find the bound type first
+        for declared_dimension in declared_dimensions:
+            # we have an assumed shape
+            if isinstance(declared_dimension, Assumed_Shape_Spec):
+                dimensions.append(ArrayBound(BoundType.ASSUMED_SHAPE))
+            else:
+                lower_expr: Expression = None
+                upper_expr: Expression = None
+                bound_type: BoundType = None
+                # this is not nice - it depends on the order if the if-else statement
+                if walk(declared_dimension, Name):   
+                    bound_type = BoundType.VARIABLE
+                elif walk(declared_dimension, Int_Literal_Constant):
+                    bound_type = BoundType.FIXED
+                lower_expr = _node_to_expression(declared_dimension.children[0])
+                if not lower_expr:
+                    # nothing declared so default to 1
+                    lower_expr = Expression(ExpressionType.LITERAL, "1")
+                upper_expr = _node_to_expression(declared_dimension.children[1])
+                dimensions.append(ArrayBound(bound_type, lower_expr, upper_expr))
     return {"dimensions": dimensions} if dimensions else None
 
 def _node_to_expression(node: Any) -> Expression:
@@ -303,7 +336,7 @@ def normalize_negative_numbers(value: str) -> str:
 
 def _extract_array_constructor_value(array_constructor: Array_Constructor) -> str:
     return array_constructor.string #TODO
-# The Array_Constructor handling likely needs improvements to handle cases like complex arrays
+# The Array_Constructor handling needs improvements to handle cases like complex arrays
 # The _extract_type_info function doesn't handle kind parameters (e.g., integer(kind=8))
 # There's no handling for uppercase parameter names in tests vs lowercase in the code output
 # Need more specific handling for character literals with quotes
