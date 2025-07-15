@@ -1,129 +1,89 @@
 import unittest
+import warnings
+import sys
+import io
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
+from fparser.two.utils import FortranSyntaxError
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.common import BindingTypeEnum
 
-#TODO look at the commented-out function declarations
-class TestOptionalParameters(TestCase):
 
+class TestOptionalParameters(TestCase):
+    """Test binding optional parameters - both valid and invalid cases."""
+    
     def setUp(self):
         self.setUpPyfakefs()
+        self._created_files = []
+        
+        # Suppress warnings about unclosed files and exceptions in __del__
+        warnings.filterwarnings('ignore', category=ResourceWarning)
+        warnings.filterwarnings('ignore', message='Exception ignored in.*')
+        
+        # Also redirect stderr to suppress __del__ exceptions that bypass warnings
+        self._stderr = sys.stderr
+        sys.stderr = io.StringIO()
+        
+    def tearDown(self):
+        # Restore stderr
+        sys.stderr = self._stderr
+        
+        # Clean up any files that weren't already cleaned
+        for filepath in self._created_files:
+            if self.fs.exists(filepath):
+                self.fs.remove(filepath)
+                
+        # Reset warnings
+        warnings.resetwarnings()
+        
+        super().tearDown()
+        
+    def _create_test_file(self, filepath, contents):
+        """Create a test file and track it for cleanup."""
+        self.fs.create_file(filepath, contents=contents)
+        self._created_files.append(filepath)
 
-    def test_binding_optional_parameters(self):
-        self.fs.create_file(
-            "/fake/path/binding_optional_params.f90",
+    def test_valid_binding_parameters(self):
+        """Test that valid BIND(C) parameters work correctly."""
+        filepath = "/fake/path/valid_binding_params.f90"
+        self._create_test_file(
+            filepath,
             contents="""\
-    module binding_optional_params_mod
+module valid_binding_params_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    !!* Function with standard binding *!
+    function standard_binding(x) bind(c, name='std_c_func') result(y)
         use iso_c_binding
-        implicit none
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 2.0
+    end function
 
-        contains
-        !!* Function with standard binding *!
-        function standard_binding(x) bind(c, name="std_c_func") result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
+    !!* Function with just bind(c) *!
+    function simple_binding(x) bind(c) result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 3.0
+    end function
+    
+    !!* Function with unusual spacing but valid syntax *!
+    function spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ) result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 4.0
+    end function
 
-        !!* Function with future/vendor-specific binding parameters *!
-        function extended_binding(x) bind(c, name="ext_c_func") result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
-        
-        !!* Function with multiple optional parameters *!
-!        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
-        function multi_param_binding(x) bind(c, name='multi_param') result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
-        
-        !!* Function with options-like parameter *!
-!        function options_binding(x) bind(c, options='unwind,strict') result(y)
-        function options_binding(x) bind(c) result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
-        
-        !!* Deprecated but found in old code *!
-!        function old_style_binding(x) bind(c, stdcall) result(y)
-        function old_style_binding(x) bind(c) result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
-        
-        !!* With unusual spacing and multiple parameters *!
-!        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
-        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func') result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-        end function
-
-    contains
-        
-        !!* Function with standard binding *!
-        function standard_binding(x) bind(c, name='std_c_func') result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 2.0
-        end function
-
-        !!* Function with future/vendor-specific binding parameters *!
-!        function extended_binding(x) bind(c, name='ext_c_func', align=8) result(y)
-        function extended_binding(x) bind(c, name='ext_c_func') result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 3.0
-        end function
-        
-        !!* Function with multiple optional parameters *!
-!        function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
-        function multi_param_binding(x) bind(c, name='multi_param') result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 4.0
-        end function
-        
-        !!* Function with options-like parameter *!
-!        function options_binding(x) bind(c, options='unwind,strict') result(y)
-        function options_binding(x) bind(c) result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 5.0
-        end function
-        
-        !!* Deprecated but found in old code *!
-!        function old_style_binding(x) bind(c, stdcall) result(y)
-        function old_style_binding(x) bind(c) result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 6.0
-        end function
-        
-        !!* With unusual spacing and multiple parameters *!
-!        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
-        function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'   ) result(y)
-            use iso_c_binding
-            real(c_double), value :: x
-            real(c_double) :: y
-            y = x * 7.0
-        end function
-
-    end module binding_optional_params_mod
-    """
+end module valid_binding_params_mod
+"""
         )
-        result = extract_module_data([Path('/fake/path/binding_optional_params.f90')])
+        
+        result = extract_module_data([Path(filepath)])
         module = result[0]
         
         # Check standard binding
@@ -132,51 +92,185 @@ class TestOptionalParameters(TestCase):
         self.assertEqual(standard['binding_type']['type'], BindingTypeEnum.BIND_C)
         self.assertEqual(standard['binding_type']['name'], 'std_c_func')
         
-        # Check binding with additional align parameter
-        extended = module['functions']['extended_binding']
-        self.assertIn('binding_type', extended)
-        self.assertEqual(extended['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(extended['binding_type']['name'], 'ext_c_func')
-        # Note: we don't verify the align parameter is captured since current implementation likely ignores it
+        # Check simple binding without name
+        simple = module['functions']['simple_binding']
+        self.assertIn('binding_type', simple)
+        self.assertEqual(simple['binding_type']['type'], BindingTypeEnum.BIND_C)
+        self.assertIsNone(simple['binding_type']['name'])
         
-        # Check binding with multiple parameters
-        multi = module['functions']['multi_param_binding']
-        self.assertIn('binding_type', multi)
-        self.assertEqual(multi['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(multi['binding_type']['name'], 'multi_param')
-        # Additional parameters aren't verified since they're not captured in current implementation
+        # Check binding with unusual spacing
+        spaced = module['functions']['spaced_binding']
+        self.assertIn('binding_type', spaced)
+        self.assertEqual(spaced['binding_type']['type'], BindingTypeEnum.BIND_C)
+        self.assertEqual(spaced['binding_type']['name'], 'spaced_func')
+
+    def test_binding_with_align_parameter_fails(self):
+        """Test that bind(c) with align parameter is not supported."""
+        filepath = "/fake/path/align_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module align_binding_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    function extended_binding(x) bind(c, name='ext_c_func', align=8) result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 3.0
+    end function
+
+end module align_binding_mod
+"""
+        )
         
-        # Check binding with options-style parameter
-        options = module['functions']['options_binding']
-        self.assertIn('binding_type', options)
-        self.assertEqual(options['binding_type']['type'], BindingTypeEnum.BIND_C)
-        # Name could be None since the first optional param isn't 'name'
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
         
-        # Check old-style binding with parameter without equals
-        old_style = module['functions']['old_style_binding']
-        self.assertIn('binding_type', old_style)
-        self.assertEqual(old_style['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertIsNone(old_style['binding_type']['name'])  # No name provided
+        self.assertIn("line 7", str(context.exception))
+
+    def test_binding_with_multiple_extra_parameters_fails(self):
+        """Test that bind(c) with multiple non-standard parameters is not supported."""
+        filepath = "/fake/path/multi_param_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module multi_param_binding_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    function multi_param_binding(x) bind(c, name='multi_param', align=8, convention='cdecl') result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 4.0
+    end function
+
+end module multi_param_binding_mod
+"""
+        )
         
-        # Check binding with complex spacing and multiple parameters
-        complex_spaced = module['functions']['complex_spaced_binding']
-        self.assertIn('binding_type', complex_spaced)
-        self.assertEqual(complex_spaced['binding_type']['type'], BindingTypeEnum.BIND_C)
-        self.assertEqual(complex_spaced['binding_type']['name'], 'spaced_func')
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
         
-        # Check interface versions match implementation versions
-        interface_funcs = {p['name']: p for iface in module['interfaces'] for p in iface['procedures'].values()}
-        for func_name in ['standard_binding', 'extended_binding', 'multi_param_binding',
-                        'options_binding', 'old_style_binding', 'complex_spaced_binding']:
-            if func_name in interface_funcs:
-                iface_func = interface_funcs[func_name]
-                impl_func = module['functions'][func_name]
-                self.assertEqual(iface_func['binding_type']['type'], impl_func['binding_type']['type'],
-                                f"Binding type mismatch for {func_name}")
-                self.assertEqual(iface_func['binding_type']['name'], impl_func['binding_type']['name'],
-                                f"Binding name mismatch for {func_name}")
-                
-                
+        self.assertIn("line 7", str(context.exception))
+
+    def test_binding_with_options_parameter_fails(self):
+        """Test that bind(c) with options parameter is not supported."""
+        filepath = "/fake/path/options_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module options_binding_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    function options_binding(x) bind(c, options='unwind,strict') result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 5.0
+    end function
+
+end module options_binding_mod
+"""
+        )
+        
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
+        
+        self.assertIn("line 7", str(context.exception))
+
+    def test_old_style_binding_parameter_fails(self):
+        """Test that old-style bind(c, stdcall) without equals is not supported."""
+        filepath = "/fake/path/old_style_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module old_style_binding_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    function old_style_binding(x) bind(c, stdcall) result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 6.0
+    end function
+
+end module old_style_binding_mod
+"""
+        )
+        
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
+        
+        self.assertIn("line 7", str(context.exception))
+
+    def test_complex_spaced_binding_with_align_fails(self):
+        """Test that bind(c) with spacing and align parameter is not supported."""
+        filepath = "/fake/path/complex_spaced_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module complex_spaced_binding_mod
+    use iso_c_binding
+    implicit none
+
+contains
+    
+    function complex_spaced_binding(x) bind(  c  ,  name = 'spaced_func'  ,  align  =  16  ) result(y)
+        use iso_c_binding
+        real(c_double), value :: x
+        real(c_double) :: y
+        y = x * 7.0
+    end function
+
+end module complex_spaced_binding_mod
+"""
+        )
+        
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
+        
+        self.assertIn("line 7", str(context.exception))
+
+    def test_interface_with_invalid_binding_fails(self):
+        """Test that interfaces with invalid binding parameters also fail."""
+        filepath = "/fake/path/interface_invalid_binding.f90"
+        self._create_test_file(
+            filepath,
+            contents="""\
+module interface_invalid_binding_mod
+    use iso_c_binding
+    implicit none
+
+    interface
+        function interface_func(x) bind(c, name='iface_func', align=8) result(y)
+            use iso_c_binding
+            real(c_double), value :: x
+            real(c_double) :: y
+        end function
+    end interface
+
+end module interface_invalid_binding_mod
+"""
+        )
+        
+        with self.assertRaises(FortranSyntaxError) as context:
+            extract_module_data([Path(filepath)])
+        
+        self.assertIn("line 6", str(context.exception))
+
+
 if __name__ == '__main__':
     unittest.main()
-

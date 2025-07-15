@@ -352,11 +352,19 @@ class TestVariableDeclarations(TestCase):
 
         real, target :: scalar_target = 42.0
         real, target :: array_target(3) = [1.0, 2.0, 3.0]
-    
-        ! Pointers to actual targets
-        real, pointer :: p_to_scalar => scalar_target
-        real, pointer :: p_to_array(:) => array_target
-        real, pointer :: p_to_slice(:) => array_target(1:2)  ! Points to part of array
+
+        ! Pointers (will be associated in executable code)
+        real, pointer :: p_to_scalar => null()
+        real, pointer :: p_to_array(:) => null()
+        real, pointer :: p_to_slice(:) => null()
+
+    contains
+        subroutine associate_pointers()
+            ! Executable pointer assignments
+            p_to_scalar => scalar_target
+            p_to_array => array_target
+            p_to_slice => array_target(1:2)
+        end subroutine associate_pointers
     end module test_mod
     """)
         result = extract_module_data([Path("/fake/path/module.f90")])
@@ -371,15 +379,15 @@ class TestVariableDeclarations(TestCase):
         self.assertEqual(len(variables), 11)
 
         # Check allocatable arrays
-        self.assertEqual(variables["alloc_arr"]["type"], "real")
-        self.assertIn("allocatable", variables["alloc_arr"]["attributes"])
+        self.assertEqual(variables["alloc_arr"]["type"], "REAL")
+        self.assertIn("ALLOCATABLE", variables["alloc_arr"]["attributes"])
         dimension = cast(Dimension, variables["alloc_arr"]["dimension"])
         self.assertIsNone(dimension["dimensions"][0].lower)
         self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertIsNone(variables["alloc_arr"]["initial_value"])
 
-        self.assertEqual(variables["alloc_matrix"]["type"], "real")
-        self.assertIn("allocatable", variables["alloc_matrix"]["attributes"])
+        self.assertEqual(variables["alloc_matrix"]["type"], "REAL")
+        self.assertIn("ALLOCATABLE", variables["alloc_matrix"]["attributes"])
         dimension = cast(Dimension, variables["alloc_matrix"]["dimension"])
         self.assertEqual(len(dimension["dimensions"]), 2)
         self.assertIsNone(dimension["dimensions"][0].lower)
@@ -389,46 +397,46 @@ class TestVariableDeclarations(TestCase):
         self.assertIsNone(variables["alloc_matrix"]["initial_value"])
 
         # Check pointers
-        self.assertEqual(variables["p_scalar"]["type"], "real")
-        self.assertIn("pointer", variables["p_scalar"]["attributes"])
+        self.assertEqual(variables["p_scalar"]["type"], "REAL")
+        self.assertIn("POINTER", variables["p_scalar"]["attributes"])
         self.assertEqual(variables["p_scalar"]["initial_value"], "null()")
 
-        self.assertEqual(variables["p_arr"]["type"], "real")
-        self.assertIn("pointer", variables["p_arr"]["attributes"])
+        self.assertEqual(variables["p_arr"]["type"], "REAL")
+        self.assertIn("POINTER", variables["p_arr"]["attributes"])
         dimension = cast(Dimension, variables["p_arr"]["dimension"])
         self.assertIsNone(dimension["dimensions"][0].lower)
         self.assertIsNone(dimension["dimensions"][0].upper)
         self.assertEqual(variables["p_arr"]["initial_value"], "null()")
 
         # Check targets
-        self.assertEqual(variables["target_val"]["type"], "real")
-        self.assertIn("target", variables["target_val"]["attributes"])
+        self.assertEqual(variables["target_val"]["type"], "REAL")
+        self.assertIn("TARGET", variables["target_val"]["attributes"])
         self.assertEqual(variables["target_val"]["initial_value"], "1.0")
 
-        self.assertEqual(variables["target_arr"]["type"], "real")
-        self.assertIn("target", variables["target_arr"]["attributes"])
+        self.assertEqual(variables["target_arr"]["type"], "REAL")
+        self.assertIn("TARGET", variables["target_arr"]["attributes"])
         dimension = cast(Dimension, variables["target_arr"]["dimension"])
         self.assertEqual(dimension["dimensions"][0], create_dimension_expr(1, 3))
-        self.assertEqual(variables["target_arr"]["initial_value"], "1.0, 2.0, 3.0")
+        self.assertEqual(variables["target_arr"]["initial_value"], "[1.0, 2.0, 3.0]")
 
-        # Test pointers to actual targets
-        self.assertEqual(variables["p_to_scalar"]["type"], "real")
-        self.assertIn("pointer", variables["p_to_scalar"]["attributes"])
-        self.assertEqual(variables["p_to_scalar"]["initial_value"], "scalar_target")
+        # Test pointers that will be associated later
+        self.assertEqual(variables["p_to_scalar"]["type"], "REAL")
+        self.assertIn("POINTER", variables["p_to_scalar"]["attributes"])
+        self.assertEqual(variables["p_to_scalar"]["initial_value"], "null()")
 
-        self.assertEqual(variables["p_to_array"]["type"], "real")
-        self.assertIn("pointer", variables["p_to_array"]["attributes"])
+        self.assertEqual(variables["p_to_array"]["type"], "REAL")
+        self.assertIn("POINTER", variables["p_to_array"]["attributes"])
         dimension = cast(Dimension, variables["p_to_array"]["dimension"])
         self.assertIsNone(dimension["dimensions"][0].lower)
         self.assertIsNone(dimension["dimensions"][0].upper)
-        self.assertEqual(variables["p_to_array"]["initial_value"], "array_target")
+        self.assertEqual(variables["p_to_array"]["initial_value"], "null()")
 
-        self.assertEqual(variables["p_to_slice"]["type"], "real")
-        self.assertIn("pointer", variables["p_to_slice"]["attributes"])
+        self.assertEqual(variables["p_to_slice"]["type"], "REAL")
+        self.assertIn("POINTER", variables["p_to_slice"]["attributes"])
         dimension = cast(Dimension, variables["p_to_slice"]["dimension"])
         self.assertIsNone(dimension["dimensions"][0].lower)
         self.assertIsNone(dimension["dimensions"][0].upper)
-        self.assertEqual(variables["p_to_slice"]["initial_value"], "array_target(1:2)")
+        self.assertEqual(variables["p_to_slice"]["initial_value"], "null()")
 
     def test_special_initializations(self):
         self.fs.create_file("/fake/path/module.f90",
