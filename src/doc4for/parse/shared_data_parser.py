@@ -1,5 +1,5 @@
 import logging
-from typing import List, Type, Dict, Tuple, Any
+from typing import List, Type, Dict, Tuple, Any, Optional, Callable
 from fparser.two.Fortran2003 import (
     Block_Data,
     Block_Data_Stmt,
@@ -15,10 +15,20 @@ from fparser.two.Fortran2003 import (
     Bind_Entity,
     Save_Stmt,
     Saved_Entity,
-    Data_Implied_Do
+    Data_Implied_Do,
+    Data_Stmt_Value,
+    Int_Literal_Constant,
+    Complex_Literal_Constant,
+    Real_Literal_Constant,
+    Logical_Literal_Constant,
+    Char_Literal_Constant,
+    Part_Ref,
+    Data_Stmt_Set,
+    Section_Subscript_List,
+    Subscript_Triplet
 )
 from fparser.two.utils import walk
-from doc4for.models.module_models import BlockDataDescription, DataStatementDescription, CommonBlockDescription
+from doc4for.models.module_models import BlockDataDescription, CommonBlockDescription
 from doc4for.models.variable_models import VariableDescription
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_variable
@@ -86,7 +96,6 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
     name = block_data_names[0].string if block_data_names else ""
     decl_comment_stack = []
     common_blocks = {}
-    data_statements = []
     other_variables = {}
     variable_to_common_block = {}  # Map variable names to their common block names
     
@@ -151,14 +160,12 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                             other_variables[variable_name] = variable_desc
                     decl_comment_stack.clear()
                 elif isinstance(spec_child, Data_Stmt):
-                    new_data_statements = _process_data_statement(
-                        spec_child, 
-                        decl_comment_stack, 
+                    _process_data_statement(
+                        spec_child,  
                         variable_to_common_block, 
                         common_blocks, 
                         other_variables
                     )
-                    data_statements.extend(new_data_statements)
                     decl_comment_stack.clear()
                 elif isinstance(spec_child, Bind_Stmt):
                     binding_type = _extract_binding_type(walk(spec_child, Language_Binding_Spec))
@@ -194,7 +201,6 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
         "name": name,
         "description": format_comments(comment_stack),
         "common_blocks": common_blocks,
-        "data_statements": data_statements,
         "other_variables": other_variables,
     }
     
@@ -245,21 +251,6 @@ def process_save_statements_block_data(block_data: BlockDataDescription,
             else:
                 logger.warning(f"SAVE statement for common block '/{common_name}/' but common block not found in block data")
 
-def parse_data_statement(data_stmt: Data_Stmt, comment_stack: List[Comment]) -> List[DataStatementDescription]:
-    # Since we don't have the context of common blocks and other variables,
-    # we'll create empty dictionaries and ignore the side effects of updating initial values
-    empty_variable_to_common_block = {}
-    empty_common_blocks = {}
-    empty_other_variables = {}
-    
-    return _process_data_statement(
-        data_stmt,
-        comment_stack,
-        empty_variable_to_common_block,
-        empty_common_blocks,
-        empty_other_variables
-    )
-
 def _update_variable_initial_value(
     variable_name: str,
     initial_value: str,
@@ -292,277 +283,253 @@ def _get_variable_info(
     
     return None, None
 
-# def _process_data_statement(
-#     data_stmt: Data_Stmt, 
-#     comment_stack: List[Comment],
-#     variable_to_common_block: Dict[str, str],
-#     common_blocks: Dict[str, Any],
-#     other_variables: Dict[str, Any]
-# ) -> List[DataStatementDescription]:
-#     data_statements = []
-#     data_description = format_comments(comment_stack)
-#     data_stmt_sets = [child for child in data_stmt.children]
-
-#     for data_set in data_stmt_sets:
-#         if len(data_set.children) >= 2:
-#             var_names = data_set.children[0]
-#             var_values = data_set.children[1]
+def extract_data_value(node) -> str:
+    """Extract string representation from various data value node types."""
+    if isinstance(node, Data_Stmt_Value):
+        count_literal, value_literal = node.children
+        
+        # Handle parameter names in count position
+        if isinstance(count_literal, Name):
+            count = count_literal.string
+        else:
+            count = count_literal.children[0] if count_literal.children else "1"
+        
+        # Handle parameter names in value position
+        if isinstance(value_literal, Name):
+            value = value_literal.string
+        else:
+            value = extract_data_value(value_literal)
             
-#             # Check if this is an implied DO loop
-#             if var_names.children and isinstance(var_names.children[0], Data_Implied_Do):
-#                 implied_do = var_names.children[0]
-                
-#                 # Extract the base variable name from the Part_Ref
-#                 var_ref = implied_do.children[0].children[0]  # Data_I_Do_Object_List -> Part_Ref
-#                 var_name_str = var_ref.children[0].string  # Get the Name
-                
-#                 # Build the implied DO loop string representation
-#                 loop_var = implied_do.children[1].string
-#                 start = implied_do.children[2].string
-#                 end = implied_do.children[3].string
-                
-#                 # Reconstruct the implied DO syntax
-#                 implied_init = f"{var_ref.string}, {loop_var}={start},{end}"
-                
-#                 # Get all values
-#                 value_list = [val.string for val in var_values.children]
-#                 var_value_str = ", ".join(value_list)
-                
-#                 # Create data statement entry
-#                 data_statements.append({
-#                     "variable": var_name_str,
-#                     "value": var_value_str,
-#                     "description": data_description,
-#                     "implied_initialisation": implied_init,
-#                 })
-                
-#                 # Update variable's initial value
-#                 _update_variable_initial_value(
-#                     var_name_str, var_value_str, variable_to_common_block, 
-#                     common_blocks, other_variables
-#                 )    
-#     return data_statements
+        return f"{count}*{value}"
+    elif isinstance(node, Name):
+        # Handle direct parameter names
+        return node.string
+    elif isinstance(node, Complex_Literal_Constant):
+        real_part, imag_part = node.children
+        real_val = real_part.children[0] if real_part.children else "0"
+        imag_val = imag_part.children[0] if imag_part.children else "0"
+        return f"({real_val}, {imag_val})"
+    elif isinstance(node, (Int_Literal_Constant, Real_Literal_Constant, 
+                          Char_Literal_Constant, Logical_Literal_Constant)):
+        return node.children[0]
+    else:
+        # Fallback to string representation
+        return str(node)
 
+def process_data_statement_core(
+    data_stmt: Data_Stmt,
+    update_variable_func: Callable[[str, str], None],
+    get_variable_info_func: Callable[[str], Tuple[Optional[Dict], Optional[Dict]]]
+) -> None:
+    """
+    Core logic for processing DATA statements that works for both module and block data contexts.
+    
+    Args:
+        data_stmt: The DATA statement to process
+        update_variable_func: Function to update a variable's initial value
+        get_variable_info_func: Function to retrieve variable information
+    """
+    
+    def process_implied_do(do_obj):
+        """Process implied DO and return the pattern string and base variable name."""
+        first_child = do_obj.children[0]  # Data_I_Do_Object_List
+        loop_var = do_obj.children[1].string
+        start = do_obj.children[2].string
+        end = do_obj.children[3].string
+        
+        # Check if the first child contains another implied DO (nested case)
+        nested_implied_do = walk(first_child, Data_Implied_Do)
+        if nested_implied_do:
+            inner_str, var_name = process_implied_do(nested_implied_do[0])
+            # For nested loops, wrap inner in parentheses
+            return f"({inner_str}), {loop_var}={start},{end}", var_name
+        else:
+            # Base case: extract variable from Data_I_Do_Object_List
+            var_refs = walk(first_child, Part_Ref)
+            if var_refs:
+                var_ref = var_refs[0]
+                var_name = var_ref.children[0].string
+                var_pattern = var_ref.string
+                return f"{var_pattern}, {loop_var}={start},{end}", var_name
+            else:
+                # Fallback if Part_Ref not found
+                name_nodes = walk(first_child, Name)
+                if name_nodes:
+                    var_name = name_nodes[0].string
+                    return f"{var_name}, {loop_var}={start},{end}", var_name
+                return f"unknown, {loop_var}={start},{end}", "unknown"
+    
+    # Process each data statement set
+    data_stmt_sets = walk(data_stmt, Data_Stmt_Set)
+    for data_stmt_set in data_stmt_sets:
+        object_list, value_list = data_stmt_set.children
+        
+        # Check if this is an implied DO loop
+        implied_do_nodes = walk(object_list, Data_Implied_Do)
+        if implied_do_nodes:
+            implied_do = implied_do_nodes[0]
+            
+            # Process the implied DO and get both the pattern and variable name
+            implied_pattern, var_name = process_implied_do(implied_do)
+            
+            # Get values using the improved extraction function
+            values = []
+            for child in value_list.children:
+                values.append(extract_data_value(child))
+            
+            value_str = ", ".join(values)
+            
+            # Create the full implied DO initialization string
+            full_init_value = f"({implied_pattern}) = {value_str}"
+            
+            # Update the variable
+            update_variable_func(var_name, full_init_value)
+            
+        else:
+            # Handle regular DATA statements (non-implied DO)
+            # Get variable names and handle substring references
+            var_infos = []
+            for child in object_list.children:
+                if isinstance(child, Name):
+                    var_infos.append((child.string, None))
+                elif isinstance(child, Part_Ref):
+                    base_name = child.children[0].string
+                    # Extract substring range if present
+                    section_info = None
+                    if len(child.children) > 1:
+                        section_subscripts = walk(child, Section_Subscript_List)
+                        if section_subscripts:
+                            section_list = section_subscripts[0]
+                            triplets = walk(section_list, Subscript_Triplet)
+                            if triplets:
+                                triplet = triplets[0]
+                                start = triplet.children[0].string if triplet.children[0] else "1"
+                                end = triplet.children[1].string if triplet.children[1] else None
+                                section_info = f"({start}:{end})"
+                    var_infos.append((base_name, section_info))
+            
+            # Get values using the improved extraction function
+            values = []
+            for child in value_list.children:
+                values.append(extract_data_value(child))
+            
+            # Handle different variable-to-value mappings
+            if len(var_infos) == 1 and len(values) > 1:
+                # Single variable, multiple values (array initialization)
+                var_name, section_info = var_infos[0]
+                value_str = ", ".join(values)
+                
+                if section_info:
+                    value_str = f"{section_info}={value_str}"
+                
+                update_variable_func(var_name, value_str)
+                
+            elif len(var_infos) == len(values):
+                # One-to-one mapping
+                for (var_name, section_info), value in zip(var_infos, values):
+                    if section_info:
+                        value = f"{section_info}={value}"
+                    
+                    update_variable_func(var_name, value)
+            elif len(var_infos) > 1 and len(values) > len(var_infos):
+                # Multiple variables, multiple values - distribute based on array sizes
+                value_index = 0
+                
+                for var_name, section_info in var_infos:
+                    # Get variable info to determine array size
+                    var_info, _ = get_variable_info_func(var_name)
+                    
+                    if var_info and var_info.get("dimension"):
+                        # Calculate total array size
+                        array_size = 1
+                        for dim in var_info["dimension"]["dimensions"]:
+                            # Assuming you have a way to get the size from bounds
+                            lower = int(dim.lower.value) if dim.lower else 1
+                            upper = int(dim.upper.value) if dim.upper else 1
+                            array_size *= (upper - lower + 1)
+                    else:
+                        # Scalar variable
+                        array_size = 1
+                    
+                    # Extract the appropriate number of values
+                    var_values = values[value_index:value_index + array_size]
+                    value_str = ", ".join(var_values)
+                    
+                    if section_info:
+                        value_str = f"{section_info}={value_str}"
+                    
+                    update_variable_func(var_name, value_str)
+                    value_index += array_size                    
+            else:
+                # Handle special cases like substring initialization
+                for var_name, section_info in var_infos:
+                    base_var_name = var_name.split('(')[0] if '(' in var_name else var_name
+                    
+                    if section_info:
+                        # Substring initialization
+                        var_info, _ = get_variable_info_func(base_var_name)
+                        existing_value = var_info.get("initial_value", "") if var_info else ""
+                        
+                        cleaned_value = values[0].strip("'") if values else ""
+                        
+                        if existing_value:
+                            combined_value = f"{existing_value}, {section_info}='{cleaned_value}'"
+                        else:
+                            combined_value = f"{section_info}='{cleaned_value}'"
+                        
+                        update_variable_func(base_var_name, combined_value)
+                    else:
+                        # Regular initialization
+                        if values:
+                            update_variable_func(var_name, values[0])
+
+# For block data context
+def create_block_data_adapters(variable_to_common_block, common_blocks, other_variables):
+    """Create adapter functions for block data context."""
+    
+    def update_variable(var_name: str, value: str) -> None:
+        _update_variable_initial_value(
+            var_name, value, variable_to_common_block, 
+            common_blocks, other_variables
+        )
+    
+    def get_variable_info(var_name: str) -> Tuple[Optional[Dict], Optional[Dict]]:
+        return _get_variable_info(
+            var_name, variable_to_common_block, common_blocks, other_variables
+        )
+    
+    return update_variable, get_variable_info
+
+# For module context
+def create_module_adapters(module_data, variable_initializations):
+    """Create adapter functions for module context."""
+    
+    def update_variable(var_name: str, value: str) -> None:
+        if var_name in variable_initializations:
+            variable_initializations[var_name].append(value)
+        else:
+            variable_initializations[var_name] = [value]
+    
+    def get_variable_info(var_name: str) -> Tuple[Optional[Dict], Optional[Dict]]:
+        if var_name in module_data["variables"]:
+            return module_data["variables"][var_name], None
+        return None, None
+    
+    return update_variable, get_variable_info
+
+# Updated block data function
 def _process_data_statement(
-    data_stmt: Data_Stmt, 
-    comment_stack: List[Comment],
+    data_stmt: Data_Stmt,
     variable_to_common_block: Dict[str, str],
     common_blocks: Dict[str, Any],
     other_variables: Dict[str, Any]
-) -> List[DataStatementDescription]:
-    data_statements = []
-    data_description = format_comments(comment_stack)
-    data_stmt_sets = [child for child in data_stmt.children]
-
-    for data_set in data_stmt_sets:
-        if len(data_set.children) >= 2:
-            var_names = data_set.children[0]
-            var_values = data_set.children[1]
-            
-            # Check if this is an implied DO loop
-            if var_names.children and isinstance(var_names.children[0], Data_Implied_Do):
-                implied_do = var_names.children[0]
-                
-                # Helper function to process implied DO loops recursively
-                def process_implied_do(do_obj, is_nested=False):
-                    first_child = do_obj.children[0]  # Data_I_Do_Object_List
-                    loop_var = do_obj.children[1].string
-                    start = do_obj.children[2].string
-                    end = do_obj.children[3].string
-                    
-                    # Check if the first child contains another implied DO (nested case)
-                    if first_child.children and isinstance(first_child.children[0], Data_Implied_Do):
-                        inner_str, var_name = process_implied_do(first_child.children[0], is_nested=True)
-                        # For nested loops, wrap inner in parentheses
-                        return f"({inner_str}), {loop_var}={start},{end}", var_name
-                    else:
-                        # Base case: extract variable from Data_I_Do_Object_List -> Part_Ref
-                        var_ref = first_child.children[0]  # Part_Ref
-                        var_name = var_ref.children[0].string  # Get the base variable name
-                        var_pattern = var_ref.string  # Full pattern like "matrix(i,j)"
-                        return f"{var_pattern}, {loop_var}={start},{end}", var_name
-                
-                # Process the implied DO and get both the string and variable name
-                implied_init, var_name_str = process_implied_do(implied_do)
-                
-                # Get all values
-                value_list = [val.string for val in var_values.children]
-                var_value_str = ", ".join(value_list)
-                
-                # Create data statement entry
-                data_statements.append({
-                    "variable": var_name_str,
-                    "value": var_value_str,
-                    "description": data_description,
-                    "implied_initialisation": implied_init,
-                })
-                
-                # Update variable's initial value
-                _update_variable_initial_value(
-                    var_name_str, var_value_str, variable_to_common_block, 
-                    common_blocks, other_variables
-                )
-            else:
-                # Handle regular DATA statements (non-implied DO)
-                implied_init = ""
-                var_name_list = [var.string for var in var_names.children]
-                value_list = [val.string for val in var_values.children]
-                value_index = 0
-
-                for var_name_str in var_name_list:
-                    var_info, _ = _get_variable_info(var_name_str, variable_to_common_block, common_blocks, other_variables)
-
-                    # Calculate array size
-                    array_size = 1
-                    if var_info and var_info.get("dimension") and var_info["dimension"].get("dimensions"):
-                        for dim in var_info["dimension"]["dimensions"]:
-                            if hasattr(dim, "upper") and hasattr(dim, "lower"):
-                                upper_val = int(dim.upper.value)
-                                lower_val = int(dim.lower.value)
-                                array_size *= upper_val - lower_val + 1
-
-                    # Extract values for this variable
-                    if value_index + array_size <= len(value_list):
-                        var_values_for_this_var = value_list[value_index:value_index + array_size]
-                        value_index += array_size
-                    else:
-                        var_values_for_this_var = value_list[value_index:]
-                        value_index = len(value_list)
-
-                    var_value_str = ", ".join(var_values_for_this_var)
-
-                    # Create data statement entry
-                    data_statements.append({
-                        "variable": var_name_str,
-                        "value": var_value_str,
-                        "description": data_description,
-                        "implied_initialisation": implied_init,
-                    })
-
-                    # Update variable's initial value
-                    _update_variable_initial_value(
-                        var_name_str, var_value_str, variable_to_common_block, 
-                        common_blocks, other_variables
-                    )
+) -> None:
+    update_func, get_info_func = create_block_data_adapters(
+        variable_to_common_block, common_blocks, other_variables
+    )
     
-    return data_statements
-
-
-def _process_data_statement(
-    data_stmt: Data_Stmt, 
-    comment_stack: List[Comment],
-    variable_to_common_block: Dict[str, str],
-    common_blocks: Dict[str, Any],
-    other_variables: Dict[str, Any]
-) -> List[DataStatementDescription]:
-    data_statements = []
-    data_description = format_comments(comment_stack)
-    data_stmt_sets = [child for child in data_stmt.children]
-
-    for data_set in data_stmt_sets:
-        if len(data_set.children) >= 2:
-            var_names = data_set.children[0]
-            var_values = data_set.children[1]
-            
-            # Check if this is an implied DO loop
-            if var_names.children and isinstance(var_names.children[0], Data_Implied_Do):
-                implied_do = var_names.children[0]
-                
-                # Helper function to process implied DO loops recursively
-                def process_implied_do(do_obj, is_nested=False):
-                    first_child = do_obj.children[0]  # Data_I_Do_Object_List
-                    loop_var = do_obj.children[1].string
-                    start = do_obj.children[2].string
-                    end = do_obj.children[3].string
-                    
-                    # Check if the first child contains another implied DO (nested case)
-                    if first_child.children and isinstance(first_child.children[0], Data_Implied_Do):
-                        inner_str, var_name = process_implied_do(first_child.children[0], is_nested=True)
-                        # For nested loops, wrap inner in parentheses
-                        return f"({inner_str}), {loop_var}={start},{end}", var_name
-                    else:
-                        # Base case: extract variable from Data_I_Do_Object_List -> Part_Ref
-                        var_ref = first_child.children[0]  # Part_Ref
-                        var_name = var_ref.children[0].string  # Get the base variable name
-                        var_pattern = var_ref.string  # Full pattern like "matrix(i,j)"
-                        return f"{var_pattern}, {loop_var}={start},{end}", var_name
-                
-                # Process the implied DO and get both the string and variable name
-                implied_init, var_name_str = process_implied_do(implied_do)
-                
-                # Get all values
-                value_list = [val.string for val in var_values.children]
-                var_value_str = ", ".join(value_list)
-                
-                # Create data statement entry
-                data_statements.append({
-                    "variable": var_name_str,
-                    "value": var_value_str,
-                    "description": data_description,
-                    "implied_initialisation": implied_init,
-                })
-                
-                # Update variable's initial value
-                _update_variable_initial_value(
-                    var_name_str, var_value_str, variable_to_common_block, 
-                    common_blocks, other_variables
-                )
-            else:
-                # Handle regular DATA statements (non-implied DO)
-                implied_init = ""
-                var_name_list = [var.string for var in var_names.children]
-                value_list = [val.string for val in var_values.children]
-                value_index = 0
-
-                for var_name_str in var_name_list:
-                    # Check if this is a substring reference (contains parentheses)
-                    base_var_name = var_name_str
-                    is_substring = False
-                    
-                    if '(' in var_name_str and ')' in var_name_str:
-                        # Extract the base variable name (everything before the first parenthesis)
-                        base_var_name = var_name_str.split('(')[0]
-                        is_substring = True
-                    
-                    var_info, _ = _get_variable_info(base_var_name, variable_to_common_block, common_blocks, other_variables)
-
-                    # Calculate array size
-                    array_size = 1
-                    if var_info and var_info.get("dimension") and var_info["dimension"].get("dimensions"):
-                        for dim in var_info["dimension"]["dimensions"]:
-                            if hasattr(dim, "upper") and hasattr(dim, "lower"):
-                                upper_val = int(dim.upper.value)
-                                lower_val = int(dim.lower.value)
-                                array_size *= upper_val - lower_val + 1
-
-                    # Extract values for this variable
-                    if value_index + array_size <= len(value_list):
-                        var_values_for_this_var = value_list[value_index:value_index + array_size]
-                        value_index += array_size
-                    else:
-                        var_values_for_this_var = value_list[value_index:]
-                        value_index = len(value_list)
-
-                    var_value_str = ", ".join(var_values_for_this_var)
-
-                    # Create data statement entry
-                    data_statements.append({
-                        "variable": var_name_str,  # Keep the full name with substring for documentation
-                        "value": var_value_str,
-                        "description": data_description,
-                        "implied_initialisation": implied_init,
-                    })
-
-                    # Update variable's initial value
-                    # For substrings, use the base variable name
-                    _update_variable_initial_value(
-                        base_var_name, var_value_str, variable_to_common_block, 
-                        common_blocks, other_variables
-                    )
-    
-    return data_statements
-# def parse_save_statement():
-#     pass #TODO
+    process_data_statement_core(data_stmt, update_func, get_info_func)
+                          
 
 # def parse_equivalence_statement():
 #     pass #TODO

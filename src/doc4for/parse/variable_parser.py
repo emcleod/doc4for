@@ -21,8 +21,7 @@ def parse_variable(
     dimension_stack: Optional[List[Dimension_Stmt]]=None
 ) -> List[VariableDescription]:
 
-    description = format_comments(
-        comment_stack) if is_doc4for_comment(comment_stack) else ""
+    description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
     
     type_info = _extract_type_info(declaration)
 

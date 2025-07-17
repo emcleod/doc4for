@@ -788,7 +788,7 @@ C     Equivalence statement (less common)
         
         # Check DATA statement initialization
         self.assertEqual(variables["IARRAY"]["type"], "INTEGER")
-        self.assertEqual(variables["IARRAY"]["initial_value"], "/1, 2, 3, 4, 5/")
+        self.assertEqual(variables["IARRAY"]["initial_value"], "1, 2, 3, 4, 5")
 
         # Check common block variables
         #TODO 

@@ -4,21 +4,13 @@ from doc4for.models.procedure_models import FunctionDescription, InterfaceDescri
 from doc4for.models.type_models import TypeDescription
 from doc4for.models.common import EnumDescription, Uses, BindingType, EquivalenceRelationship
 
-DataStatementDescription = TypedDict(
-    "DataStatementDescription",
-    {
-        "variable": str,            
-        "value": str,              
-        "description": str,  
-        "implied_initialisation": Optional[str]   
-    }
-)
+#TODO move three to data_models.py
 
 CommonBlockDescription = TypedDict(
     "CommonBlockDescription",
     {
         "name": str,
-        "variables": Dict[str, VariableDescription], #TODO this should be ordered 
+        "variables": Dict[str, VariableDescription], #TODO this should be ordered to keep declaration order
         "description": str,
         "binding_type": Optional[BindingType]
     },
@@ -31,7 +23,6 @@ BlockDataDescription = TypedDict(
         "name": str,
         "description": str,
         "common_blocks": Dict[str, CommonBlockDescription],
-        "data_statements": List[DataStatementDescription],
         "other_variables": Dict[str, VariableDescription] # variables can be declared but not used in common blocks
         #TODO what about parameters that are used for initialisation
     },

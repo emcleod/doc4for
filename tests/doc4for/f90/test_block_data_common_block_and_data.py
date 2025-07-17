@@ -138,41 +138,6 @@ end program physics_simulation
         self.assertEqual(variables["boltzmann_constant"]["initial_value"], "1.380649E-23")
         self.assertEqual(variables["units_system"]["initial_value"], '"SI_MKS"')
 
-
-    def test_data_statements(self):
-        block_data = self.file_data["block_data"]["physical_constants_init"]
-        
-        # Test 1: Data statements are correctly recorded
-        self.assertIn("data_statements", block_data)
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 6)  # Should have 6 data statements
-        
-        # Check for specific data values in data statements
-        gravity_data = next(d for d in data_stmts if d["variable"] == "gravity")
-        self.assertEqual(gravity_data["value"], "9.80665")
-        
-        pi_data = next(d for d in data_stmts if d["variable"] == "pi")
-        self.assertEqual(pi_data["value"], "3.14159265358979323846264")
-        
-        units_data = next(d for d in data_stmts if d["variable"] == "units_system")
-        self.assertEqual(units_data["value"], '"SI_MKS"')
-        
-        # Test 2: Initial values are also propagated to the variable descriptions
-        common_blocks = block_data["common_blocks"]
-        phys_constants_block = common_blocks["physical_constants"]
-        variables = phys_constants_block["variables"]
-        
-        # Check that initial values match the data statements
-        self.assertEqual(variables["gravity"]["initial_value"], "9.80665")
-        self.assertEqual(variables["pi"]["initial_value"], "3.14159265358979323846264")
-        self.assertEqual(variables["units_system"]["initial_value"], '"SI_MKS"')
-        
-        # Verify variable types are preserved
-        self.assertEqual(variables["gravity"]["type"], "REAL")
-        self.assertEqual(variables["gravity"]["kind"], "8")
-        self.assertEqual(variables["units_system"]["type"], "CHARACTER")
-        self.assertEqual(variables["units_system"]["length"], "20")   
-
     def test_subroutines(self):
         self.assertIn("subroutines", self.file_data)
         subroutines = self.file_data["subroutines"]

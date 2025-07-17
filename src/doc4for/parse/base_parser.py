@@ -112,6 +112,7 @@ def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comm
     data["equivalence"].append(equivalence_relationship)
 
 
+#TODO move this
 def parse_equivalence(equivalence_stmt: Equivalence_Stmt, comment_stack: List[Comment]) -> EquivalenceRelationship:
     # Get description from comment stack
     description = format_comments(comment_stack)

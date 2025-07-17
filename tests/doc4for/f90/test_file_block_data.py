@@ -76,14 +76,6 @@ class TestBlockData(TestCase):
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                                "implied_initialisation": "",
-                                "variable": "x",
-                                "value": "1.0"},
-                               {"description": "",
-                                "implied_initialisation": "",
-                                "variable": "y",
-                                "value": "2.0"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -143,14 +135,6 @@ END BLOCK DATA simple
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1.0"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "y",
-                                 "value": "2.0"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -211,14 +195,6 @@ END BLOCK DATA simple
                     },
                 }
             },
-            "data_statements": [{"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1.0"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "y",
-                                 "value": "2.0"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -305,22 +281,6 @@ END BLOCK DATA simple
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "y",
-                                 "value": "2.0"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "theta",
-                                 "value": "0.45"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "z",
-                                 "value": "3.0"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1.0"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -367,10 +327,6 @@ END BLOCK DATA
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -417,20 +373,6 @@ END BLOCK DATA
                     }
                 }
             },
-            "data_statements": [
-                {
-                    "description": "",
-                    "implied_initialisation": "",
-                    "variable": "x",
-                    "value": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
-                },
-                {
-                    "description": "",
-                    "implied_initialisation": "",
-                    "variable": "y",
-                    "value": "12, 13, 14"
-                }
-            ],
             "other_variables": {
                 "y": {
                     "description": "",
@@ -504,14 +446,6 @@ END BLOCK DATA
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                               "implied_initialisation": "",
-                               "variable": "x",
-                               "value": "1, 2, 3"},
-                              {"description": "",
-                               "implied_initialisation": "",
-                               "variable": "y",
-                               "value": "4, 5"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -587,15 +521,15 @@ END BLOCK DATA
         physics = block_data["common_blocks"]["physics"]["variables"]
         self.assertEqual(physics["gravity"]["type"], "REAL")
         self.assertEqual(physics["gravity"]["kind"], "8")
-        self.assertEqual(physics["gravity"]["initial_value"], "9.81d0")
+        self.assertEqual(physics["gravity"]["initial_value"], "9.81D0")
 
         self.assertEqual(physics["air_density"]["type"], "REAL")
         self.assertEqual(physics["air_density"]["kind"], "8")
-        self.assertEqual(physics["air_density"]["initial_value"], "1.225d0")
+        self.assertEqual(physics["air_density"]["initial_value"], "1.225D0")
 
         self.assertEqual(physics["viscosity"]["type"], "REAL")
         self.assertIsNone(physics["viscosity"]["kind"])
-        self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
+        self.assertEqual(physics["viscosity"]["initial_value"], "1.81E-5")
 
         # Check settings common block
         settings = block_data["common_blocks"]["settings"]["variables"]
@@ -604,7 +538,7 @@ END BLOCK DATA
         self.assertEqual(settings["debug_level"]["type"], "INTEGER")
         self.assertEqual(settings["debug_level"]["initial_value"], "2")
         self.assertEqual(settings["use_fast_mode"]["type"], "LOGICAL")
-        self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
+        self.assertEqual(settings["use_fast_mode"]["initial_value"], ".TRUE.")
 
         # Check tables common block (arrays)
         tables = block_data["common_blocks"]["tables"]["variables"]
@@ -637,8 +571,6 @@ END BLOCK DATA
         self.assertEqual(strings["version"]["length"], "8")
         self.assertEqual(strings["version"]["initial_value"], '"v1.2.3  "')
 
-        # Check data_statements and other_variables fields exist
-        self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
 
     def test_unnamed_block_data_with_comments(self):
@@ -705,14 +637,6 @@ END BLOCK DATA
                     }
                 }
             },
-            "data_statements": [{"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "x",
-                                 "value": "1.0"},
-                                {"description": "",
-                                 "implied_initialisation": "",
-                                 "variable": "y",
-                                 "value": "2.0"}],
             "other_variables": {}
         }
         self.assertEqual(block_data, expected)
@@ -811,17 +735,17 @@ END BLOCK DATA
         self.assertEqual(physics["gravity"]["description"], "Gravitational acceleration and air properties\n")
         self.assertEqual(physics["gravity"]["type"], "REAL")
         self.assertEqual(physics["gravity"]["kind"], "8")
-        self.assertEqual(physics["gravity"]["initial_value"], "9.81d0")
+        self.assertEqual(physics["gravity"]["initial_value"], "9.81D0")
 
         self.assertEqual(physics["air_density"]["description"], "Gravitational acceleration and air properties\n")
         self.assertEqual(physics["air_density"]["type"], "REAL")
         self.assertEqual(physics["air_density"]["kind"], "8")
-        self.assertEqual(physics["air_density"]["initial_value"], "1.225d0")
+        self.assertEqual(physics["air_density"]["initial_value"], "1.225D0")
 
         self.assertEqual(physics["viscosity"]["description"], "") # note doc4for comments don't fall through
         self.assertEqual(physics["viscosity"]["type"], "REAL")
         self.assertIsNone(physics["viscosity"]["kind"])
-        self.assertEqual(physics["viscosity"]["initial_value"], "1.81e-5")
+        self.assertEqual(physics["viscosity"]["initial_value"], "1.81E-5")
 
         # Check settings common block
         self.assertEqual(block_data["common_blocks"]["settings"]["description"], "Configuration for simulation execution\n")
@@ -836,7 +760,7 @@ END BLOCK DATA
 
         self.assertEqual(settings["use_fast_mode"]["description"], "Use the fast mode or not\n")
         self.assertEqual(settings["use_fast_mode"]["type"], "LOGICAL")
-        self.assertEqual(settings["use_fast_mode"]["initial_value"], ".true.")
+        self.assertEqual(settings["use_fast_mode"]["initial_value"], ".TRUE.")
 
         # Check tables common block (arrays)
         expected_tables_description = "Lookup tables for temperature and pressure calculations\nUsed for interpolation in the simulation\n"
@@ -876,8 +800,6 @@ END BLOCK DATA
         self.assertEqual(strings["version"]["length"], "8")
         self.assertEqual(strings["version"]["initial_value"], '"v1.2.3  "')
 
-        # Check data_statements and other_variables fields exist
-        self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
 
     def test_block_data_edge_cases(self):
@@ -971,8 +893,6 @@ END BLOCK DATA other_data
         self.assertEqual(
             unnamed_block["common_blocks"]["strings"]["variables"]["str"]["initial_value"], '"ABC"')
 
-        # Check data_statements and other_variables fields exist
-        self.assertIn("data_statements", unnamed_block)
         self.assertIn("other_variables", unnamed_block)
 
         # Check other block data
@@ -984,8 +904,6 @@ END BLOCK DATA other_data
         self.assertEqual(other_block["common_blocks"]
                          ["other"]["variables"]["b"]["initial_value"], "2")
         
-        # Check data_statements and other_variables fields exist
-        self.assertIn("data_statements", other_block)
         self.assertIn("other_variables", other_block)
 
     def test_block_data_array_initialization_styles(self):
@@ -1070,8 +988,6 @@ END BLOCK DATA array_init
         dimension = f90_arith["dimension"]
         self.assertEqual(dimension["dimensions"][0], create_fixed_array_bound(1, 5))
         
-        # Check data_statements and other_variables fields exist
-        self.assertIn("data_statements", block_data)
         self.assertIn("other_variables", block_data)
 
 if __name__ == "__main__":

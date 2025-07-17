@@ -128,24 +128,7 @@ class TestBlockDataBindings(TestCase):
         max_files_var = sys_block["variables"]["max_files"]
         self.assertEqual(max_files_var["name"], "max_files")
         self.assertEqual(max_files_var["type"], "INTEGER")
-        
-        # Test data statements in c_constants
-        data_statements = c_constants["data_statements"]
-        self.assertEqual(len(data_statements), 8)
-        
-        # Check specific data statements
-        pi_data = next((d for d in data_statements if d["variable"] == "pi"), None)
-        self.assertIsNotNone(pi_data)
-        self.assertEqual(pi_data["value"], "3.14159265358979d0")
-        
-        e_data = next((d for d in data_statements if d["variable"] == "e"), None)
-        self.assertIsNotNone(e_data)
-        self.assertEqual(e_data["value"], "2.71828182845905d0")
-        
-        max_files_data = next((d for d in data_statements if d["variable"] == "max_files"), None)
-        self.assertIsNotNone(max_files_data)
-        self.assertEqual(max_files_data["value"], "20")
-        
+                        
         # Second block data: more_constants
         more_constants = block_data["more_constants"]
         self.assertEqual(more_constants["name"], "more_constants")
@@ -189,20 +172,6 @@ class TestBlockDataBindings(TestCase):
         self.assertEqual(temps_var["kind"], "c_float")
         self.assertEqual(temps_var["dimension"]["dimensions"], 
                          [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "4"))])
-        
-        # Test data statements in more_constants
-        more_data_statements = more_constants["data_statements"]
-        self.assertEqual(len(more_data_statements), 2)
-        
-        # Check fibonacci data statement
-        fib_data = next((d for d in more_data_statements if d["variable"] == "fibonacci"), None)
-        self.assertIsNotNone(fib_data)
-        self.assertEqual(fib_data["value"], "1, 1, 2, 3, 5, 8, 13, 21, 34, 55")
-        
-        # Check temps data statement
-        temps_data = next((d for d in more_data_statements if d["variable"] == "temps"), None)
-        self.assertIsNotNone(temps_data)
-        self.assertEqual(temps_data["value"], "0.0, 32.0, 100.0, 212.0")
         
         # Test that other_variables is empty (all variables are in common blocks)
         self.assertEqual(len(c_constants["other_variables"]), 0)
@@ -280,18 +249,6 @@ class TestBlockDataBindings(TestCase):
         self.assertEqual(pi_var["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertEqual(pi_var["binding_type"]["name"], "c_physics_block")
         
-        # Check data statements
-        data_statements = physics_block_data["data_statements"]
-        self.assertEqual(len(data_statements), 2)
-        
-        gravity_data = next((d for d in data_statements if d["variable"] == "gravity"), None)
-        self.assertIsNotNone(gravity_data)
-        self.assertEqual(gravity_data["value"], "9.80665d0")
-        
-        light_speed_data = next((d for d in data_statements if d["variable"] == "light_speed"), None)
-        self.assertIsNotNone(light_speed_data)
-        self.assertEqual(light_speed_data["value"], "299792458.0d0")
-
 
     # TODO haven't got parameter information in BlockDataDescription
     # def test_block_data_mixed_binding(self):

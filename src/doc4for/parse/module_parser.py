@@ -22,12 +22,14 @@ from fparser.two.Fortran2003 import (
     Language_Binding_Spec,
     Save_Stmt,
     Saved_Entity,
-    Equivalence_Stmt
+    Equivalence_Stmt,
+    Data_Stmt
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
 from doc4for.parse.common_parser import FortranHandler, _extract_binding_type
 from doc4for.models.common import BindingType
+from doc4for.parse.shared_data_parser import create_module_adapters, process_data_statement_core#
 
 from doc4for.parse.base_parser import (    
     VisibilityState,
@@ -40,7 +42,6 @@ from doc4for.parse.base_parser import (
     # handle_use,
     handle_common_block,
     handle_equivalence
-#    handle_type
 )
 from doc4for.logging_config import setup_logging
 
@@ -50,6 +51,17 @@ ModuleHandler = FortranHandler[ModuleDescription]
 
 _module_handler_instance: Optional[ModuleHandler] = None
 
+# Types (derived types)
+# Variables (including parameters)
+# Procedures (functions and subroutines)
+# Interfaces (abstract and explicit)
+# Operators (defined operators)
+# Generic names (covered by interfaces)
+# Namelist groups
+# Common blocks
+# Generic interfaces/operators
+# Module procedures
+# Named constants (PARAMETER)
 def _get_module_handler() -> ModuleHandler:
     """Get an instance of ModuleHandler and initialize if necessary.
 
@@ -61,7 +73,6 @@ def _get_module_handler() -> ModuleHandler:
         handler = ModuleHandler()
         handler.register_handler(Function_Subprogram, handle_function)
         handler.register_handler(Subroutine_Subprogram, handle_subroutine)
-#        handler.register_handler(FortranType, handle_type)
         handler.register_handler(
             Type_Declaration_Stmt, handle_type_declaration)
         handler.register_handler(
@@ -91,6 +102,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     access_stack: Dict[str, str] = {}
     # keep track of lone bind statements e.g. for binding a common block
     bind_stack: Dict[str, BindingType] = {}
+    # gather data statements to populate initial values in variables
+    data_statement_stack: List[Data_Stmt] = []
     # keep track of save statements
     save_variables: List[str] = []
     save_common_blocks: List[str] = []
@@ -144,6 +157,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                             elif isinstance(entity, Name):
                                 # It's a variable name
                                 save_variables.append(entity.string)
+                elif isinstance(node, Data_Stmt):
+                    data_statement_stack.append(node)
                 else:
                     handler = handlers.get_handler(type(node))
                     if handler:
@@ -160,6 +175,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
         process_access_statements(module_data, access_stack)
     if bind_stack:
         process_bind_statements(module_data, bind_stack)
+    if data_statement_stack:
+        process_data_statements(module_data, data_statement_stack)
     if save_all or save_variables or save_common_blocks:
         process_save_statements(module_data, save_variables, save_common_blocks, save_all)
     # common block variables and their type declarations need to be matched
@@ -204,17 +221,6 @@ def process_common_block_variables(module_data: ModuleDescription) -> None:
                 # replace the variable description in the common block with the full description
                 common_block_variables[common_block_variable_name] = variables[common_block_variable_name]
 
-# Types (derived types)
-# Variables (including parameters)
-# Procedures (functions and subroutines)
-# Interfaces (abstract and explicit)
-# Operators (defined operators)
-# Generic names (covered by interfaces)
-# Namelist groups
-# Common blocks
-# Generic interfaces/operators
-# Module procedures
-# Named constants (PARAMETER)
 #TODO remove private entities if they shouldn't be documented
 def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
     module_data["types"] = {
@@ -278,6 +284,21 @@ def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str
         if bind_target not in matched_entities:
             logger.warning(f"BIND statement for '{bind_target}' but no matching entity found")
 
+def process_data_statements(module_data: ModuleDescription, data_statement_stack: List[Data_Stmt]) -> None:
+    variable_initializations = {}
+    
+    update_func, get_info_func = create_module_adapters(module_data, variable_initializations)
+    
+    for data_stmt in data_statement_stack:
+        process_data_statement_core(data_stmt, update_func, get_info_func)
+    
+    # Apply the collected initializations
+    for var_name, value_list in variable_initializations.items():
+        if var_name in module_data["variables"]:
+            combined_value = ", ".join(value_list)
+            module_data["variables"][var_name]["initial_value"] = combined_value
+        else:
+            logger.warning(f"DATA statement for variable '{var_name}' but variable not found")
 
 def process_save_statements(module_data: ModuleDescription, save_variables: List[str], save_common_blocks: List[str], 
                            save_all: bool) -> None:    

@@ -45,10 +45,6 @@ end block data array_initializations
         # Get block data
         block_data = file_data["block_data"]["array_initializations"]
         
-        # Get data statements
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 4)  # Four data statements
-        
         # Get common block variables
         arrays_block = block_data["common_blocks"]["arrays"]
         variables = arrays_block["variables"]
@@ -107,11 +103,7 @@ end block data multi_variable_initialization
         
         # Get block data
         block_data = file_data["block_data"]["multi_variable_initialization"]
-        
-        # Get data statements
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 9)  
-        
+                
         # Get common block variables
         multi_var_block = block_data["common_blocks"]["multi_var"]
         variables = multi_var_block["variables"]
@@ -132,63 +124,7 @@ end block data multi_variable_initialization
         
         # Test array initialization from single statement
         self.assertEqual(variables["scores"]["initial_value"], "85, 90, 95")
-        
-    @unittest.skip("fparser2 doesn't support expressions in DATA statements")
-    def test_complex_expressions_in_data(self):
-        self.fs.create_file(
-            "/fake/path/expression_data.f90",
-            contents="""\
-block data expression_initialization
-  implicit none
-  
-  ! Parameters for use in expressions
-  integer, parameter :: base = 100
-  real, parameter :: pi = 3.14159
-  
-  ! Variables to initialize
-  integer :: values(5)
-  real :: angles(4)
-  real :: calculated_values(3)
-  
-  common /expr_data/ values, angles, calculated_values
-  
-  ! Using expressions with parameters
-  data values /base, base+10, base+20, base+30, base+40/
-  
-  ! Angle calculations
-  data angles /0.0, pi/6, pi/4, pi/2/
-  
-  ! More complex calculations
-  data calculated_values /pi*1.0, pi*2.0, pi*3.0/
-  
-end block data expression_initialization
-"""
-        )
-        
-        result = extract_file_data([Path('/fake/path/expression_data.f90')])
-        file_data = result[0]
-        
-        # Get block data
-        block_data = file_data["block_data"]["expression_initialization"]
-        
-        # Get data statements
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 3)  # Three data statements
-        
-        # Get common block variables
-        expr_block = block_data["common_blocks"]["expr_data"]
-        variables = expr_block["variables"]
-        
-        # Test expression-based initializations
-        values = variables["values"]
-        angles = variables["angles"]
-        calculated = variables["calculated_values"]
-        
-        # Better assertions using assertIn
-        self.assertIn("base", values["initial_value"])
-        self.assertIn("pi", angles["initial_value"])
-        self.assertIn("pi", calculated["initial_value"])
-    
+            
     def test_implied_do_loops(self):
         self.fs.create_file(
             "/fake/path/implied_do_data.f90",
@@ -222,10 +158,6 @@ end block data implied_do_initialization
         # Get block data
         block_data = file_data["block_data"]["implied_do_initialization"]
         
-        # Get data statements
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 3)  # Three data statements with DO loops
-        
         # Get common block variables
         loop_block = block_data["common_blocks"]["loop_data"]
         variables = loop_block["variables"]
@@ -234,12 +166,9 @@ end block data implied_do_initialization
         matrix = variables["matrix"]
         diagonal = variables["diagonal"]
         
-        self.assertEqual(sequence["initial_value"], "10*0")
-        self.assertEqual(data_stmts[0]["implied_initialisation"], 'sequence(i), i=1,10')
-        self.assertEqual(matrix["initial_value"], "9*0")
-        self.assertEqual(data_stmts[1]["implied_initialisation"], '(matrix(i,j), i=1,3), j=1,3')
-        self.assertEqual(diagonal["initial_value"], "5*1.0")
-        self.assertEqual(data_stmts[2]["implied_initialisation"], 'diagonal(i,i), i=1,5')
+        self.assertEqual(sequence["initial_value"], "(sequence(i), i=1,10) = 10*0")
+        self.assertEqual(matrix["initial_value"], "((matrix(i,j), i=1,3), j=1,3) = 9*0")
+        self.assertEqual(diagonal["initial_value"], "(diagonal(i,i), i=1,5) = 5*1.0")
 
     def test_character_and_substring(self):
         self.fs.create_file(
@@ -280,10 +209,6 @@ end block data character_initialization
         # Get block data
         block_data = file_data["block_data"]["character_initialization"]
         
-        # Get data statements
-        data_stmts = block_data["data_statements"]
-        self.assertEqual(len(data_stmts), 5)  # Five data statements
-        
         # Get common block variables
         char_block = block_data["common_blocks"]["char_data"]
         variables = char_block["variables"]
@@ -297,9 +222,7 @@ end block data character_initialization
         
         # Test array of strings
         codes_value = variables["codes"]["initial_value"]
-        self.assertIn("ABC123", codes_value)
-        self.assertIn("DEF456", codes_value)
-        self.assertIn("GHI789", codes_value)
+        self.assertEqual(codes_value, "'ABC123', 'DEF456', 'GHI789'")
         
         # Test substring initialization 
         partial_value = variables["partial_init"]["initial_value"]
