@@ -19,11 +19,18 @@ from fparser.two.Fortran2003 import (
     Generic_Binding,
     Generic_Spec,
     Dtio_Generic_Spec,
-    Component_Attr_Spec
+    Component_Attr_Spec,
+    Type_Param_Name_List,
+    Type_Param_Def_Stmt,
+    Type_Param_Attr_Spec,
+    Type_Param_Decl_List,
+    Type_Param_Decl,
+    Derived_Type_Stmt,
+
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import DataComponent
-from doc4for.models.type_models import TypeDescription, GenericInterface
+from doc4for.models.type_models import TypeDescription, GenericInterface, TypeParameter
 from doc4for.models.procedure_models import ProcedureDescription, PassType
 from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
 from doc4for.parse.common_parser import (_extract_literal_value, _extract_type,
@@ -40,6 +47,7 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
     type_name = walk(type_def, Type_Name)[0].string
     type_description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""    
     attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
+    
     # if there's an extends attribute, find the parent type    
     parent_name: str = None
     if any("EXTENDS" in attribute for attribute in attributes):
@@ -56,8 +64,15 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         "enums": {},
         "procedures": {},
         "generic_interfaces": {},
-        "extends": parent_name
+        "extends": parent_name,
+        "type_parameters": {}  
     }
+
+    # Check if this is a parameterized derived type
+    derived_type_stmt = walk(type_def, Derived_Type_Stmt)[0]
+    if walk(derived_type_stmt, Type_Param_Name_List):
+        # Extract type parameters
+        type_info["type_parameters"] = extract_type_parameters(type_def)
 
     # Process the nodes inside the type
     type_comment_stack = []    
@@ -78,12 +93,64 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
 
     return type_info
 
+
+def extract_type_parameters(type_def: Derived_Type_Def) -> Dict[str, TypeParameter]:
+    """Extract type parameters from a parameterized derived type definition."""
+    parameters = {}
+    comment_stack = []
+    
+    for node in type_def.children:
+        if isinstance(node, Comment):
+            comment_stack.append(node)
+        elif isinstance(node, Type_Param_Def_Stmt):
+            # Get the parameter type (KIND or LEN)
+            param_attr_spec = walk(node, Type_Param_Attr_Spec)[0]
+            parameter_type = param_attr_spec.string.upper()
+            
+            # Process each parameter declaration
+            param_decl_list = walk(node, Type_Param_Decl_List)[0]
+            for param_item in param_decl_list.children:
+                if isinstance(param_item, Name):
+                    # Simple parameter without default
+                    param_name = param_item.string
+                    default = None
+                elif isinstance(param_item, Type_Param_Decl):
+                    # Parameter with default value
+                    param_name = walk(param_item, Name)[0].string
+                    # Extract the default value (everything after the '=')
+                    default_node = param_item.children[2]
+                    default = default_node.string if hasattr(default_node, 'string') else str(default_node)
+                else:
+                    # Skip commas and other separators
+                    continue
+                
+                # Get description from preceding comments
+                description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+                
+                # Create the parameter entry
+                parameters[param_name] = {
+                    "name": param_name,
+                    "type": "INTEGER",  # PDT parameters are always integers
+                    "parameter_type": parameter_type,
+                    "default": default,
+                    "description": description
+                }
+                
+                # Clear comment stack after using it
+                comment_stack.clear()
+        else:
+            # Clear comment stack if we hit something else
+            if not isinstance(node, Derived_Type_Stmt):
+                comment_stack.clear()
+    
+    return parameters
+
 def handle_data_component(data_component: Component_Part, 
                           comment_stack: List[Comment]) -> Dict[str, DataComponent]:  
     components: Dict[str, DataComponent] = {}
     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
         #TODO not sure this is handling comments correctly 
-        data_type, polymorphism_type = _extract_type(def_stmt)
+        data_type, polymorphism_type, type_params = _extract_type(def_stmt)
         description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
         dimension: Dimension = _extract_dimension_info(def_stmt)
         attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
@@ -104,10 +171,42 @@ def handle_data_component(data_component: Component_Part,
                 "polymorphism_type": polymorphism_type,
                 "len": length,
                 "initial_value": initial_value,
-                "attributes": attributes
+                "attributes": attributes,
+                "type_params": type_params 
             }
             components[name] = component
     return components
+
+# def handle_data_component(data_component: Component_Part, 
+#                           comment_stack: List[Comment]) -> Dict[str, DataComponent]:  
+#     components: Dict[str, DataComponent] = {}
+#     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
+#         #TODO not sure this is handling comments correctly 
+#         data_type, polymorphism_type = _extract_type(def_stmt)
+#         description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+#         dimension: Dimension = _extract_dimension_info(def_stmt)
+#         attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
+#                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
+#         type_info: Dict[str, str] = _extract_type_info(def_stmt)
+#         kind = type_info["kind"]
+#         length = type_info["length"]
+#         declarations = walk(def_stmt, Component_Decl)
+#         for declaration in declarations:
+#             name: str = walk(declaration, Name)[0].string
+#             initial_value: str = _extract_literal_value(declaration)
+#             component: DataComponent = {
+#                 "name": name,
+#                 "type": data_type,
+#                 "kind": kind,
+#                 "description": description,
+#                 "dimension": dimension,
+#                 "polymorphism_type": polymorphism_type,
+#                 "len": length,
+#                 "initial_value": initial_value,
+#                 "attributes": attributes
+#             }
+#             components[name] = component
+#     return components
 
 def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part) -> Dict[str, ProcedureDescription]:
     procedures = {}

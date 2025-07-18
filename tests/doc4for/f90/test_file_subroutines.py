@@ -128,7 +128,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE},
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None},
                 "width": {"type": "REAL", 
                            "description": "The width of the rectangle",
                            "dimension": None,
@@ -138,7 +139,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE},
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None},
                 "scale": {"type": "REAL", 
                            "description": "The scale, not used",
                            "dimension": None,
@@ -148,7 +150,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE}
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None}
             },
             "out": {
                 "area": {"type": "REAL", 
@@ -160,7 +163,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE}
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None}
             },
             "argument_interfaces": {},
             "binding_type": None
@@ -183,7 +187,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE},
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None},
                 "width": {"type": "REAL", 
                            "description": "",
                            "dimension": None,
@@ -193,7 +198,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE},
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None},
             },
             "out": {
                 "area": {"type": "REAL", 
@@ -205,7 +211,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE},
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None},
             },
             "argument_interfaces": {},
             "binding_type": None
@@ -290,7 +297,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE}
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None}
             },
             "out": {
                 "vector": {"type": "REAL", 
@@ -304,7 +312,8 @@ end module test_mod
                            "interface_name": None,
                            "kind": None,
                            "length": None,
-                           "polymorphism_type": PolymorphismType.NONE}
+                           "polymorphism_type": PolymorphismType.NONE,
+                           "type_params": None}
             },
             "argument_interfaces": {},
             "binding_type": None

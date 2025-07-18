@@ -245,7 +245,8 @@ class TestComplexCases(TestCase):
                 "default_value": None,
                 "length": None,
                 "interface_name": None,
-                "enum_type": None
+                "enum_type": None,
+                "type_params": None
             },
             "y": {
                 "description": "",
@@ -257,7 +258,8 @@ class TestComplexCases(TestCase):
                 "default_value": None,
                 "length": None,
                 "interface_name": None,
-                "enum_type": None
+                "enum_type": None,
+                "type_params": None
             },
             "z": {
                 "description": "",
@@ -269,7 +271,8 @@ class TestComplexCases(TestCase):
                 "default_value": None,
                 "length": None,
                 "interface_name": None,
-                "enum_type": None
+                "enum_type": None,
+                "type_params": None
             }
         }
         self.assertEqual(subroutine["in"], expected)

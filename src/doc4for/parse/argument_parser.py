@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from typing import Dict, TYPE_CHECKING, Tuple
+from typing import Dict, Tuple
 from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
     Dimension_Attr_Spec,
@@ -17,8 +17,6 @@ from fparser.two.utils import walk
 from doc4for.models.procedure_models import Argument
 from doc4for.models.dimension_models import ArrayBound, BoundType
 from doc4for.models.variable_models import PolymorphismType
-if TYPE_CHECKING:
-    from doc4for.models.dimension_models import Dimension
 from doc4for.parse.common_parser import _extract_type_info, _extract_dimension_info, _extract_entity_info
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -46,7 +44,8 @@ def parse_procedure_argument(declaration: Procedure_Declaration_Stmt) -> Tuple[D
             "default_value": None,
             "interface_name": interface_name,  
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE        
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None  
         }
     return arguments, intent
 
@@ -95,6 +94,7 @@ def parse_arguments(declaration: Type_Declaration_Stmt) -> Tuple[Dict[str, Argum
             "default_value": default_value,
             "interface_name": None,  
             "enum_type": None, 
-            "polymorphism_type": type_info.get("polymorphism_type")
+            "polymorphism_type": type_info.get("polymorphism_type"),
+            "type_params": type_info.get("type_params")  # Changed from type_param to type_params
         } 
     return arguments, intent

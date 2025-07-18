@@ -190,7 +190,8 @@ class TestAttributes(TestCase):
                 "length": None,
                 "interface_name": None,
                 "enum_type": None,
-                "polymorphism_type": PolymorphismType.NONE
+                "polymorphism_type": PolymorphismType.NONE,
+                "type_params": None
             }
         }
         self.assertEqual(in_arguments, expected)
@@ -278,7 +279,8 @@ class TestAttributes(TestCase):
                 "length": None,
                 "interface_name": None,
                 "enum_type": None,
-                "polymorphism_type": PolymorphismType.NONE
+                "polymorphism_type": PolymorphismType.NONE,
+                "type_params": None
             }
         }
         self.assertEqual(arguments, expected)
@@ -371,7 +373,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_y = {
             "type": "CHARACTER",
@@ -383,7 +386,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_z = {
             "type": "REAL",
@@ -395,7 +399,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         self.assertEqual(in_arguments["x"], expected_x)
         self.assertEqual(in_arguments["y"], expected_y)
@@ -436,7 +441,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_b = {
             "type": "REAL",
@@ -448,7 +454,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_c = {
             "type": "CHARACTER",
@@ -460,7 +467,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_d = {
             "type": "INTEGER",
@@ -472,7 +480,8 @@ class TestAttributes(TestCase):
             "default_value": "42",
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_e = {
             "type": "REAL",
@@ -484,7 +493,8 @@ class TestAttributes(TestCase):
             "default_value": None,
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         expected_f = {
             "type": "LOGICAL",
@@ -496,7 +506,8 @@ class TestAttributes(TestCase):
             "default_value": ".true.",
             "interface_name": None,
             "enum_type": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         self.assertEqual(in_arguments["a"], expected_a)
         self.assertEqual(in_arguments["c"], expected_c)

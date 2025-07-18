@@ -53,7 +53,8 @@ class TestFunctionArguments(TestCase):
             "default_value": None,
             "kind": None,
             "length": None, 
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         self.assertEqual(returns, expected_returns)
         self.assertEqual(function["arguments"], [])
@@ -96,7 +97,8 @@ class TestFunctionArguments(TestCase):
                                         "default_value": None,
                                         "kind": None,
                                         "length": None, 
-                                        "polymorphism_type": PolymorphismType.NONE                                                                              
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None                                                                           
                                        })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -107,7 +109,8 @@ class TestFunctionArguments(TestCase):
                                         "default_value": None,
                                         "kind": None,
                                         "length": None, 
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                        })
         self.assertCountEqual(function["arguments"], ["x", "y"])
         self.assertEqual(len(outputs), 0)
@@ -120,7 +123,8 @@ class TestFunctionArguments(TestCase):
                                     "default_value": None,
                                     "kind": None,
                                     "length": None, 
-                                    "polymorphism_type": PolymorphismType.NONE
+                                    "polymorphism_type": PolymorphismType.NONE,
+                                    "type_params": None
                                    })
 
     def test_function_with_return_prefix(self):
@@ -162,7 +166,8 @@ class TestFunctionArguments(TestCase):
             "length": None,
             "kind": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         }
         self.assertEqual(returns, expected_returns)
         self.assertEqual(function["arguments"], ["a", "b"])
@@ -1087,13 +1092,16 @@ class TestFunctionArguments(TestCase):
         results1 = function1["return"]
         
         self.assertIn("fixed_matrix", inputs1)
-        self.assertEqual(inputs1["fixed_matrix"]["type"], "matrix_type(k=real64, rows=3, cols=3)")
+        self.assertEqual(inputs1["fixed_matrix"]["type"], "matrix_type")
+        self.assertEqual(inputs1["fixed_matrix"]["type_params"], "(k=real64, rows=3, cols=3)")
         
         self.assertIn("variable_matrix", inputs1)
-        self.assertEqual(inputs1["variable_matrix"]["type"], "matrix_type(k=real32, :, :)")
+        self.assertEqual(inputs1["variable_matrix"]["type"], "matrix_type")
+        self.assertEqual(inputs1["variable_matrix"]["type_params"], "(k=real32, :, :)")
         
         self.assertIn("vectors", inputs1)
-        self.assertEqual(inputs1["vectors"]["type"], "vector_type(precision=real64, :)")
+        self.assertEqual(inputs1["vectors"]["type"], "vector_type")
+        self.assertEqual(inputs1["vectors"]["type_params"], "(precision=real64, :)")
         if inputs1["vectors"]["dimension"]:
             self.assertEqual(len(inputs1["vectors"]["dimension"]["dimensions"]), 1)
             dim = inputs1["vectors"]["dimension"]["dimensions"][0]
@@ -1112,7 +1120,8 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(inputs2["cols"]["type"], "INTEGER")
         self.assertEqual(inputs2["cols"]["dimension"], None)
         
-        self.assertEqual(results2["type"], "matrix_type(k=real64, :, :)")
+        self.assertEqual(results2["type"], "matrix_type")
+        self.assertEqual(results2["type_params"], "(k=real64, :, :)")
 
     def test_function_with_simple_parameterized_types(self):
         """Test simpler case of parameterized types that might be more commonly supported"""
@@ -1163,7 +1172,8 @@ class TestFunctionArguments(TestCase):
         self.assertEqual(inputs["max_length"]["dimension"], None)
         
         self.assertIn("str_array", inputs)
-        self.assertEqual(inputs["str_array"]["type"], "string_type(max_len=max_length)")
+        self.assertEqual(inputs["str_array"]["type"], "string_type")
+        self.assertEqual(inputs["str_array"]["type_params"], "(max_len=max_length)")
         if inputs["str_array"]["dimension"]:
             self.assertEqual(len(inputs["str_array"]["dimension"]["dimensions"]), 1)
             dim = inputs["str_array"]["dimension"]["dimensions"][0]

@@ -10,6 +10,7 @@ Argument = TypedDict(
     "Argument",
     {
         "type": str,
+        "type_param": Optional[str], # for parameterized types
         "kind": Optional[str],
         "length": Optional[str], # character length
         "description": str,
@@ -17,7 +18,7 @@ Argument = TypedDict(
         "attributes": List[str],
         "default_value": Optional[str],
         "interface_name": Optional[str],
-        "enum_type": Optional[str],  # Reference to enum if this is an enum type
+        "enum_type": Optional[str],  # reference to enum if this is an enum type
         "polymorphism_type": Optional[PolymorphismType], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
     },
 )

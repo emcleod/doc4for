@@ -75,11 +75,11 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
             
             # filter to keep only the actual arguments
             dummy_arguments = {name: var for name, var in parsed_arguments.items() if name in dummy_arg_names}
-            if intent == 'IN':
+            if intent == "IN":
                 intent_in.update(dummy_arguments)
-            if intent == 'OUT':
+            if intent == "OUT":
                 intent_out.update(dummy_arguments)
-            if intent == 'INOUT' or not intent:
+            if intent == "INOUT" or not intent:
                 intent_in.update(dummy_arguments)
                 intent_out.update(dummy_arguments)
         

@@ -62,6 +62,7 @@ DataComponent = TypedDict(
     {
         "description": str,
         "type": str,
+        "type_params": Optional[str], # for parameterized types
         "name": str,
         "initial_value": Optional[str],
         "dimension": Optional[Dimension],

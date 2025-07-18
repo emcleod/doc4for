@@ -42,7 +42,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -53,7 +54,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
 
     def test_subroutine_in_annotation_name_mismatch(self):
@@ -88,7 +90,8 @@ class TestSubroutineAnnotations(TestCase):
                                             "attributes": [],
                                             "kind": None,
                                             "length": None,
-                                            "polymorphism_type": PolymorphismType.NONE
+                                            "polymorphism_type": PolymorphismType.NONE,
+                                            "type_params": None
                                             })
             self.assertEqual(inputs["y"], {"type": "REAL", 
                                            "description": "", 
@@ -99,7 +102,8 @@ class TestSubroutineAnnotations(TestCase):
                                             "attributes": [],
                                             "kind": None,
                                             "length": None,
-                                            "polymorphism_type": PolymorphismType.NONE
+                                            "polymorphism_type": PolymorphismType.NONE,
+                                            "type_params": None
                                             })
             self.assertNotIn("z", inputs)
             self.assertIn("Warning: 'in' annotation 'z' not found in arguments [['x', 'y']]", cm.output[0])
@@ -136,7 +140,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         outputs = subroutine["out"]
         self.assertEqual(outputs["y"], {"type": "REAL", 
@@ -148,7 +153,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "attributes": [],
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
 
     def test_subroutine_out_annotation_name_mismatch(self):
@@ -184,7 +190,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "kind": None,
                                        "length": None,
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         outputs = subroutine["out"]
         self.assertEqual(outputs["y"], {"type": "REAL", 
@@ -196,7 +203,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "kind": None,
                                         "length": None,
                                         "default_value": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
         self.assertNotIn("z", outputs)
 
@@ -232,7 +240,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(outputs["x"], {"type": "REAL", 
                                         "description": "", 
@@ -243,7 +252,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "attributes": [],
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
 
     def test_subroutine_inout_annotation_name_mismatch(self):
@@ -278,7 +288,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(outputs["x"], {"type": "REAL", 
                                         "description": "", 
@@ -289,7 +300,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "attributes": [],
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
         self.assertNotIn("z", inputs)
         self.assertNotIn("z", outputs)
@@ -326,7 +338,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "The second input", 
@@ -337,7 +350,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
 
     def test_subroutine_out_annotation_name_match_with_description(self):
@@ -373,7 +387,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         outputs = subroutine["out"]
         self.assertEqual(outputs["y"], {"type": "REAL", 
@@ -385,7 +400,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "attributes": [],
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
 
     def test_subroutine_inout_annotation_name_match_with_description(self):
@@ -420,7 +436,8 @@ class TestSubroutineAnnotations(TestCase):
                                        "attributes": [],
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(outputs["x"], {"type": "REAL", 
                                         "description": "The variable to be updated", 
@@ -431,7 +448,8 @@ class TestSubroutineAnnotations(TestCase):
                                         "attributes": [],
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
 
 if __name__ == "__main__":

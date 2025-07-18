@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import List, Dict, Any, Tuple, TypeVar, Generic, Type, Protocol
+from typing import List, Dict, Any, Tuple, TypeVar, Generic, Type, Protocol, Optional
 from fparser.two.Fortran2003 import (
     Comment, 
     Name, 
@@ -25,7 +25,10 @@ from fparser.two.Fortran2003 import (
     Component_Decl,
     Component_Initialization,
     Deferred_Shape_Spec,
-    Part_Ref
+    Part_Ref,
+    Derived_Type_Spec,
+    Type_Name,
+    Type_Param_Spec_List
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
@@ -80,22 +83,36 @@ class FortranHandler(Generic[T]):
     def handle_ignored_item(self, item: Any, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
         logger.info("Ignored type %s", type(item))
 
-def _extract_type(declaration: Any) -> Tuple[str, PolymorphismType]: #TODO is there a way to narrow from Any
+def _extract_type(declaration: Any) -> Tuple[str, PolymorphismType, Optional[str]]:
+    """Extract type information, returning (base_type, polymorphism_type, type_params)"""
     types = walk(declaration, Intrinsic_Type_Spec)
     if len(types) == 1:
         # we have an intrinsic type
-        return types[0].children[0], PolymorphismType.NONE
+        return types[0].children[0], PolymorphismType.NONE, None
+    
     types = walk(declaration, Declaration_Type_Spec)
     if len(types) == 1:
         # we have either a TYPE or a CLASS
         type_spec, type_details = types[0].children
         if type_spec == "TYPE":
-            return type_details.string, PolymorphismType.NONE
+            # Check if it's a parameterized derived type
+            if isinstance(type_details, Derived_Type_Spec):
+                type_name = walk(type_details, Type_Name)[0].string
+                # Check for type parameters
+                param_list = walk(type_details, Type_Param_Spec_List)
+                if param_list:
+                    # Extract the parameter string
+                    type_params = f"({param_list[0].string})"
+                    return type_name, PolymorphismType.NONE, type_params
+                else:
+                    return type_name, PolymorphismType.NONE, None
+            else:
+                return type_details.string, PolymorphismType.NONE, None
         elif type_spec == "CLASS":
             if isinstance(type_details, str) and type_details == "*":
-                return type_details, PolymorphismType.UNLIMITED
+                return type_details, PolymorphismType.UNLIMITED, None
             elif hasattr(type_details, "string"):
-                return type_details.string, PolymorphismType.LIMITED
+                return type_details.string, PolymorphismType.LIMITED, None
     raise ValueError("Not handled yet TODO", types)
 
 def _extract_kind(declaration) -> str:
@@ -168,7 +185,7 @@ def _extract_length_and_kind(declaration: Any) -> Tuple[str, str]:
 # TODO split these up so each only handles one sort of thing
 def _extract_type_info(declaration) -> Dict[str, str]:
     info = {}
-    info["base_type"], info["polymorphism_type"] = _extract_type(declaration)
+    info["base_type"], info["polymorphism_type"], info["type_params"] = _extract_type(declaration)
     length = _extract_char_length(declaration)
     kind = _extract_kind(declaration)
     if not length and not kind:
@@ -208,23 +225,6 @@ def _extract_literal_value(node):
         return str(node.children[0]) if node.children else str(node)
     
     return str(node)
-# def _extract_literal_value(node):
-#     # Handle unary expressions (like negative numbers)
-#     if isinstance(node, Level_2_Unary_Expr):
-#         # node.children should be (operator, operand)
-#         operator = str(node.children[0])
-#         operand = node.children[1]
-        
-#         # If it's a negative literal, combine the operator with the value
-#         if operator == '-' and isinstance(operand, (Int_Literal_Constant, Real_Literal_Constant)):
-#             value = str(operand.children[0]) if operand.children else str(operand)
-#             return f'-{value}'  # Combine the minus with the literal value
-    
-#     # Check if it's a literal constant
-#     if isinstance(node, (Int_Literal_Constant, Real_Literal_Constant)):
-#         return str(node.children[0]) if node.children else str(node)
-    
-#     return str(node)
 
 def _extract_entity_info(entity_decl):
     """Extract name, dimension, and value from an entity declaration."""

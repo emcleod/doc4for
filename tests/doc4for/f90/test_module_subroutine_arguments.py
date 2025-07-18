@@ -49,7 +49,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
                                        "dimension": None, 
@@ -59,7 +60,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["res"], {"type": "REAL", 
                                           "description": "", 
@@ -70,7 +72,8 @@ class TestSubroutineArguments(TestCase):
                                           "length": None,
                                           "attributes": [],
                                           "default_value": None,
-                                          "polymorphism_type": PolymorphismType.NONE})
+                                          "polymorphism_type": PolymorphismType.NONE,
+                                          "type_params": None})
 
     def test_subroutine_with_scalar_args_2(self):
         self.fs.create_file(
@@ -110,7 +113,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
                                        "dimension": None, 
@@ -120,7 +124,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["res"], {"type": "REAL", 
                                           "description": "", 
@@ -131,7 +136,8 @@ class TestSubroutineArguments(TestCase):
                                           "length": None,
                                           "attributes": [],
                                           "default_value": None,
-                                          "polymorphism_type": PolymorphismType.NONE})
+                                          "polymorphism_type": PolymorphismType.NONE,
+                                          "type_params": None})
 
     def test_subroutine_with_kind_length_default_value(self):
         self.fs.create_file(
@@ -171,7 +177,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(inputs["y"], {"type": "CHARACTER", 
                                        "description": "", 
                                        "dimension": None, 
@@ -181,7 +188,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": "20",
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["res"], {"type": "REAL", 
                                           "description": "", 
@@ -192,7 +200,8 @@ class TestSubroutineArguments(TestCase):
                                           "length": None,
                                           "attributes": [],
                                           "default_value": "35",
-                                          "polymorphism_type": PolymorphismType.NONE})
+                                          "polymorphism_type": PolymorphismType.NONE,
+                                          "type_params": None})
 
     def test_subroutine_with_array_args(self):
         self.fs.create_file(
@@ -232,7 +241,8 @@ class TestSubroutineArguments(TestCase):
             "length": None,
             "attributes": [],
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE})
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["res"], {"type": "REAL", 
                                           "description": "", 
@@ -243,7 +253,8 @@ class TestSubroutineArguments(TestCase):
                                           "length": None,
                                           "attributes": [],
                                           "default_value": None,
-                                          "polymorphism_type": PolymorphismType.NONE})
+                                          "polymorphism_type": PolymorphismType.NONE,
+                                          "type_params": None})
 
     def test_subroutine_with_inout_args(self):
         self.fs.create_file(
@@ -281,7 +292,8 @@ class TestSubroutineArguments(TestCase):
                                        "length": None,
                                        "attributes": [],
                                        "default_value": None,
-                                       "polymorphism_type": PolymorphismType.NONE})
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["x"], {"type": "REAL", 
                                         "description": "", 
@@ -292,7 +304,8 @@ class TestSubroutineArguments(TestCase):
                                         "length": None,
                                         "attributes": [],
                                         "default_value": None,
-                                        "polymorphism_type": PolymorphismType.NONE})
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None})
 
     def test_subroutine_with_mixed_args(self):
         self.fs.create_file(
@@ -332,7 +345,8 @@ class TestSubroutineArguments(TestCase):
                                             "length": None,
                                             "attributes": [],
                                             "default_value": None,
-                                            "polymorphism_type": PolymorphismType.NONE
+                                            "polymorphism_type": PolymorphismType.NONE,
+                                            "type_params": None
                                             })
         self.assertEqual(inputs["arr"], {
             "type": "REAL", 
@@ -344,7 +358,8 @@ class TestSubroutineArguments(TestCase):
             "length": None,
             "attributes": [],
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE})
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None})
         self.assertEqual(len(outputs), 1)
         self.assertEqual(outputs["res"], {
             "type": "REAL", 
@@ -356,7 +371,8 @@ class TestSubroutineArguments(TestCase):
             "length": None,
             "attributes": ["ALLOCATABLE"],
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE})
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None})
 
     def test_subroutine_with_polymorphic_args(self):
         self.fs.create_file(
@@ -456,7 +472,8 @@ end module shape_module
                     "length": None,
                     "attributes": [],
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.LIMITED
+                    "polymorphism_type": PolymorphismType.LIMITED,
+                    "type_params": None
                     }
         self.assertEqual(subroutine["arguments"], ["s"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -473,7 +490,8 @@ end module shape_module
                       "length": None,
                       "attributes": [],
                       "default_value": None,
-                      "polymorphism_type": PolymorphismType.NONE
+                      "polymorphism_type": PolymorphismType.NONE,
+                      "type_params": None
                       }
         self.assertEqual(subroutine["arguments"], ["s"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -490,7 +508,8 @@ end module shape_module
                     "length": None,
                     "attributes": [],
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None
                     }
         self.assertEqual(subroutine["arguments"], ["x"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -507,7 +526,8 @@ end module shape_module
                     "length": None,
                     "attributes": [],
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.LIMITED
+                    "polymorphism_type": PolymorphismType.LIMITED,
+                    "type_params": None
                     }
         self.assertEqual(subroutine["arguments"], ["this"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -524,7 +544,8 @@ end module shape_module
                     "length": None,
                     "attributes": [],
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.LIMITED
+                    "polymorphism_type": PolymorphismType.LIMITED,
+                    "type_params": None
                     }
         self.assertEqual(subroutine["arguments"], ["this"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -541,7 +562,8 @@ end module shape_module
                     "length": None,
                     "attributes": [],
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.LIMITED
+                    "polymorphism_type": PolymorphismType.LIMITED,
+                    "type_params": None
                     }
         self.assertEqual(subroutine["arguments"], ["this"])
         self.assertEqual(len(subroutine["in"]), 1)
@@ -617,7 +639,8 @@ end module shape_module
                       "length": None,
                       "attributes": ["VALUE"],
                       "default_value": None,
-                      "polymorphism_type": PolymorphismType.NONE
+                      "polymorphism_type": PolymorphismType.NONE,
+                      "type_params": None
                       }
         self.assertEqual(subroutine["in"]["n"], expected_n)
 
@@ -631,7 +654,8 @@ end module shape_module
                         "length": None,
                         "attributes": [],
                         "default_value": None,
-                        "polymorphism_type": PolymorphismType.NONE
+                        "polymorphism_type": PolymorphismType.NONE,
+                        "type_params": None
                         }
         self.assertEqual(subroutine["in"]["data"], expected_data)
         self.assertEqual(subroutine["out"]["data"], expected_data)
@@ -646,7 +670,8 @@ end module shape_module
                             "length": None,
                             "attributes": ["VALUE"],
                             "default_value": None,
-                            "polymorphism_type": PolymorphismType.NONE
+                            "polymorphism_type": PolymorphismType.NONE,
+                            "type_params": None
                             }
         self.assertEqual(subroutine["in"]["callback"], expected_callback)
 
@@ -666,7 +691,8 @@ end module shape_module
                         "length": None,
                         "attributes": ["VALUE"],
                         "default_value": None,
-                        "polymorphism_type": PolymorphismType.NONE
+                        "polymorphism_type": PolymorphismType.NONE,
+                        "type_params": None
                         }
         self.assertEqual(function["in"]["size"], expected_size)
 
@@ -682,7 +708,8 @@ end module shape_module
                         "length": None,
                         "attributes": [],
                         "default_value": None,
-                        "polymorphism_type": PolymorphismType.NONE
+                        "polymorphism_type": PolymorphismType.NONE,
+                        "type_params": None
                         }
         self.assertEqual(function["in"]["arr"], expected_arr)
 

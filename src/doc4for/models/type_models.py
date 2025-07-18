@@ -15,6 +15,17 @@ GenericInterface = TypedDict(
     },
 )
 
+TypeParameter = TypedDict(
+    "TypeParameter",
+    {
+        "name": str,
+        "type": str,
+        "parameter_type": str,  # "KIND" or "LEN"
+        "default": Optional[str],
+        "description": str,
+    },
+)
+
 TypeDescription = TypedDict(
     "TypeDescription",
     {
@@ -25,25 +36,7 @@ TypeDescription = TypedDict(
         "enums": Dict[str, EnumDescription],  
         "procedures": Dict[str, ProcedureDescription],
         "generic_interfaces": Dict[str, GenericInterface],
-        "extends": Optional[str]
+        "extends": Optional[str],
+        "type_parameters": Dict[str, TypeParameter]
     },
 )
-# for parameterized derived types
-# TypeDescription = TypedDict(
-#     "TypeDescription",
-#     {
-#         # Existing fields...
-#         "type_parameters": Dict[str, TypeParameter],
-#     },
-# )
-
-# TypeParameter = TypedDict(
-#     "TypeParameter",
-#     {
-#         "name": str,
-#         "type": str,
-#         "parameter_type": str,  # "KIND" or "LEN"
-#         "default": Optional[str],
-#         "description": str,
-#     },
-# )

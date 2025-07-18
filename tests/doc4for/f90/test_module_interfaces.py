@@ -58,7 +58,8 @@ module abstract_interface_mod
                                                 "kind": None,
                                                 "length": None,
                                                 "default_value": None,
-                                                "polymorphism_type": PolymorphismType.NONE
+                                                "polymorphism_type": PolymorphismType.NONE,
+                                                "type_params": None
                                                 }})
         self.assertEqual(function["out"], {})
         self.assertEqual(function["return"], {"type": "REAL", 
@@ -70,7 +71,8 @@ module abstract_interface_mod
                                                 "kind": None,
                                                 "length": None,
                                                 "default_value": None,
-                                                "polymorphism_type": PolymorphismType.NONE
+                                                "polymorphism_type": PolymorphismType.NONE,
+                                                "type_params": None
                                               })
 
     def test_abstract_interface_with_nested_interface(self):
@@ -138,7 +140,8 @@ end module test_mod
                     "kind": None,
                     "length": None,
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None
                    },
             "b": {"type": "REAL", 
                   "description": "Upper bound", 
@@ -149,7 +152,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "f": {"type": "PROCEDURE", 
                   "description": "Function to integrate", 
@@ -160,7 +164,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(function["out"], {})
@@ -174,7 +179,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Check the nested interface for f
@@ -197,7 +203,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(nested_function["out"], {})
@@ -211,7 +218,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
             }
         )
         self.assertEqual(nested_interface["attributes"], [])  # not abstract
@@ -280,7 +288,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(integrand["return"], 
@@ -293,7 +302,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
         })
 
         # Check Simpson function and its use of the procedure interface
@@ -309,7 +319,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "a": {"type": "REAL", 
                   "description": "Lower bound", 
@@ -320,7 +331,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "b": {"type": "REAL", 
                   "description": "Upper bound", 
@@ -331,7 +343,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(simpson["return"], {
@@ -344,7 +357,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
         
     def test_subroutine_interface(self):
@@ -402,7 +416,8 @@ end module test_mod
                           "kind": None,
                           "length": None,
                           "default_value": None,
-                          "polymorphism_type": PolymorphismType.NONE},
+                          "polymorphism_type": PolymorphismType.NONE,
+                          "type_params": None},
             "data": {"type": "REAL", 
                      "description": "Input/output array to process", 
                      "dimension": {"dimensions": [ArrayBound(BoundType.ASSUMED_SHAPE)]},
@@ -412,7 +427,8 @@ end module test_mod
                      "kind": None,
                      "length": None,
                      "default_value": None,
-                     "polymorphism_type": PolymorphismType.NONE}
+                     "polymorphism_type": PolymorphismType.NONE,
+                     "type_params": None}
         })
         self.assertEqual(process_data["out"], {
             "data": {"type": "REAL", 
@@ -424,7 +440,8 @@ end module test_mod
                     "kind": None,
                     "length": None,
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE}
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None}
         })
         self.assertNotIn("return", process_data)  # It"s a subroutine, so no return value
 
@@ -448,7 +465,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
             }  
         })
         self.assertEqual(processor_proc["out"], {
@@ -461,7 +479,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertNotIn("return", processor_proc)
@@ -554,7 +573,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "df": {"type": "PROCEDURE", 
                    "description": "Derivative of objective function", 
@@ -565,7 +585,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                    },
             "constraint": {"type": "PROCEDURE", 
                            "description": "Constraint function", 
@@ -576,7 +597,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                            },
             "x0": {"type": "REAL", 
                    "description": "Initial guess", 
@@ -587,7 +609,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                    }
         })
         self.assertEqual(optimize["return"], {
@@ -600,7 +623,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Check nested interfaces
@@ -621,7 +645,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(f_proc["return"], {
@@ -634,7 +659,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Check derivative function interface
@@ -652,7 +678,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(df_proc["return"], {
@@ -665,7 +692,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Check constraint function interface
@@ -683,7 +711,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(constraint_proc["return"], {
@@ -696,7 +725,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
     def test_interface_position_matching(self):
@@ -773,7 +803,8 @@ end module test_mod
                             "kind": None,
                             "length": None,
                             "default_value": None,
-                            "polymorphism_type": PolymorphismType.NONE
+                            "polymorphism_type": PolymorphismType.NONE,
+                            "type_params": None
                           },  
             "gradient": {"type": "PROCEDURE", 
                          "description": "Gradient function", 
@@ -784,7 +815,8 @@ end module test_mod
                         "kind": None,
                         "length": None,
                         "default_value": None,
-                        "polymorphism_type": PolymorphismType.NONE
+                        "polymorphism_type": PolymorphismType.NONE,
+                        "type_params": None
                          },  
             "x0": {"type": "REAL", 
                    "description": "Initial guess", 
@@ -795,7 +827,8 @@ end module test_mod
                     "kind": None,
                     "length": None,
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None
                    }
         })
         self.assertEqual(minimize["return"], {
@@ -808,7 +841,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Check nested interfaces - they should be associated with arguments by position
@@ -832,7 +866,8 @@ end module test_mod
                     "kind": None,
                     "length": None,
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None
                   }
         })
         self.assertEqual(objective_proc["return"], {
@@ -845,7 +880,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
         # Second interface should be associated with "gradient" parameter
@@ -866,7 +902,8 @@ end module test_mod
                 "kind": None,
                 "length": None,
                 "default_value": None,
-                "polymorphism_type": PolymorphismType.NONE
+                "polymorphism_type": PolymorphismType.NONE,
+                "type_params": None
                   }
         })
         self.assertEqual(gradient_proc["return"], {
@@ -879,7 +916,8 @@ end module test_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })        
 
     def test_named_interface_explicit_procedure(self):
@@ -977,7 +1015,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(normalize["out"], {})
@@ -993,7 +1032,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
         })
 
         # Check magnitude function
@@ -1010,7 +1050,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(magnitude["out"], {})
@@ -1024,7 +1065,8 @@ end module test_mod
                 "kind": None,
                 "length": None,
                 "default_value": None,
-                "polymorphism_type": PolymorphismType.NONE
+                "polymorphism_type": PolymorphismType.NONE,
+                "type_params": None
         })
 
         # Check scale subroutine
@@ -1041,7 +1083,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                        },
             "v": {"type": "REAL", 
                   "description": "Vector to scale", 
@@ -1052,7 +1095,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(scale["out"], {
@@ -1066,7 +1110,8 @@ end module test_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
             }
         })
         self.assertNotIn("return", scale)  # It"s a subroutine, so no return value
@@ -1174,7 +1219,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "b": {"type": "REAL", 
                   "description": "Second matrix", 
@@ -1185,7 +1231,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(add["out"], {})
@@ -1204,7 +1251,8 @@ end module matrix_ops_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
     def test_operator_interface_explicit_procedure(self):
@@ -1283,7 +1331,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "b": {"type": "REAL", 
                   "description": "Second vector", 
@@ -1294,7 +1343,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
             }
         })
         self.assertEqual(add_vectors["out"], {})
@@ -1310,7 +1360,8 @@ end module matrix_ops_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE                            
+            "polymorphism_type": PolymorphismType.NONE,                          
+            "type_params": None
         })
 
         # Check add_vector_scalar function
@@ -1327,7 +1378,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   },
             "b": {"type": "REAL", 
                   "description": "Scalar value", 
@@ -1338,7 +1390,8 @@ end module matrix_ops_mod
                   "kind": None,
                   "length": None,
                   "default_value": None,
-                  "polymorphism_type": PolymorphismType.NONE
+                  "polymorphism_type": PolymorphismType.NONE,
+                  "type_params": None
                   }
         })
         self.assertEqual(add_vector_scalar["out"], {})
@@ -1354,7 +1407,8 @@ end module matrix_ops_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
 
     def test_operator_interface_module_procedure(self):
@@ -1782,7 +1836,8 @@ end module matrix_ops_mod
                     "kind": None,
                     "length": None,
                     "default_value": None,
-                    "polymorphism_type": PolymorphismType.NONE
+                    "polymorphism_type": PolymorphismType.NONE,
+                    "type_params": None
                   }
         })
         self.assertEqual(proc["out"], {})
@@ -1796,7 +1851,8 @@ end module matrix_ops_mod
             "kind": None,
             "length": None,
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None
         })
         self.assertEqual(proc["attributes"], [])
         self.assertEqual(proc["argument_interfaces"], {})

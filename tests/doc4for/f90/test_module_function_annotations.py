@@ -38,7 +38,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -49,7 +50,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
 
     def test_in_annotation_description(self):
@@ -87,7 +89,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -98,7 +101,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
 
     def test_missing_description_warning(self):
@@ -154,7 +158,8 @@ class TestFunctionAnnotations(TestCase):
                                            "default_value": None,
                                            "kind": None,
                                            "length": None,
-                                           "polymorphism_type": PolymorphismType.NONE
+                                           "polymorphism_type": PolymorphismType.NONE,
+                                           "type_params": None
                                         })
             self.assertEqual(inputs["y"], {"type": "INTEGER", 
                                            "description": "", 
@@ -165,7 +170,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
             self.assertNotIn("z", inputs)
             # check that there's a warning for wrong variable name in comment
@@ -206,7 +212,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         outputs = function["out"]
         self.assertEqual(outputs["y"], {"type": "REAL", 
@@ -217,7 +224,8 @@ class TestFunctionAnnotations(TestCase):
                                         "default_value": None,
                                         "kind": None,
                                         "length": None,
-                                        "polymorphism_type": PolymorphismType.NONE
+                                        "polymorphism_type": PolymorphismType.NONE,
+                                        "type_params": None
                                         })
 
     def test_out_annotation_name_mismatch(self):
@@ -254,7 +262,8 @@ class TestFunctionAnnotations(TestCase):
                                            "default_value": None,
                                            "kind": None,
                                            "length": None,
-                                           "polymorphism_type": PolymorphismType.NONE
+                                           "polymorphism_type": PolymorphismType.NONE,
+                                           "type_params": None
                                         })
             self.assertEqual(inputs["y"], {"type": "REAL", 
                                            "description": "", 
@@ -265,7 +274,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                         })
             self.assertNotIn("z", inputs)
             # check that there's a warning for wrong variable name in comment
@@ -306,7 +316,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -317,7 +328,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(outputs["x"], {"type": "REAL", 
                                         "description": "", 
@@ -328,7 +340,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
 
     def test_inout_annotation_name_mismatch(self):
@@ -401,7 +414,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         self.assertEqual(inputs["y"], {"type": "REAL", 
                                        "description": "", 
@@ -412,7 +426,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                        })
         results = function["return"]
         self.assertEqual(results, {"type": "INTEGER", 
@@ -424,7 +439,8 @@ class TestFunctionAnnotations(TestCase):
                                    "default_value": None,
                                    "kind": None,
                                    "length": None,
-                                   "polymorphism_type": PolymorphismType.NONE
+                                   "polymorphism_type": PolymorphismType.NONE,
+                                   "type_params": None
                                    })
 
     def test_no_description_for_return(self):
@@ -511,7 +527,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(inputs["z"], {"type": "INTEGER", 
                                        "description": "The final variable", 
@@ -522,7 +539,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(outputs["y"], {"type": "REAL", 
                                         "description": "The second variable", 
@@ -533,7 +551,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(outputs["z"], {"type": "INTEGER", 
                                         "description": "The final variable", 
@@ -544,7 +563,8 @@ class TestFunctionAnnotations(TestCase):
                                        "default_value": None,
                                        "kind": None,
                                        "length": None,
-                                       "polymorphism_type": PolymorphismType.NONE
+                                       "polymorphism_type": PolymorphismType.NONE,
+                                       "type_params": None
                                     })
         self.assertEqual(function["return"], {"type": "REAL", 
                                               "description": "The result", 
@@ -555,7 +575,8 @@ class TestFunctionAnnotations(TestCase):
                                             "default_value": None,
                                             "kind": None,
                                             "length": None,
-                                            "polymorphism_type": PolymorphismType.NONE
+                                            "polymorphism_type": PolymorphismType.NONE,
+                                            "type_params": None
                                         })
 
 if __name__ == "__main__":

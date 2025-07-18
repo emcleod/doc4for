@@ -29,14 +29,23 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
         return None
     
     # Handle return type and return variable
-    return_type, return_variable = None, None
+    return_type, return_variable, type_params = None, None, None
     if common["prefixes"]:
         for node in common["prefixes"][0].children:
             if not isinstance(node, Prefix_Spec):
                 if return_type is not None:
                     logger.error(f"Found more than one return type for {common['procedure_name']}")
                     continue
-                return_type = node.string.upper() if isinstance(node, Intrinsic_Type_Spec) else node.string
+                
+                # Check if this is a parameterized type
+                if isinstance(node, str) and "(" in node and ")" in node and not node.upper().startswith(("REAL", "INTEGER", "COMPLEX")):
+                    # Split the type and parameters
+                    base_name = node.split("(")[0].strip()
+                    params = "(" + node.split("(", 1)[1]
+                    return_type = base_name
+                    type_params = params
+                else:
+                    return_type = node.string.upper() if isinstance(node, Intrinsic_Type_Spec) else node.string
     
     # Handle suffixes
     suffixes = walk(common["procedure_declaration"], Suffix)
@@ -63,7 +72,8 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
             "length": None,
             "attributes": [],
             "default_value": None,
-            "polymorphism_type": PolymorphismType.NONE
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": type_params  # Added type_params
         }
     
     function_description = {

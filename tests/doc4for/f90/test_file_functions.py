@@ -59,7 +59,7 @@ end module test_mod
             "in": {},
             "return": {"description": "Always returns 42", "dimension": None, "type": "INTEGER",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -75,7 +75,7 @@ end module test_mod
             "in": {},
             "return": {"description": "", "dimension": None, "type": "INTEGER",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -126,18 +126,18 @@ end module test_mod
             "in": {
                 "length": {"description": "The length of the rectangle", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
                 "width": {"description": "The width of the rectangle", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
                 "scale": {"description": "The scale, not used", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             },
             "out": {},
             "return": {"description": "Area of the rectangle", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -152,15 +152,15 @@ end module test_mod
             "in": {
                 "length": {"description": "", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
                 "width": {"description": "", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE}
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None}
             },
             "out": {},
             "return": {"description": "", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -249,18 +249,18 @@ end module test_mod
                            ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100")),
                            ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
                        "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             },
             "out": {
                 "vector": {"description": "The output vector", 
                        "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
                        "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             },
             "return": {"description": "Whether the operation was successful", 
                        "dimension": None, 
                        "type": "LOGICAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -305,12 +305,11 @@ end module test_mod
             "out": {},
             "return": {"description": "Description for unnamed return", "dimension": None, "type": "REAL",
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
         self.assertEqual(func_attached, expected_attached)
-
 
     def test_many_arguments(self):
         self.fs.create_file(
@@ -470,7 +469,8 @@ end module test_mod
             "kind": None,
             "length": "1",
             "polymorphism_type": PolymorphismType.NONE,
-            "default_value": None
+            "default_value": None,
+            "type_params": None
         })
 
     def test_argument_annotations_with_complex_descriptions(self):
@@ -616,7 +616,7 @@ end module test_mod
             "return": {"description": "Returns a vector of results", 
                        "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "10"))]}, 
                        "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                       "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -636,7 +636,7 @@ end module test_mod
                     ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "5")),
                     ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "5"))]}, 
                 "type": "INTEGER", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -654,7 +654,7 @@ end module test_mod
                 "description": "Returns complex values",
                 "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "3"))]}, 
                 "type": "COMPLEX", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
             "binding_type": None
         }
@@ -672,7 +672,7 @@ end module test_mod
                 "description": "Returns many values",
                 "dimension": {"dimensions": [ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), Expression(ExpressionType.LITERAL, "100"))]}, 
                 "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
-                "enum_type": None, "polymorphism_type": PolymorphismType.NONE},            
+                "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},            
             "argument_interfaces": {},
             "binding_type": None
         }

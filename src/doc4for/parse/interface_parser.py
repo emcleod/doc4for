@@ -232,7 +232,8 @@ def _match_interfaces_to_procedure_arguments(
                         "kind": None,
                         "length": None,
                         "polymorphism_type": PolymorphismType.NONE,
-                        "default_value": None
+                        "default_value": None,
+                        "type_params": None
                     }
     
     # Now handle implicit procedure arguments (old style)
@@ -263,7 +264,8 @@ def _match_interfaces_to_procedure_arguments(
                 "kind": None,
                 "length": None,
                 "polymorphism_type": PolymorphismType.NONE,
-                "default_value": None
+                "default_value": None,
+                "type_params": None
             }
     
     return argument_interfaces, procedure_arguments
@@ -341,12 +343,17 @@ def _extract_return_info(common: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     
     if not return_argument:
         return_argument = {
+            "type": return_type,
             "description": "",
             "dimension": None,
             "enum_type": None,
             "interface_name": None,
-            "type": return_type
-        }
-    
+            "attributes": [],
+            "kind": None,
+            "length": None,
+            "default_value": None,
+            "polymorphism_type": PolymorphismType.NONE,
+            "type_params": None  
+        }    
     return return_variable, return_argument
 
