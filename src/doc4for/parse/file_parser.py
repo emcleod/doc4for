@@ -8,7 +8,8 @@ from fparser.two.Fortran2003 import (
   Subroutine_Subprogram,
   Main_Program,
   Block_Data,
-  Equivalence_Stmt
+  Equivalence_Stmt,
+  Use_Stmt
 )
 from doc4for.models.file_models import FileDescription
 from doc4for.utils.comment_utils import format_comments, is_end_of_doc4for_comment
@@ -19,8 +20,8 @@ from doc4for.parse.base_parser import (
     handle_subroutine, 
     handle_block_data, 
     handle_program,
-    handle_equivalence
-    # handle_use
+    handle_equivalence,
+    handle_use
     )
 from doc4for.f90.populate_data_models import initialise_module_description
 from doc4for.parse.module_parser import parse_module_content
@@ -46,7 +47,7 @@ def _get_file_handler() -> FileHandler:
         handler.register_handler(Main_Program, handle_program)
         handler.register_handler(Block_Data, handle_block_data)
         handler.register_handler(Equivalence_Stmt, handle_equivalence)
-        # handler.register_handler(Use, handle_use)
+        handler.register_handler(Use_Stmt, handle_use)
         _file_handler_instance = handler
     return _file_handler_instance
 

@@ -25,7 +25,8 @@ from fparser.two.Fortran2003 import (
     Part_Ref,
     Data_Stmt_Set,
     Section_Subscript_List,
-    Subscript_Triplet
+    Subscript_Triplet,
+    Use_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.module_models import BlockDataDescription, CommonBlockDescription
@@ -34,6 +35,7 @@ from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.variable_parser import parse_variable
 from doc4for.models.dimension_models import Dimension
 from doc4for.parse.common_parser import _extract_dimension_info, _extract_binding_type
+from doc4for.parse.uses_parser import parse_uses
 
 from doc4for.logging_config import setup_logging
 
@@ -98,7 +100,8 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
     common_blocks = {}
     other_variables = {}
     variable_to_common_block = {}  # Map variable names to their common block names
-    
+    uses = {}
+
     # Add save tracking
     save_variables: List[str] = []
     save_common_blocks: List[str] = []
@@ -111,6 +114,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                 if isinstance(spec_child, Comment):
                     decl_comment_stack.append(spec_child)
                 elif isinstance(spec_child, Implicit_Part):
+                    # picks up comments for e.g. use statements
                     decl_comment_stack.extend(walk(spec_child, Comment))
                 elif isinstance(spec_child, Common_Stmt):
                     common_blocks_desc = parse_common_block(spec_child, decl_comment_stack)
@@ -129,13 +133,15 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                         # Process each saved entity
                         for saved_entity in saved_entity_list.children:
                             if isinstance(saved_entity, Saved_Entity):
-                                # Common block format: Saved_Entity('/', Name('counters'), '/')
                                 if len(saved_entity.children) == 3 and saved_entity.children[0] == '/' and saved_entity.children[2] == '/':
                                     common_name = saved_entity.children[1].string
                                     save_common_blocks.append(common_name)
                             elif isinstance(saved_entity, Name):
                                 # Regular variable
                                 save_variables.append(saved_entity.string)
+                    decl_comment_stack.clear()
+                elif isinstance(spec_child, Use_Stmt):
+                    uses.update(parse_uses(spec_child, decl_comment_stack))
                     decl_comment_stack.clear()
                 else:
                     # don't want to pick up any comments that aren't in front of common blocks
@@ -202,7 +208,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
         "description": format_comments(comment_stack),
         "common_blocks": common_blocks,
         "other_variables": other_variables,
-        "uses": {} #TODO
+        "uses": uses
     }
     
     # Process save statements using the same function as modules
