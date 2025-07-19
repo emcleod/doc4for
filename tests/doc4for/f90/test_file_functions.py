@@ -61,7 +61,8 @@ end module test_mod
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -77,7 +78,8 @@ end module test_mod
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -139,7 +141,8 @@ end module test_mod
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -162,7 +165,8 @@ end module test_mod
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -262,7 +266,8 @@ end module test_mod
                        "type": "LOGICAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_array, expected_array)
 
@@ -307,7 +312,8 @@ end module test_mod
                        "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_attached, expected_attached)
 
@@ -618,7 +624,8 @@ end module test_mod
                        "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                        "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_vector, expected_vector)
 
@@ -638,7 +645,8 @@ end module test_mod
                 "type": "INTEGER", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                 "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_matrix, expected_matrix)
 
@@ -656,7 +664,8 @@ end module test_mod
                 "type": "COMPLEX", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                 "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_spaced, expected_spaced)
 
@@ -674,7 +683,8 @@ end module test_mod
                 "type": "REAL", "attributes": [], "default_value": None, "kind": None, "length": None, "interface_name": None,
                 "enum_type": None, "polymorphism_type": PolymorphismType.NONE, "type_params": None},            
             "argument_interfaces": {},
-            "binding_type": None
+            "binding_type": None,
+            "uses": {}
         }
         self.assertEqual(func_dense, expected_dense)
 

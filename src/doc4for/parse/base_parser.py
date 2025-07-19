@@ -15,7 +15,8 @@ from fparser.two.Fortran2003 import (
     Equivalence_Stmt,
     Equivalence_Set,
     Equivalence_Object,
-    Name
+    Name,
+    Use_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.type_models import TypeDescription
@@ -29,6 +30,7 @@ from doc4for.parse.shared_data_parser import parse_block_data, parse_common_bloc
 from doc4for.parse.program_parser import parse_program
 from doc4for.parse.type_parser import handle_type_definition
 from doc4for.parse.variable_parser import parse_variable
+from doc4for.parse.uses_parser import merge_use_statements, parse_uses
 from doc4for.utils.attribute_utils import has_attribute
 from doc4for.utils.comment_utils import format_comments
 
@@ -111,6 +113,24 @@ def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comm
     
     data["equivalence"].append(equivalence_relationship)
 
+def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    new_uses = parse_uses(item, comment_stack)
+    
+    if not data["uses"]:
+        data["uses"] = new_uses
+    else:
+        for module_name, use_data in new_uses.items():
+            if module_name in data["uses"]:
+                data["uses"][module_name] = merge_use_statements(data["uses"][module_name], use_data)
+            else:
+                data["uses"][module_name] = use_data
+
+# def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+#     uses = parse_uses(item, comment_stack)
+#     if data["uses"]:
+#         data["uses"].update(uses)
+#     else:
+#         data["uses"] = uses
 
 #TODO move this
 def parse_equivalence(equivalence_stmt: Equivalence_Stmt, comment_stack: List[Comment]) -> EquivalenceRelationship:

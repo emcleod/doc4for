@@ -86,7 +86,8 @@ def parse_interface(
                 "out": common["intent_out"],
                 "return": return_argument,
                 "argument_interfaces": proc_info["argument_interfaces"],
-                "binding_type": binding_type
+                "binding_type": binding_type,
+                "uses": {} #TODO
             }
             
             procedures[common["procedure_name"]] = function_description
@@ -108,7 +109,8 @@ def parse_interface(
                 "in": common["intent_in"],
                 "out": common["intent_out"],
                 "argument_interfaces": proc_info["argument_interfaces"],
-                "binding_type": binding_type
+                "binding_type": binding_type,
+                "uses": {} #TODO
             }
             
             procedures[common["procedure_name"]] = subroutine_description
@@ -120,7 +122,8 @@ def parse_interface(
         "procedures": procedures,
         "module_procedures": module_procedures,
         "name": name,
-        "operator_symbol": operator_symbol
+        "operator_symbol": operator_symbol,
+        "uses": {} #TODO
     }
     
     return name, interface_description

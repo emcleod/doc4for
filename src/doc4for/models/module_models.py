@@ -23,7 +23,8 @@ BlockDataDescription = TypedDict(
         "name": str,
         "description": str,
         "common_blocks": Dict[str, CommonBlockDescription],
-        "other_variables": Dict[str, VariableDescription] # variables can be declared but not used in common blocks
+        "other_variables": Dict[str, VariableDescription], # variables can be declared but not used in common blocks
+        "uses": Dict[str, Uses],
         #TODO what about parameters that are used for initialisation
     },
 )

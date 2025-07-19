@@ -76,7 +76,8 @@ class TestBlockData(TestCase):
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -135,7 +136,8 @@ END BLOCK DATA simple
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -195,7 +197,8 @@ END BLOCK DATA simple
                     },
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -281,7 +284,8 @@ END BLOCK DATA simple
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -327,7 +331,8 @@ END BLOCK DATA
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -386,8 +391,9 @@ END BLOCK DATA
                     "length": None,
                     "binding_type": None,
                     "is_saved": False
-                }
-            }
+                },
+            },
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
         
@@ -446,7 +452,8 @@ END BLOCK DATA
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 
@@ -637,7 +644,8 @@ END BLOCK DATA
                     }
                 }
             },
-            "other_variables": {}
+            "other_variables": {},
+            "uses": {}
         }
         self.assertEqual(block_data, expected)
 

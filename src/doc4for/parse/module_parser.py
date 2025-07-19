@@ -23,7 +23,8 @@ from fparser.two.Fortran2003 import (
     Save_Stmt,
     Saved_Entity,
     Equivalence_Stmt,
-    Data_Stmt
+    Data_Stmt,
+    Use_Stmt
 )
 from doc4for.models.module_models import ModuleDescription
 from doc4for.models.variable_models import ParameterDescription
@@ -39,7 +40,7 @@ from doc4for.parse.base_parser import (
     handle_derived_type,
     handle_interface,
     handle_enum,
-    # handle_use,
+    handle_use,
     handle_common_block,
     handle_equivalence
 )
@@ -79,7 +80,7 @@ def _get_module_handler() -> ModuleHandler:
             Derived_Type_Def, handle_derived_type)
         handler.register_handler(Interface_Block, handle_interface)
         handler.register_handler(Enum_Def, handle_enum)
-        # handler.register_handler(Use, handle_use)
+        handler.register_handler(Use_Stmt, handle_use)
         handler.register_handler(Common_Stmt, handle_common_block)
         handler.register_handler(Equivalence_Stmt, handle_equivalence)
         _module_handler_instance = handler

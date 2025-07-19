@@ -70,7 +70,6 @@ def format_comments(comment_stack: List[Comment]) -> str:
 def is_end_of_doc4for_comment(comment: Comment) -> bool:
     return "*!" in comment.item.comment
 
-#TODO don't need this
 def get_formatted_description(comment_stack: List[Comment]) -> str:
    """Get a formatted description from the comment stack.
 

@@ -202,6 +202,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
         "description": format_comments(comment_stack),
         "common_blocks": common_blocks,
         "other_variables": other_variables,
+        "uses": {} #TODO
     }
     
     # Process save statements using the same function as modules

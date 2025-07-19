@@ -69,11 +69,20 @@ EnumDescription = TypedDict(
     },
 )
 
+Rename = TypedDict(
+    "Rename",
+    {
+        "local": str,      
+        "original": str    
+    }
+)
+
 Uses = TypedDict(
     "Uses", 
     {
         "module_name": str, 
-        "selections": List[Union[str, Tuple[str, str]]],  # Can be either a simple string or a tuple with ("local_name": "original_name")
+        "selections": List[str], 
+        "renames": List[Rename],
         "description": Optional[str]
     }
 )

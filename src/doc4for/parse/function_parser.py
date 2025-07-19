@@ -84,7 +84,8 @@ def parse_function(function: Function_Subprogram, comment_stack: List[Comment]) 
         "out": common["intent_out"],
         "argument_interfaces": common["argument_interfaces"],
         "binding_type": binding_type,
-        "return": return_argument
+        "return": return_argument,
+        "uses": common["uses"]
     }
     
     update_arguments_with_comment_data(comment_stack, function_description)

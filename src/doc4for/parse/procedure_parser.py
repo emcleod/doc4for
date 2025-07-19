@@ -10,7 +10,8 @@ from fparser.two.Fortran2003 import (
     Name,
     Dummy_Arg_List, # type: ignore[attr-defined]
     Type_Declaration_Stmt,
-    Procedure_Declaration_Stmt
+    Procedure_Declaration_Stmt,
+    Use_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -23,13 +24,15 @@ from doc4for.models.variable_models import PolymorphismType
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.argument_parser import parse_arguments, parse_procedure_argument
 from doc4for.utils.comment_utils import format_comments
+from doc4for.parse.uses_parser import parse_uses_list
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
 #TODO look at differing types passed in from interface_parser and function_parser
 def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt], 
-                    procedure_decls: List[Procedure_Declaration_Stmt], comment_stack: List[Comment]) -> Dict:
+                    procedure_decls: List[Procedure_Declaration_Stmt], 
+                    comment_stack: List[Comment]) -> Dict:
     # accumulate comment stack before declaration
     for node in procedure.children:
         if isinstance(node, Comment):
@@ -112,6 +115,7 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
             intent_in[dummy_argument] = argument
             intent_out[dummy_argument] = argument
 
+    uses = parse_uses_list(walk(procedure, Use_Stmt))
     return {
         "procedure_name": procedure_name,
         "procedure_declaration": procedure_stmt,
@@ -121,7 +125,8 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
         "intent_out": intent_out,
         "all_parsed_arguments": all_parsed_arguments,
         "prefixes": prefixes,
-        "argument_interfaces": argument_interfaces
+        "argument_interfaces": argument_interfaces,
+        "uses": uses
     }
 
 

@@ -1,5 +1,5 @@
-from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any, Tuple
-from doc4for.models.common import BindingType
+from typing import TypedDict, List, Dict, Optional, Union, TypeGuard, Any
+from doc4for.models.common import BindingType, Uses
 from doc4for.models.dimension_models import Dimension
 from doc4for.models.variable_models import PolymorphismType
 from enum import Enum, auto
@@ -40,6 +40,7 @@ InterfaceDescription = TypedDict(
         "operator_symbol": Optional[str],
         "procedures": Dict[str, Any], # deferred 
         "module_procedures": Dict[str, ModuleProcedureDescription],
+        "uses": Dict[str, Uses],
     },
 )
 
@@ -54,7 +55,8 @@ FunctionDescription = TypedDict(
         "out": Dict[str, Argument],
         "return": Argument, #TODO maybe add return variable name to argument
         "argument_interfaces": Dict[str, InterfaceDescription],
-        "binding_type": BindingType
+        "binding_type": BindingType,
+        "uses": Dict[str, Uses],
     },
 )
 
@@ -67,7 +69,8 @@ SubroutineDescription = TypedDict(
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
         "argument_interfaces": Dict[str, InterfaceDescription],
-        "binding_type": BindingType
+        "binding_type": BindingType,
+        "uses": Dict[str, Uses],
     },
 )
 
