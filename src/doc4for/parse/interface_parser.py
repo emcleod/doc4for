@@ -23,7 +23,9 @@ from fparser.two.Fortran2003 import (
     Implicit_Part,
     Dummy_Arg_List,  # type: ignore[attr-defined]
     Procedure_Declaration_Stmt,
-    Proc_Decl_List   # type: ignore[attr-defined]
+    Proc_Decl_List,  # type: ignore[attr-defined]
+    Use_Stmt,
+    Import_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import InterfaceDescription
@@ -32,6 +34,7 @@ from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 from doc4for.parse.common_parser import _extract_binding_type
 from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
+from doc4for.parse.uses_parser import parse_imports_list, parse_uses_list
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -87,7 +90,8 @@ def parse_interface(
                 "return": return_argument,
                 "argument_interfaces": proc_info["argument_interfaces"],
                 "binding_type": binding_type,
-                "uses": {} #TODO
+                "uses": proc_info["uses"],
+                "imports": proc_info["imports"]
             }
             
             procedures[common["procedure_name"]] = function_description
@@ -110,7 +114,8 @@ def parse_interface(
                 "out": common["intent_out"],
                 "argument_interfaces": proc_info["argument_interfaces"],
                 "binding_type": binding_type,
-                "uses": {} #TODO
+                "uses": proc_info["uses"],
+                "imports": proc_info["imports"]
             }
             
             procedures[common["procedure_name"]] = subroutine_description
@@ -315,12 +320,25 @@ def _process_procedure_body(
             ordered_arguments.append(arg_name)
     common["arguments"] = ordered_arguments
     
+    spec_parts = walk(node, Specification_Part)
+    use_stmts = []
+    import_stmts = []
+    
+    if spec_parts:
+        use_stmts = walk(spec_parts[0], Use_Stmt)
+        import_stmts = walk(spec_parts[0], Import_Stmt)
+    
+    # Add USE and IMPORT parsing
+    uses = parse_uses_list(use_stmts)
+    imports = parse_imports_list(import_stmts)  # New function
+
     return {
         "common": common,
         "argument_interfaces": argument_interfaces,
-        "procedure_comment_stack": procedure_comment_stack
+        "procedure_comment_stack": procedure_comment_stack,
+        "imports": imports,
+        "uses": uses
     }
-
 
 def _extract_return_info(common: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     return_type, return_variable = None, None

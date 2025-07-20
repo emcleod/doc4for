@@ -224,11 +224,29 @@ def process_common_block_variables(module_data: ModuleDescription) -> None:
 
 #TODO remove private entities if they shouldn't be documented
 def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
-    module_data["types"] = {
-        name: {**desc, "attributes": desc.get("attributes", []) + [access_stack[name]]}
-        for name, desc in module_data["types"].items()
-        if name in access_stack
-    }
+    # Update types that have access statements, preserve all others
+    updated_types = {}
+    
+    for name, desc in module_data["types"].items():
+        if name in access_stack:
+            # Add access from access_stack to existing attributes
+            existing_attrs = desc.get("attributes", [])
+            updated_types[name] = {
+                **desc, 
+                "attributes": existing_attrs + [access_stack[name]]
+            }
+        else:
+            # Keep the type as-is (it may have inline access specs)
+            updated_types[name] = desc
+    
+    module_data["types"] = updated_types
+    
+# def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
+#     module_data["types"] = {
+#         name: {**desc, "attributes": desc.get("attributes", []) + [access_stack[name]]}
+#         for name, desc in module_data["types"].items()
+#         if name in access_stack
+#     }
 
 def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str, BindingType]) -> None:
     """Process BIND statements and attach them to the appropriate entities."""

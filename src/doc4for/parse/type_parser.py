@@ -26,7 +26,7 @@ from fparser.two.Fortran2003 import (
     Type_Param_Decl_List,
     Type_Param_Decl,
     Derived_Type_Stmt,
-
+    Type_Attr_Spec_List
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import DataComponent
@@ -48,6 +48,13 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
     type_description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""    
     attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
     
+    # look for inline access statements
+    attr_spec_lists = walk(type_def, Type_Attr_Spec_List)
+    if attr_spec_lists:
+        access_specs = walk(attr_spec_lists[0], Access_Spec)
+        for access_spec in access_specs:
+            attributes.append(access_spec.string.lower())  # 'public' or 'private'
+
     # if there's an extends attribute, find the parent type    
     parent_name: str = None
     if any("EXTENDS" in attribute for attribute in attributes):

@@ -45,9 +45,6 @@ class VisibilityState:
     explicit_private: List[str] = field(default_factory=list)
 
 def handle_derived_type(item: Derived_Type_Def, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    # TODO is this just over-cautious?
-    if "types" not in data:
-        data["types"] = {}
     type_desc: TypeDescription = handle_type_definition(item, comment_stack)
     data["types"][type_desc["type_name"]] = type_desc
 

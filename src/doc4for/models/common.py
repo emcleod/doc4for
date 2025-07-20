@@ -87,6 +87,19 @@ Uses = TypedDict(
     }
 )
 
+class ImportType(Enum):
+    ALL = auto()
+    EXPLICIT = auto()
+    IMPLICIT = auto()
+
+Import = TypedDict(
+    "Import",
+    {
+        "import_type": ImportType,
+        "entities": List[str],  # empty for ALL/IMPLICIT
+    }
+)
+
 EquivalenceRelationship = TypedDict(
     "EquivalenceRelationship",
     {

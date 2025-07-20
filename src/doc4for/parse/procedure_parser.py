@@ -11,7 +11,8 @@ from fparser.two.Fortran2003 import (
     Dummy_Arg_List, # type: ignore[attr-defined]
     Type_Declaration_Stmt,
     Procedure_Declaration_Stmt,
-    Use_Stmt
+    Use_Stmt,
+    Import_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -24,7 +25,7 @@ from doc4for.models.variable_models import PolymorphismType
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.argument_parser import parse_arguments, parse_procedure_argument
 from doc4for.utils.comment_utils import format_comments
-from doc4for.parse.uses_parser import parse_uses_list
+from doc4for.parse.uses_parser import parse_uses_list, parse_imports_list
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -116,6 +117,7 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
             intent_out[dummy_argument] = argument
 
     uses = parse_uses_list(walk(procedure, Use_Stmt))
+    imports = parse_imports_list(walk(procedure, Import_Stmt))
     return {
         "procedure_name": procedure_name,
         "procedure_declaration": procedure_stmt,
@@ -126,7 +128,8 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
         "all_parsed_arguments": all_parsed_arguments,
         "prefixes": prefixes,
         "argument_interfaces": argument_interfaces,
-        "uses": uses
+        "uses": uses,
+        "imports": imports
     }
 
 

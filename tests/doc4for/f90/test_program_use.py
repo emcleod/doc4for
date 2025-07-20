@@ -228,19 +228,20 @@ end module my_module
         # Check iso_fortran_env imports with renames
         iso_uses = program_details["uses"]["iso_fortran_env"]
         self.assertEqual(iso_uses["module_name"], "iso_fortran_env")
-        self.assertEqual(len(iso_uses["selections"]), 2)
-        
-        # Check that the renamed imports are correctly stored
-        # First renamed import: big_real => real64
-        self.assertIn(("big_real", "real64"), iso_uses["selections"])
-        # Second renamed import: medium_int => int32
-        self.assertIn(("medium_int", "int32"), iso_uses["selections"])
-        
+        self.assertFalse(iso_uses["selections"])
+        self.assertEqual(len(iso_uses["renames"]), 2)
+        self.assertEqual(iso_uses["renames"][0]["local"], "big_real")
+        self.assertEqual(iso_uses["renames"][0]["original"], "real64")
+        self.assertEqual(iso_uses["renames"][1]["local"], "medium_int")
+        self.assertEqual(iso_uses["renames"][1]["original"], "int32")
+                
         # Check my_module imports with renames
         my_module_uses = program_details["uses"]["my_module"]
         self.assertEqual(my_module_uses["module_name"], "my_module")
-        self.assertEqual(len(my_module_uses["selections"]), 1)
-        self.assertIn(("print_test", "test1"), my_module_uses["selections"])
-
+        self.assertFalse(my_module_uses["selections"])
+        self.assertEqual(len(my_module_uses["renames"]), 1)
+        self.assertEqual(my_module_uses["renames"][0]["local"], "print_test")
+        self.assertEqual(my_module_uses["renames"][0]["original"], "test1")
+        
 if __name__ == "__main__":
     unittest.main()
