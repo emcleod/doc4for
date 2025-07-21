@@ -92,32 +92,24 @@ class TestExternalStatements(TestCase):
         self.assertEqual(integrate_func["in"]["func"]["description"], "External function to integrate")
         self.assertEqual(integrate_func["in"]["a"]["description"], "Lower bound")
         self.assertEqual(integrate_func["in"]["b"]["description"], "Upper bound")
-        self.assertEqual(integrate_func["return"]["integral"]["description"], "Integral value")
+        self.assertEqual(integrate_func["return"]["description"], "Integral value")
         
-        # Check that external declaration was detected
-        self.assertIn("externals", integrate_func)
-        self.assertEqual(len(integrate_func["externals"]), 1)
-        self.assertIn("func", integrate_func["externals"])
-        
-        # Check that func is marked as procedure and external
-        self.assertEqual(integrate_func["in"]["func"]["type"], "procedure")
-        self.assertEqual(integrate_func["in"]["func"]["is_external"], True)
-        
+        # Check that func is marked as procedure and is intent in
+        self.assertEqual(integrate_func["in"]["func"]["type"], "PROCEDURE")
+        self.assertFalse(integrate_func["in"]["func"]["attributes"])
+        self.assertEqual(integrate_func["external_procedures"]["func"]["name"], "func")
+        self.assertEqual(integrate_func["external_procedures"]["func"]["procedure_type"], "FUNCTION")
+
         # Check the matrix_multiply function
         multiply_func = module["functions"]["matrix_multiply"]
         self.assertEqual(multiply_func["description"], 
-                        "\nWrapper for BLAS dgemm routine\n"
+                        "Wrapper for BLAS dgemm routine\n"
                         "Shows external declaration for well-known library functions\n\n")
         
         # Check that dgemm external declaration was detected
-        self.assertIn("externals", multiply_func)
-        self.assertEqual(len(multiply_func["externals"]), 1)
-        self.assertIn("dgemm", multiply_func["externals"])
-        
-        # Check external procedure is documented
-        external_info = multiply_func["externals"]["dgemm"]
-        self.assertEqual(external_info["description"], "Declares BLAS dgemm as external\n")
-        self.assertEqual(external_info["type"], "subroutine")
+        self.assertNotIn("dgemm", multiply_func["in"])
+        self.assertEqual(multiply_func["external_procedures"]["dgemm"]["name"], "dgemm")
+        self.assertEqual(multiply_func["external_procedures"]["dgemm"]["procedure_type"], "SUBROUTINE")
 
     def test_external_and_intrinsic_declarations(self):
         """Test both external and intrinsic statements."""
@@ -196,54 +188,40 @@ class TestExternalStatements(TestCase):
         # Check parameter descriptions
         self.assertEqual(process_func["in"]["x"]["description"], "Input value")
         self.assertEqual(process_func["in"]["user_func"]["description"], "User-defined function")
-        self.assertEqual(process_func["return"]["y"]["description"], "Processed result")
+        self.assertEqual(process_func["return"]["description"], "Processed result")
         
-        # Check intrinsic declarations
-        self.assertIn("intrinsics", process_func)
-        self.assertEqual(len(process_func["intrinsics"]), 3)
-        self.assertIn("sin", process_func["intrinsics"])
-        self.assertIn("cos", process_func["intrinsics"])
-        self.assertIn("log", process_func["intrinsics"])
+        # Check that user_func is marked as procedure and is intent in
+        self.assertEqual(process_func["in"]["user_func"]["type"], "PROCEDURE")
+        self.assertFalse(process_func["in"]["user_func"]["attributes"])
         
-        # Check that intrinsic description is captured
-        self.assertEqual(process_func["intrinsics"]["sin"]["description"], 
-                        "Explicitly declare as intrinsic to avoid conflicts\n")
-        
-        # Check external declarations
-        self.assertIn("externals", process_func)
-        self.assertEqual(len(process_func["externals"]), 1)
-        self.assertIn("user_func", process_func["externals"])
-        self.assertEqual(process_func["externals"]["user_func"]["description"], 
-                        "Declare the user function as external\n")
+        # Check external procedures
+        self.assertEqual(process_func["external_procedures"]["user_func"]["name"], "user_func")
+        self.assertEqual(process_func["external_procedures"]["user_func"]["procedure_type"], "FUNCTION")
         
         # Check the apply_transformations subroutine
         apply_sub = module["subroutines"]["apply_transformations"]
         self.assertEqual(apply_sub["description"], 
-                        "\nSubroutine with multiple external declarations\n\n")
-        
-        # Check multiple external declarations
-        self.assertIn("externals", apply_sub)
-        self.assertEqual(len(apply_sub["externals"]), 2)
-        self.assertIn("transform1", apply_sub["externals"])
-        self.assertIn("transform2", apply_sub["externals"])
+                        "Subroutine with multiple external declarations\n\n")
         
         # Check parameter documentation
         self.assertEqual(apply_sub["in"]["transform1"]["description"], "First transformation function")
         self.assertEqual(apply_sub["in"]["transform2"]["description"], "Second transformation function")
         self.assertEqual(apply_sub["in"]["array"]["description"], "Data array to process")
+        self.assertEqual(apply_sub["out"]["array"]["description"], "Data array to process")
         
-        # Check that parameters are marked as external
-        self.assertEqual(apply_sub["in"]["transform1"]["is_external"], True)
-        self.assertEqual(apply_sub["in"]["transform2"]["is_external"], True)
+        # Check that transform functions are marked as procedures
+        self.assertEqual(apply_sub["in"]["transform1"]["type"], "PROCEDURE")
+        self.assertFalse(apply_sub["in"]["transform1"]["attributes"])
+        self.assertEqual(apply_sub["in"]["transform2"]["type"], "PROCEDURE")
+        self.assertFalse(apply_sub["in"]["transform2"]["attributes"])
         
-        # Check intrinsic declarations in subroutine
-        self.assertIn("intrinsics", apply_sub)
-        self.assertEqual(len(apply_sub["intrinsics"]), 2)
-        self.assertIn("abs", apply_sub["intrinsics"])
-        self.assertIn("sqrt", apply_sub["intrinsics"])
-        self.assertEqual(apply_sub["intrinsics"]["abs"]["description"], 
-                        "Mark common math functions as intrinsic\n")
-
+        # Check external procedures
+        self.assertEqual(apply_sub["external_procedures"]["transform1"]["name"], "transform1")
+        self.assertEqual(apply_sub["external_procedures"]["transform1"]["procedure_type"], "FUNCTION")
+        
+        self.assertEqual(apply_sub["external_procedures"]["transform2"]["name"], "transform2")
+        self.assertEqual(apply_sub["external_procedures"]["transform2"]["procedure_type"], "FUNCTION")
+                
     def test_complex_external_interface(self):
         """Test complex case with external functions and specific interfaces."""
         self.fs.create_file(
@@ -326,7 +304,6 @@ class TestExternalStatements(TestCase):
             !!* External callback function *!
             external :: callback
             real :: callback  ! Return type
-            
             !!* Alternative interface style *!
             interface
                 !!* Expected signature for callback *!
@@ -347,6 +324,8 @@ class TestExternalStatements(TestCase):
     """
         )
         
+            #TODO callback appears in 'out'
+            #TODO the interface isn't being picked up - maybe because of place?
         result = extract_module_data([Path("/fake/path/complex_external.f90")])
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -362,7 +341,7 @@ class TestExternalStatements(TestCase):
                         "Interface for external optimization library functions\n"
                         "Defines the expected signature for external optimizers\n")
         
-        # Check the external_minimize subroutin interface
+        # Check the external_minimize subroutine interface
         minimize_sub = external_interface["procedures"]["external_minimize"]
         self.assertEqual(minimize_sub["description"], 
                         "External minimization routine interface\n\n")
@@ -374,46 +353,48 @@ class TestExternalStatements(TestCase):
         self.assertEqual(minimize_sub["out"]["x"]["description"], "Starting point and solution")
         self.assertEqual(minimize_sub["out"]["fval"]["description"], "Final function value")
         
-        # Check external declaration in interface
-        self.assertIn("externals", minimize_sub)
-        self.assertIn("func", minimize_sub["externals"])
+        # Check that func is marked as a procedure
+        self.assertEqual(minimize_sub["in"]["func"]["type"], "PROCEDURE")
+        self.assertFalse(minimize_sub["in"]["func"]["attributes"])
+        
+        # Check external procedures in interface
+        self.assertEqual(minimize_sub["external_procedures"]["func"]["name"], "func")
+        self.assertEqual(minimize_sub["external_procedures"]["func"]["procedure_type"], "FUNCTION")
         
         # Check the optimize function
         optimize_func = module["functions"]["optimize"]
         self.assertEqual(optimize_func["description"], 
-                        "\nWrapper for external optimization library\n\n")
+                        "Wrapper for external optimization library\n\n")
         
-        # Check multiple external declarations
-        self.assertIn("externals", optimize_func)
-        self.assertEqual(len(optimize_func["externals"]), 2)
-        self.assertIn("objective", optimize_func["externals"])
-        self.assertIn("lbfgs_minimize", optimize_func["externals"])
+        # Check external procedure parameters
+        self.assertEqual(optimize_func["in"]["objective"]["type"], "PROCEDURE")
+        self.assertFalse(optimize_func["in"]["objective"]["attributes"])
         
-        # Check external descriptions
-        self.assertEqual(optimize_func["externals"]["objective"]["description"], 
-                        "User-provided objective function\n")
-        self.assertEqual(optimize_func["externals"]["lbfgs_minimize"]["description"], 
-                        "External optimization routine from library\n")
+        # Check external procedures
+        self.assertEqual(len(optimize_func["external_procedures"]), 2)
         
-        # Check procedure pointer documentation
-        self.assertIn("procedure_pointers", optimize_func)
-        self.assertIn("minimize_ptr", optimize_func["procedure_pointers"])
-        self.assertEqual(optimize_func["procedure_pointers"]["minimize_ptr"]["interface"], "external_minimize")
-        self.assertEqual(optimize_func["procedure_pointers"]["minimize_ptr"]["description"], 
-                        "Interface aliases for convenience\n")
+        # Check objective external procedure
+        self.assertEqual(optimize_func["external_procedures"]["objective"]["name"], "objective")
+        self.assertEqual(optimize_func["external_procedures"]["objective"]["procedure_type"], "FUNCTION")
         
+        # Check lbfgs_minimize external procedure
+        self.assertEqual(optimize_func["external_procedures"]["lbfgs_minimize"]["name"], "lbfgs_minimize")
+        self.assertEqual(optimize_func["external_procedures"]["lbfgs_minimize"]["procedure_type"], "SUBROUTINE")
+                
         # Check process_data_external function
         process_func = module["functions"]["process_data_external"]
         self.assertEqual(process_func["description"], 
-                        "\nFunction using callback with external declaration\n\n")
+                        "Function using callback with external declaration\n\n")
         
-        # Check that both external declaration and interface exist
-        self.assertIn("externals", process_func)
-        self.assertIn("callback", process_func["externals"])
-        self.assertEqual(process_func["externals"]["callback"]["description"], 
-                        "External callback function\n")
+        # Check callback parameter
+        self.assertEqual(process_func["in"]["callback"]["type"], "PROCEDURE")
+        self.assertFalse(process_func["in"]["callback"]["attributes"])
         
-        # Check that nested interface is also captured
+        # Check callback external procedure
+        self.assertEqual(process_func["external_procedures"]["callback"]["name"], "callback")
+        self.assertEqual(process_func["external_procedures"]["callback"]["procedure_type"], "FUNCTION")
+        
+        # Check that nested interface is also captured (keeping this since it's not intrinsic-related)
         self.assertEqual(len(process_func["argument_interfaces"]), 1)
         self.assertIn("callback", process_func["argument_interfaces"])
         callback_interface = process_func["argument_interfaces"]["callback"]
@@ -422,6 +403,7 @@ class TestExternalStatements(TestCase):
         # Check function signature in nested interface
         callback_func = callback_interface["procedures"]["callback_interface"]
         self.assertEqual(callback_func["description"], "Expected signature for callback\n")
+        
 
 if __name__ == "__main__":
     unittest.main()

@@ -89,7 +89,8 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
             "programs": {},
             "block_data": {},
             "uses": {},
-            "equivalence": None
+            "equivalence": [],
+            "external_procedures": {}
         }
         parse_file_content(tree, file_data)
         files.append(file_data)

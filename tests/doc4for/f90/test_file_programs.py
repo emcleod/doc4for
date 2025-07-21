@@ -60,7 +60,8 @@ class TestProgramDocumentation(TestCase):
             "program_description": 'Main program that processes climate data\nReads '\
                 'input files, calculates averages, and generates reports\n@version'\
                      ' 1.2.3\n@author Jane Smith\n@date 2024-01-20\n',
-            "uses": {}
+            "uses": {},
+            "external_procedures": {}
         }
         self.assertEqual(prog_doc, expected_doc)
 
@@ -71,6 +72,7 @@ class TestProgramDocumentation(TestCase):
             "file_name": "/fake/path/programs.f90",
             "uses": {},
             "program_description": "",
+            "external_procedures": {}
         }
         self.assertEqual(prog_no_doc, expected_no_doc)
 
@@ -80,7 +82,8 @@ class TestProgramDocumentation(TestCase):
             "program_name": "utility",
             "file_name": "/fake/path/programs.f90",
             "uses": {},
-            "program_description": "Simple utility program\nJust a basic example\n"
+            "program_description": "Simple utility program\nJust a basic example\n",
+            "external_procedures": {}
         }
         self.assertEqual(prog_simple, expected_simple)
 

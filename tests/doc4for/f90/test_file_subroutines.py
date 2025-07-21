@@ -59,7 +59,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -74,7 +75,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -173,7 +175,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(sub_doc, expected_doc)
 
@@ -223,7 +226,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(sub_no_doc, expected_no_doc)
 
@@ -326,7 +330,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(sub_array, expected_array)
         

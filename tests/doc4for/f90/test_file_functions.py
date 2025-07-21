@@ -63,7 +63,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -81,7 +82,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -145,7 +147,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_doc, expected_doc)
 
@@ -170,7 +173,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_no_doc, expected_no_doc)
 
@@ -272,7 +276,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_array, expected_array)
 
@@ -319,7 +324,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_attached, expected_attached)
 
@@ -632,7 +638,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_vector, expected_vector)
 
@@ -654,7 +661,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_matrix, expected_matrix)
 
@@ -674,7 +682,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_spaced, expected_spaced)
 
@@ -694,7 +703,8 @@ end module test_mod
             "argument_interfaces": {},
             "binding_type": None,
             "uses": {},
-            "imports": []
+            "imports": [],
+            "external_procedures": {}
         }
         self.assertEqual(func_dense, expected_dense)
 

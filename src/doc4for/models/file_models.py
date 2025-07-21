@@ -1,7 +1,7 @@
 from typing import TypedDict, Dict, Optional, List
 from doc4for.models.module_models import BlockDataDescription, ProgramDescription, ModuleDescription
 from doc4for.models.procedure_models import FunctionDescription, SubroutineDescription
-from doc4for.models.common import Uses, EquivalenceRelationship
+from doc4for.models.common import Uses, EquivalenceRelationship, ExternalDescription
 
 FileDescription = TypedDict(
     "FileDescription",
@@ -15,6 +15,7 @@ FileDescription = TypedDict(
         "block_data": Dict[str, BlockDataDescription],
         "equivalence": Optional[List[EquivalenceRelationship]], # optional because this is obsolete
         "uses": Dict[str, Uses],
+        "external_procedures": Optional[Dict[str, ExternalDescription]] #TODO test this
     },
 )
 
@@ -22,7 +23,6 @@ FileDescription = TypedDict(
 # global parameters + variables
 # common blocks
 # interfaces
-# data statements (data x, y /1.0, 2.0/)
 # preprocessing
 # external declarations (external :: external_sub)
 # C interopability declarations

@@ -12,7 +12,11 @@ from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
     Procedure_Declaration_Stmt,
     Use_Stmt,
-    Import_Stmt
+    Import_Stmt,
+    External_Stmt, 
+    Call_Stmt, 
+    Part_Ref,
+    Section_Subscript_List
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -31,8 +35,11 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 #TODO look at differing types passed in from interface_parser and function_parser
-def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt], 
+def parse_procedure(procedure, 
+                    stmt_type, 
+                    type_decls: List[Type_Declaration_Stmt], 
                     procedure_decls: List[Procedure_Declaration_Stmt], 
+                    external_decls: List[External_Stmt],
                     comment_stack: List[Comment]) -> Dict:
     # accumulate comment stack before declaration
     for node in procedure.children:
@@ -72,6 +79,7 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
     # this will only have the interface names as keys - the interfaces will be 
     # filled in in a post-processing step when all modules have been processed
     argument_interfaces = {}
+    external_procedures = {}
     if type_decls:        
         for decl in type_decls:
             parsed_arguments, intent = parse_arguments(decl)
@@ -116,6 +124,34 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
             intent_in[dummy_argument] = argument
             intent_out[dummy_argument] = argument
 
+    # TODO I think this relies on ordering if the external procedure is passed into a procedure
+    # i.e. the external declaration overwrites the information in the section above
+    if external_decls:
+        for decl in external_decls:
+            external_names = walk(decl, Name)
+            for external_name in external_names:
+                name_str = external_name.string
+                if name_str in dummy_arg_names:
+                    # This is a parameter - add to intent_in as before
+                    argument = {
+                        "type": "PROCEDURE",  
+                        "kind": "",
+                        "length": "", 
+                        "description": "",  # Will be filled in later
+                        "dimension": "",
+                        "attributes": attributes,
+                        "default_value": "",
+                        "interface_name": None,  
+                        "enum_type": None, 
+                        "polymorphism_type": PolymorphismType.NONE
+                    } 
+                    intent_in[name_str] = argument
+                procedure_type = determine_procedure_type(procedure, name_str, all_parsed_arguments)
+                external_procedures[name_str] = {
+                    "name": name_str,
+                    "procedure_type": procedure_type
+                }
+
     uses = parse_uses_list(walk(procedure, Use_Stmt))
     imports = parse_imports_list(walk(procedure, Import_Stmt))
     return {
@@ -129,7 +165,8 @@ def parse_procedure(procedure, stmt_type, type_decls: List[Type_Declaration_Stmt
         "prefixes": prefixes,
         "argument_interfaces": argument_interfaces,
         "uses": uses,
-        "imports": imports
+        "imports": imports,
+        "external_procedures": external_procedures
     }
 
 
@@ -247,4 +284,22 @@ def clean_comment_content(comment: Comment) -> str:
 def extract_content_without_annotation(content: str) -> str:
     return " ".join(content.split()[1:])
 
+def determine_procedure_type(procedure, external_name, all_parsed_arguments):
+    # First check if there's a type declaration for this external
+    if external_name in all_parsed_arguments:
+        arg_info = all_parsed_arguments[external_name]
+        if arg_info.get("type") and arg_info["type"] != "PROCEDURE":
+            # Has a type declaration (REAL, INTEGER, etc.) - it's a function
+            return "FUNCTION"
+    
+    # Check if it's used as a function (appears in Part_Ref)
+    for part_ref in walk(procedure, Part_Ref):
+        names = walk(part_ref, Name)
+        if names and names[0].string == external_name:
+            # Check if it has a Section_Subscript_List (parentheses)
+            if walk(part_ref, Section_Subscript_List):
+                return "FUNCTION"
+    
+    # If it's not a function, it's a subroutine
+    return "SUBROUTINE"
 

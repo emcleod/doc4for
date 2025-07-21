@@ -2,7 +2,7 @@ from typing import TypedDict, Dict, List, Optional
 from doc4for.models.variable_models import VariableDescription, ParameterDescription
 from doc4for.models.procedure_models import FunctionDescription, InterfaceDescription, SubroutineDescription
 from doc4for.models.type_models import TypeDescription
-from doc4for.models.common import EnumDescription, Uses, BindingType, EquivalenceRelationship
+from doc4for.models.common import EnumDescription, Uses, BindingType, EquivalenceRelationship, ExternalDescription
 
 #TODO move three to data_models.py
 
@@ -15,7 +15,6 @@ CommonBlockDescription = TypedDict(
         "binding_type": Optional[BindingType]
     },
 )
-
 
 BlockDataDescription = TypedDict(
     "BlockDataDescription",
@@ -43,6 +42,7 @@ ModuleDescription = TypedDict(
         "uses": Dict[str, Uses], 
         "common_blocks": Dict[str, CommonBlockDescription],
         "equivalence": Optional[List[EquivalenceRelationship]], # optional because this is obsolete
+        "external_procedures": Optional[Dict[str, ExternalDescription]],
         "file_name": str,
         "module_description": str,
     },
@@ -56,6 +56,7 @@ ProgramDescription = TypedDict(
         "file_name": str,
         "program_description": str,
         "uses": Dict[str, Uses],
+        "external_procedures": Optional[Dict[str, ExternalDescription]]
     },
 )
 

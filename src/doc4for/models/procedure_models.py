@@ -23,6 +23,14 @@ Argument = TypedDict(
     },
 )
 
+ExternalProcedureDescription = TypedDict(
+    "ExternalProcedureDescription",
+    {
+        "name": str,
+        "procedure_type": str,  # "FUNCTION" or "SUBROUTINE" TODO should be an enum?
+    }
+)
+
 ModuleProcedureDescription = TypedDict(
     "ModuleProcedureDescription",
     {
@@ -57,7 +65,8 @@ FunctionDescription = TypedDict(
         "argument_interfaces": Dict[str, InterfaceDescription],
         "binding_type": BindingType,
         "uses": Dict[str, Uses],
-        "imports": List[Import]
+        "imports": List[Import],
+        "external_procedures": Optional[Dict[str, ExternalProcedureDescription]]
     },
 )
 
@@ -72,7 +81,8 @@ SubroutineDescription = TypedDict(
         "argument_interfaces": Dict[str, InterfaceDescription],
         "binding_type": BindingType,
         "uses": Dict[str, Uses],
-        "imports": List[Import]
+        "imports": List[Import],
+        "external_procedures": Optional[Dict[str, ExternalProcedureDescription]]
     },
 )
 

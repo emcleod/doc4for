@@ -25,7 +25,8 @@ from fparser.two.Fortran2003 import (
     Procedure_Declaration_Stmt,
     Proc_Decl_List,  # type: ignore[attr-defined]
     Use_Stmt,
-    Import_Stmt
+    Import_Stmt,
+    External_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import InterfaceDescription
@@ -91,7 +92,8 @@ def parse_interface(
                 "argument_interfaces": proc_info["argument_interfaces"],
                 "binding_type": binding_type,
                 "uses": proc_info["uses"],
-                "imports": proc_info["imports"]
+                "imports": proc_info["imports"],
+                "external_procedures": common["external_procedures"]
             }
             
             procedures[common["procedure_name"]] = function_description
@@ -115,7 +117,8 @@ def parse_interface(
                 "argument_interfaces": proc_info["argument_interfaces"],
                 "binding_type": binding_type,
                 "uses": proc_info["uses"],
-                "imports": proc_info["imports"]
+                "imports": proc_info["imports"],
+                "external_procedures": common["external_procedures"]
             }
             
             procedures[common["procedure_name"]] = subroutine_description
@@ -302,8 +305,9 @@ def _process_procedure_body(
     else:
         interface_blocks = []
     
-    # Parse the procedure
-    common = parse_procedure(proc_stmt, stmt_type, argument_decls, procedure_decls, procedure_comment_stack)
+    external_decls = walk(node, External_Stmt)
+    # Parse the procedure - note that the external statements list is deliberately empty
+    common = parse_procedure(proc_stmt, stmt_type, argument_decls, procedure_decls, external_decls, procedure_comment_stack)
     
     # Match interfaces to arguments
     argument_interfaces, procedure_arguments = _match_interfaces_to_procedure_arguments(

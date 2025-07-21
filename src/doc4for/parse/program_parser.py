@@ -10,7 +10,7 @@ from fparser.two.Fortran2003 import (
 from fparser.two.utils import walk
 from doc4for.models.module_models import ProgramDescription
 from doc4for.parse.uses_parser import parse_uses_list
-from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
+from doc4for.utils.comment_utils import get_formatted_description
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -21,15 +21,13 @@ def parse_program(
     program_stmt = walk(program, Program_Stmt)
     name = walk(program_stmt, Name)[0].string
     uses = parse_uses_list(walk(program, Use_Stmt), [])
+    external_procedures = {} #TODO
     program_details: ProgramDescription = {
         "program_name": name,
         "file_name": file_name,
-        "program_description": "",
+        "program_description": get_formatted_description(comment_stack),
         "uses": uses,
+        "external_procedures": external_procedures
     }
-
-    if is_doc4for_comment(comment_stack):
-        program_details["program_description"] = format_comments(comment_stack)
-
     return name, program_details
 

@@ -23,9 +23,10 @@ def initialise_module_description(
         "types": {},
         "uses": {},
         "common_blocks": {},
+        "external_procedures": {},
         "file_name": file_name,
         "module_description": "",
-        "equivalence": None
+        "equivalence": [],
     }
     if is_doc4for_comment(comment_stack):
         module_data["module_description"] = format_comments(comment_stack)

@@ -109,3 +109,11 @@ EquivalenceRelationship = TypedDict(
                                     # e.g., {"buffer": 0, "int_view": 0, "header": 0, "body": 40}
     }
 )
+
+ExternalDescription = TypedDict(
+    "ExternalDescription",
+    {
+        "name": str,
+        "description": Optional[str]
+    }
+)
