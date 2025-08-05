@@ -158,7 +158,7 @@ class TestComplexCases(TestCase):
                 "kind": None,
                 "value": "1",
                 "length": None,
-                "binding_type": None
+                "binding_type": None,
             },
             "y": {
                 "description": "",

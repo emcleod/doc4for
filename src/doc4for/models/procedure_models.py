@@ -63,7 +63,7 @@ FunctionDescription = TypedDict(
         "out": Dict[str, Argument],
         "return": Argument, #TODO maybe add return variable name to argument
         "argument_interfaces": Dict[str, InterfaceDescription],
-        "binding_type": BindingType,
+        "binding_type": Optional[BindingType],
         "uses": Dict[str, Uses],
         "imports": List[Import],
         "external_procedures": Optional[Dict[str, ExternalProcedureDescription]]
@@ -79,7 +79,7 @@ SubroutineDescription = TypedDict(
         "in": Dict[str, Argument],
         "out": Dict[str, Argument],
         "argument_interfaces": Dict[str, InterfaceDescription],
-        "binding_type": BindingType,
+        "binding_type": Optional[BindingType],
         "uses": Dict[str, Uses],
         "imports": List[Import],
         "external_procedures": Optional[Dict[str, ExternalProcedureDescription]]
@@ -102,7 +102,6 @@ ProcedureDescription = TypedDict(
         "pass_type": Optional[PassType], # pass, nopass
         "pass_name": Optional[str],
         "implementation": Optional[str], # e.g. add => add_implementation
-        "binding_type": BindingType
     },
 )
 

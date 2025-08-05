@@ -44,14 +44,13 @@ ParameterDescription = TypedDict(
     "ParameterDescription",
     {
         "description": str,
-        "type": "str",
-        "name": "str",
-        "value": "str",
-        "dimension": Optional[str],
-        "polymorphism_type": Optional[str], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
+        "type": str,
+        "name": str,
+        "value": str,
+        "dimension": Optional[Dimension],
+        "polymorphism_type": Optional[PolymorphismType], # for CLASS=polymorphic, TYPE=non-polymorphic, INTRINSIC=None
         "attributes": List[str],  # For public/private, etc.
         "kind": Optional[str], #TODO might want to link to the type for declarations like (kind=MY_DEFINED_TYPE)
-        "initial_value": Optional[str],
         "length": Optional[str],   # for character lengths
         "binding_type": Optional[BindingType]
     },

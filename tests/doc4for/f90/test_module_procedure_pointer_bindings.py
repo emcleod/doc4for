@@ -4,12 +4,12 @@ from typing import cast
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.models.common import BindingTypeEnum, BindingType
+from doc4for.models.procedure_models import PassType
 
 class TestTypeBindingProcedures(TestCase):
 
     def setUp(self):
         self.setUpPyfakefs()
-
 
     def test_procedure_pointer_binding(self):
         self.fs.create_file(
@@ -89,7 +89,7 @@ class TestTypeBindingProcedures(TestCase):
             self.assertIn("binding_type", f_callback)
             self.assertIn("pointer", f_callback["attributes"])
 
-
+    @unittest.skip("fparser2 does not support procedure pointer components with bind(c) attribute (valid Fortran 2008)")
     def test_mixed_procedure_pointers(self):
         self.fs.create_file(
             "/fake/path/mixed_proc_pointers.f90",
@@ -173,15 +173,11 @@ class TestTypeBindingProcedures(TestCase):
         # Check c_proc - now in the procedures section
         c_proc = callback_type["procedures"]["c_proc"]
         self.assertIn("binding_type", c_proc)
-        binding_type = cast(BindingType, c_proc["binding_type"])
-        self.assertEqual(binding_type["type"], BindingTypeEnum.BIND_C)
         self.assertIn("nopass", c_proc["attributes"])
         
         # Check f_proc - now in the procedures section
         f_proc = callback_type["procedures"]["f_proc"]
         self.assertIn("binding_type", f_proc)
-        binding_type = cast(BindingType, f_proc["binding_type"])
-        self.assertEqual(binding_type["type"], BindingTypeEnum.DEFAULT)
         self.assertIn("nopass", f_proc["attributes"])
         
         # Check the abstract interfaces
@@ -191,21 +187,146 @@ class TestTypeBindingProcedures(TestCase):
         
         f_interface = module["interfaces"][1]  # Second interface
         f_func = f_interface["procedures"]["regular_func_interface"]
-        self.assertEqual(f_func["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(f_func["binding_type"]["type"])
         
         # Check subroutines
         register_c = module["subroutines"]["register_c_proc"]
         self.assertEqual(register_c["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
         register_f = module["subroutines"]["register_f_proc"]
-        self.assertEqual(register_f["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(register_f["binding_type"]["type"])
         
         # Check function implementations
         c_example = module["functions"]["example_c_func"]
         self.assertEqual(c_example["binding_type"]["type"], BindingTypeEnum.BIND_C)
         
         f_example = module["functions"]["example_f_func"]
-        self.assertEqual(f_example["binding_type"]["type"], BindingTypeEnum.DEFAULT)
+        self.assertIsNone(f_example["binding_type"]["type"])
+
+    def test_type_with_procedure_pointers(self):
+        """Test procedure pointer components in derived types without bind(c) on components"""
+        self.fs.create_file(
+            "/fake/path/type_proc_pointers.f90",
+            contents="""\
+    module type_proc_pointers_mod
+        use iso_c_binding
+        implicit none
+        
+        !!* Type containing procedure pointers *!
+        type :: callback_container
+            !!* Procedure pointer using C-compatible interface *!
+            procedure(c_func_interface), pointer, nopass :: c_proc => null()
+            
+            !!* Regular procedure pointer *!
+            procedure(regular_func_interface), pointer, nopass :: f_proc => null()
+        end type
+        
+        !!* Abstract interface for C-compatible function *!
+        abstract interface
+            function c_func_interface(x) bind(c) result(y)
+                use iso_c_binding
+                real(c_double), value :: x
+                real(c_double) :: y
+            end function
+        end interface
+        
+        !!* Abstract interface for regular Fortran function *!
+        abstract interface
+            function regular_func_interface(x) result(y)
+                real, intent(in) :: x
+                real :: y
+            end function
+        end interface
+        
+    contains
+
+        !!* Register a C function pointer *!
+        subroutine register_c_proc(container, proc_ptr) bind(c)
+            type(callback_container), intent(inout) :: container
+            type(c_funptr), value :: proc_ptr
+            ! Implementation would convert c_funptr to procedure pointer
+        end subroutine
+        
+        !!* Register a Fortran function pointer *!
+        subroutine register_f_proc(container, proc_ptr)
+            type(callback_container), intent(inout) :: container
+            procedure(regular_func_interface), pointer, intent(in) :: proc_ptr
+            container%f_proc => proc_ptr
+        end subroutine
+        
+        !!* Example implementation matching C interface *!
+        function example_c_func(x) bind(c) result(y)
+            use iso_c_binding
+            real(c_double), value :: x
+            real(c_double) :: y
+            y = x * 2.0
+        end function
+        
+        !!* Example implementation matching regular interface *!
+        function example_f_func(x) result(y)
+            real, intent(in) :: x
+            real :: y
+            y = x * 3.0
+        end function
+
+    end module type_proc_pointers_mod
+    """
+        )
+        result = extract_module_data([Path("/fake/path/type_proc_pointers.f90")])
+        module = result[0]
+        
+        # Check the type with procedure pointers
+        callback_type = module["types"]["callback_container"]
+        
+        c_proc = callback_type["procedures"]["c_proc"]
+        self.assertEqual(c_proc["name"], "c_proc")
+        self.assertEqual(c_proc["description"], "Procedure pointer using C-compatible interface\n")
+        self.assertEqual(c_proc["attributes"], ["POINTER", "PUBLIC"])
+        self.assertFalse(c_proc["is_final"])
+        self.assertEqual(c_proc["bound_to"], "c_func_interface")
+        self.assertEqual(c_proc["pass_type"], PassType.NONE)
+        self.assertIsNone(c_proc["pass_name"])
+        self.assertIsNone(c_proc["implementation"])
+
+        f_proc = callback_type["procedures"]["f_proc"]     
+        self.assertEqual(f_proc["name"], "f_proc")
+        self.assertEqual(f_proc["description"], "Regular procedure pointer\n")
+        self.assertEqual(f_proc["attributes"], ["POINTER", "PUBLIC"])
+        self.assertFalse(f_proc["is_final"])
+        self.assertEqual(f_proc["bound_to"], "regular_func_interface")
+        self.assertEqual(f_proc["pass_type"], PassType.NONE)
+        self.assertIsNone(f_proc["pass_name"])
+        self.assertIsNone(f_proc["implementation"])
+
+        interfaces = module["interfaces"]
+        
+        # Find C-compatible interface
+        c_interface = next(i for i in interfaces if "c_func_interface" in i["procedures"])
+        c_func = c_interface["procedures"]["c_func_interface"]
+        self.assertEqual(c_func["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        
+        # Find regular interface
+        f_interface = next(i for i in interfaces if "regular_func_interface" in i["procedures"])
+        f_func = f_interface["procedures"]["regular_func_interface"]
+        self.assertIsNone(f_func["binding_type"])
+        
+        # Check subroutines with procedure pointer arguments
+        register_c = module["subroutines"]["register_c_proc"]
+        self.assertEqual(register_c["binding_type"]["type"], BindingTypeEnum.BIND_C)
+        # Check that it has c_funptr argument
+        self.assertCountEqual(register_c["arguments"], ["container", "proc_ptr"])
+        
+        register_f = module["subroutines"]["register_f_proc"]
+        self.assertIsNone(register_f["binding_type"])
+        # Check that it has procedure pointer argument
+        self.assertCountEqual(register_f["arguments"], ["container", "proc_ptr"])
+        
+        # Check function implementations
+        c_example = module["functions"]["example_c_func"]
+        self.assertEqual(c_example["binding_type"], {"type": BindingTypeEnum.BIND_C, "name": None})
+        
+        f_example = module["functions"]["example_f_func"]
+        self.assertIsNone(f_example["binding_type"])
 
 
 if __name__ == "__main__":

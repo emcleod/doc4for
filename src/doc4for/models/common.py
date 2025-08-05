@@ -40,6 +40,7 @@ ARGUMENT_PATTERN = r'''
 
 class BindingTypeEnum(Enum):
     BIND_C = auto()
+    # when more bindins are available in the standard, add them here
 
 BindingType = TypedDict(
     "BindingType",
@@ -65,7 +66,7 @@ EnumDescription = TypedDict(
         "description": str,
         "attributes": List[str],  # For public/private, bind(c), etc.
         "enumerators": Dict[str, EnumeratorDescription],
-        "binding_type": BindingType
+        "binding_type": Optional[BindingType]
     },
 )
 

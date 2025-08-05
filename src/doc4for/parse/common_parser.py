@@ -115,7 +115,7 @@ def _extract_type(declaration: Any) -> Tuple[str, PolymorphismType, Optional[str
                 return type_details.string, PolymorphismType.LIMITED, None
     raise ValueError("Not handled yet TODO", types)
 
-def _extract_kind(declaration) -> str:
+def _extract_kind(declaration) -> Optional[str]:
     #TODO this can be a loop over an array of allowed types
     # e.g. real(kind=8) or real(kind=c_int)
     kind_selector = walk(declaration, Kind_Selector)
@@ -133,7 +133,7 @@ def _extract_kind(declaration) -> str:
             return kind[0].string
     return None
 
-def _extract_char_length(declaration: Any) -> str:
+def _extract_char_length(declaration: Any) -> Optional[str]:
     #TODO this can be a loop over an array of allowed types
     length_selector = walk(declaration, Length_Selector)
     if length_selector:
@@ -160,7 +160,7 @@ def _extract_char_length(declaration: Any) -> str:
             return length_value[0].string
     return None
 
-def _extract_length_and_kind(declaration: Any) -> Tuple[str, str]:
+def _extract_length_and_kind(declaration: Any) -> Tuple[Optional[str], Optional[str]]:
     selector = walk(declaration, Char_Selector)
     length, kind = None, None
     if selector:
@@ -183,7 +183,7 @@ def _extract_length_and_kind(declaration: Any) -> Tuple[str, str]:
     return length, kind
 
 # TODO split these up so each only handles one sort of thing
-def _extract_type_info(declaration) -> Dict[str, str]:
+def _extract_type_info(declaration) -> Dict[str, Any]:
     info = {}
     info["base_type"], info["polymorphism_type"], info["type_params"] = _extract_type(declaration)
     length = _extract_char_length(declaration)
@@ -199,7 +199,7 @@ def _extract_type_info(declaration) -> Dict[str, str]:
     info["binding_type"] = _extract_binding_type(walk(declaration, Language_Binding_Spec))
     return info
 
-def _extract_literal_value(node):
+def _extract_literal_value(node) -> Optional[str]:
     # If it's a Component_Decl, look for Component_Initialization
     if isinstance(node, Component_Decl):
         initializations = walk(node, Component_Initialization)
@@ -239,7 +239,7 @@ def _extract_entity_info(entity_decl):
         info["value"] = _extract_value_from_initialization(initialization[0])
     return info
 
-def _extract_dimension_info(shape_spec_list) -> Dimension:    
+def _extract_dimension_info(shape_spec_list) -> Optional[Dimension]:    
     dimensions = []
     declared_dimensions = walk(shape_spec_list, Deferred_Shape_Spec)
     if declared_dimensions:
@@ -250,16 +250,16 @@ def _extract_dimension_info(shape_spec_list) -> Dimension:
         if not declared_dimensions:
             return None
         
-        bound_type: BoundType = None
+        bound_type: BoundType
         # find the bound type first
         for declared_dimension in declared_dimensions:
             # we have an assumed shape
             if isinstance(declared_dimension, Assumed_Shape_Spec):
                 dimensions.append(ArrayBound(BoundType.ASSUMED_SHAPE))
             else:
-                lower_expr: Expression = None
-                upper_expr: Expression = None
-                bound_type: BoundType = None
+                lower_expr: Expression
+                upper_expr: Expression
+                bound_type: BoundType
                 # this is not nice - it depends on the order if the if-else statement
                 if walk(declared_dimension, (Name, Intrinsic_Function_Reference)):   
                     bound_type = BoundType.VARIABLE
@@ -376,7 +376,7 @@ def _extract_array_constructor_value(array_constructor: Array_Constructor) -> st
 # Need more specific handling for character literals with quotes
 # Character length extraction and handling might need refinement
 
-def _extract_binding_type(language_bindings: List[Language_Binding_Spec]) -> BindingType:
+def _extract_binding_type(language_bindings: List[Language_Binding_Spec]) -> Optional[BindingType]:
     if not language_bindings:
         return None
     names = walk(language_bindings, Char_Literal_Constant)

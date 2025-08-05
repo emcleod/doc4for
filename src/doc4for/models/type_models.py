@@ -1,7 +1,7 @@
 from typing import TypedDict, List, Dict, Optional
 from doc4for.models.procedure_models import ProcedureDescription
 from doc4for.models.variable_models import DataComponent
-from doc4for.models.common import EnumDescription
+from doc4for.models.common import EnumDescription, BindingType
 
 #TODO add source file information to all of these
 
@@ -37,6 +37,7 @@ TypeDescription = TypedDict(
         "procedures": Dict[str, ProcedureDescription],
         "generic_interfaces": Dict[str, GenericInterface],
         "extends": Optional[str],
-        "type_parameters": Dict[str, TypeParameter]
+        "type_parameters": Dict[str, TypeParameter],
+        "binding_type": Optional[BindingType]
     },
 )

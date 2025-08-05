@@ -244,7 +244,7 @@ class TestTypes(TestCase):
 
         self.assertEqual(custom_pass["name"], "custom_pass")
         self.assertEqual(custom_pass["description"], "")
-        self.assertCountEqual(custom_pass["attributes"], [])
+        self.assertCountEqual(custom_pass["attributes"], ["PUBLIC"])
         self.assertEqual(custom_pass["pass_type"], PassType.NAMED)
         self.assertEqual(custom_pass["pass_name"], "obj")
 
@@ -337,7 +337,7 @@ in the concrete type. Note that procedure does not have access to data\nin the t
 
         self.assertEqual(custom_pass["name"], "custom_pass")
         self.assertEqual(custom_pass["description"], "The procedure argument that accesses this type is called &#x27;obj&#x27;\n")
-        self.assertCountEqual(custom_pass["attributes"], [])
+        self.assertCountEqual(custom_pass["attributes"], ["PUBLIC"])
         self.assertEqual(custom_pass["pass_type"], PassType.NAMED)
         self.assertEqual(custom_pass["pass_name"], "obj")
 
@@ -440,13 +440,13 @@ in the concrete type. Note that procedure does not have access to data\nin the t
         cleanup = type["procedures"]["cleanup"]
         self.assertEqual(cleanup["name"], "cleanup")
         self.assertEqual(cleanup["description"], "Cleans up the type\n")
-        self.assertEqual(cleanup["attributes"], [])
+        self.assertEqual(cleanup["attributes"], ["PUBLIC"])
         self.assertTrue(cleanup["is_final"])
         
         other_cleanup = type["procedures"]["other_cleanup"]
         self.assertEqual(other_cleanup["name"], "other_cleanup")
         self.assertEqual(other_cleanup["description"], "Cleans up the type\n")
-        self.assertEqual(other_cleanup["attributes"], [])
+        self.assertEqual(other_cleanup["attributes"], ["PUBLIC"])
         self.assertTrue(other_cleanup["is_final"])
 
         self.assertEqual(type["data_components"], {})

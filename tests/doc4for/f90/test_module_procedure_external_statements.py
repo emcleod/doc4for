@@ -96,7 +96,7 @@ class TestExternalStatements(TestCase):
         
         # Check that func is marked as procedure and is intent in
         self.assertEqual(integrate_func["in"]["func"]["type"], "PROCEDURE")
-        self.assertFalse(integrate_func["in"]["func"]["attributes"])
+        self.assertEqual(integrate_func["in"]["func"]["attributes"], ["PUBLIC"])
         self.assertEqual(integrate_func["external_procedures"]["func"]["name"], "func")
         self.assertEqual(integrate_func["external_procedures"]["func"]["procedure_type"], "FUNCTION")
 
@@ -192,7 +192,7 @@ class TestExternalStatements(TestCase):
         
         # Check that user_func is marked as procedure and is intent in
         self.assertEqual(process_func["in"]["user_func"]["type"], "PROCEDURE")
-        self.assertFalse(process_func["in"]["user_func"]["attributes"])
+        self.assertEqual(process_func["in"]["user_func"]["attributes"], ["PUBLIC"])
         
         # Check external procedures
         self.assertEqual(process_func["external_procedures"]["user_func"]["name"], "user_func")
@@ -211,9 +211,9 @@ class TestExternalStatements(TestCase):
         
         # Check that transform functions are marked as procedures
         self.assertEqual(apply_sub["in"]["transform1"]["type"], "PROCEDURE")
-        self.assertFalse(apply_sub["in"]["transform1"]["attributes"])
+        self.assertEqual(apply_sub["in"]["transform1"]["attributes"], ["PUBLIC"])
         self.assertEqual(apply_sub["in"]["transform2"]["type"], "PROCEDURE")
-        self.assertFalse(apply_sub["in"]["transform2"]["attributes"])
+        self.assertEqual(apply_sub["in"]["transform2"]["attributes"], ["PUBLIC"])
         
         # Check external procedures
         self.assertEqual(apply_sub["external_procedures"]["transform1"]["name"], "transform1")
@@ -355,7 +355,7 @@ class TestExternalStatements(TestCase):
         
         # Check that func is marked as a procedure
         self.assertEqual(minimize_sub["in"]["func"]["type"], "PROCEDURE")
-        self.assertFalse(minimize_sub["in"]["func"]["attributes"])
+        self.assertEqual(minimize_sub["in"]["func"]["attributes"], ["PUBLIC"])
         
         # Check external procedures in interface
         self.assertEqual(minimize_sub["external_procedures"]["func"]["name"], "func")
@@ -368,7 +368,7 @@ class TestExternalStatements(TestCase):
         
         # Check external procedure parameters
         self.assertEqual(optimize_func["in"]["objective"]["type"], "PROCEDURE")
-        self.assertFalse(optimize_func["in"]["objective"]["attributes"])
+        self.assertEqual(optimize_func["in"]["objective"]["attributes"], ["PUBLIC"])
         
         # Check external procedures
         self.assertEqual(len(optimize_func["external_procedures"]), 2)
@@ -388,7 +388,7 @@ class TestExternalStatements(TestCase):
         
         # Check callback parameter
         self.assertEqual(process_func["in"]["callback"]["type"], "PROCEDURE")
-        self.assertFalse(process_func["in"]["callback"]["attributes"])
+        self.assertEqual(process_func["in"]["callback"]["attributes"], ["PUBLIC"])
         
         # Check callback external procedure
         self.assertEqual(process_func["external_procedures"]["callback"]["name"], "callback")

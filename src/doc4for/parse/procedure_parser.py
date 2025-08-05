@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 from collections import defaultdict
 from fparser.two.Fortran2003 import (
     Name,
@@ -14,9 +14,8 @@ from fparser.two.Fortran2003 import (
     Use_Stmt,
     Import_Stmt,
     External_Stmt, 
-    Call_Stmt, 
     Part_Ref,
-    Section_Subscript_List
+    Section_Subscript_List # type: ignore[attr-defined]
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -40,7 +39,7 @@ def parse_procedure(procedure,
                     type_decls: List[Type_Declaration_Stmt], 
                     procedure_decls: List[Procedure_Declaration_Stmt], 
                     external_decls: List[External_Stmt],
-                    comment_stack: List[Comment]) -> Dict:
+                    comment_stack: List[Comment]) -> Optional[Dict]:
     # accumulate comment stack before declaration
     for node in procedure.children:
         if isinstance(node, Comment):
@@ -154,6 +153,11 @@ def parse_procedure(procedure,
 
     uses = parse_uses_list(walk(procedure, Use_Stmt))
     imports = parse_imports_list(walk(procedure, Import_Stmt))
+    
+    # Procedures are public by default
+    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
+        attributes.append("PUBLIC")
+    
     return {
         "procedure_name": procedure_name,
         "procedure_declaration": procedure_stmt,

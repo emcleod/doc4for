@@ -45,7 +45,7 @@ module abstract_interface_mod
         self.assertEqual(len(interface["procedures"]), 1)
         function = interface["procedures"]["func"]
         self.assertEqual(function["arguments"], ["x"])
-        self.assertEqual(function["attributes"], [])
+        self.assertEqual(function["attributes"], ["PUBLIC"])
         self.assertIsNone(function["binding_type"])
         self.assertEqual(function["description"], "Transforms x into y somehow\n")
         self.assertEqual(function["in"], {"x": {"type": 
@@ -126,7 +126,7 @@ end module test_mod
         self.assertEqual(len(interface["procedures"]), 1)
         function = interface["procedures"]["integrand"]
         self.assertEqual(function["arguments"], ["f", "a", "b"])
-        self.assertEqual(function["attributes"], [])
+        self.assertEqual(function["attributes"], ["PUBLIC"])
         self.assertIsNone(function["binding_type"])
         
         # Check input parameters
@@ -1647,7 +1647,7 @@ end module matrix_ops_mod
         self.assertIsNotNone(cross_func["return"])
         self.assertEqual(cross_func["return"]["type"], "vector3d")
         self.assertEqual(cross_func["return"]["description"], "Cross product vector")
-        self.assertEqual(cross_func["attributes"], [])
+        self.assertEqual(cross_func["attributes"], ["PUBLIC"])
         self.assertIsNone(cross_func["binding_type"])
         self.assertEqual(cross_func["argument_interfaces"], {})
         
@@ -1854,7 +1854,7 @@ end module matrix_ops_mod
             "polymorphism_type": PolymorphismType.NONE,
             "type_params": None
         })
-        self.assertEqual(proc["attributes"], [])
+        self.assertEqual(proc["attributes"], ["PUBLIC"])
         self.assertEqual(proc["argument_interfaces"], {})
         
         # Check dot product operator interface

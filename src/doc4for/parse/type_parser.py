@@ -1,5 +1,6 @@
 import logging
-from typing import Any, List, Dict, TypeVar, Tuple
+from typing import Optional, List, Dict, TypeVar, Tuple, Type, Callable, Any
+from dataclasses import dataclass
 from fparser.two.Fortran2003 import (
     Derived_Type_Def,
     Type_Name,
@@ -13,6 +14,7 @@ from fparser.two.Fortran2003 import (
     Access_Spec,
     Specific_Binding,
     Type_Attr_Spec,
+    Binding_Attr_List,  # type: ignore[attr-defined]
     Binding_Attr,
     Binding_PASS_Arg_Name,
     Final_Binding,
@@ -20,43 +22,114 @@ from fparser.two.Fortran2003 import (
     Generic_Spec,
     Dtio_Generic_Spec,
     Component_Attr_Spec,
-    Type_Param_Name_List,
+    Type_Param_Name_List, # type: ignore[attr-defined]
     Type_Param_Def_Stmt,
     Type_Param_Attr_Spec,
-    Type_Param_Decl_List,
+    Type_Param_Decl_List, # type: ignore[attr-defined]
     Type_Param_Decl,
     Derived_Type_Stmt,
-    Type_Attr_Spec_List
+    Type_Attr_Spec_List, # type: ignore[attr-defined]
+    Proc_Decl,
+    Proc_Component_Def_Stmt,
+    Proc_Component_Attr_Spec_List, # type: ignore[attr-defined]
+    Proc_Component_Attr_Spec,
+    Component_Attr_Spec_List, # type: ignore[attr-defined]
+    Binding_Name_List, # type: ignore[attr-defined]
+    Private_Components_Stmt,
+    Binding_Private_Stmt
 )
 from fparser.two.utils import walk
-from doc4for.models.variable_models import DataComponent
+from doc4for.models.common import BindingType, BindingTypeEnum
+from doc4for.models.variable_models import DataComponent, PolymorphismType
 from doc4for.models.type_models import TypeDescription, GenericInterface, TypeParameter
 from doc4for.models.procedure_models import ProcedureDescription, PassType
-from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
+from doc4for.utils.comment_utils import get_formatted_description
 from doc4for.parse.common_parser import (_extract_literal_value, _extract_type,
                                          _extract_dimension_info, _extract_type_info
                                         )
 from doc4for.models.dimension_models import Dimension
 
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
+@dataclass
+class TypeBoundContext:
+    """Context object for handling type-bound procedures."""
+    procedures: Dict[str, ProcedureDescription]
+    generic_interfaces: Dict[str, GenericInterface]
+    comment_stack: List[Comment]
+    access: str = "PUBLIC"
+
+
+class TypeBoundProcedureHandler:
+    """Handler for processing type-bound procedures."""
+    
+    def __init__(self):
+        self._handlers: Dict[Type, Callable[[Any, TypeBoundContext], None]] = {}
+        
+    def register_handler(self, node_type: Type, handler: Callable[[Any, TypeBoundContext], None]) -> None:
+        """Register a handler for a specific node type."""
+        self._handlers[node_type] = handler
+        
+    def get_handler(self, node_type: Type) -> Optional[Callable[[Any, TypeBoundContext], None]]:
+        """Get the handler for a specific node type."""
+        return self._handlers.get(node_type)
+        
+    def handle(self, node: Any, context: TypeBoundContext) -> None:
+        """Handle a node using the appropriate handler."""
+        handler = self.get_handler(type(node))
+        if handler:
+            handler(node, context)
+
+
+# Handler instance
+_type_bound_handler_instance: Optional[TypeBoundProcedureHandler] = None
+
+
+def _get_type_bound_handler() -> TypeBoundProcedureHandler:
+    """Get the singleton instance of TypeBoundProcedureHandler."""
+    global _type_bound_handler_instance
+    if _type_bound_handler_instance is None:
+        handler = TypeBoundProcedureHandler()
+        handler.register_handler(Comment, handle_type_bound_comment)
+        handler.register_handler(Specific_Binding, handle_specific_binding)
+        handler.register_handler(Final_Binding, handle_final_binding)
+        handler.register_handler(Generic_Binding, handle_generic_binding)
+        handler.register_handler(Binding_Private_Stmt, handle_binding_private_stmt)  # Add this
+        _type_bound_handler_instance = handler
+    return _type_bound_handler_instance
+
+
 def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comment]) -> TypeDescription:
     # Extract type name
     type_name = walk(type_def, Type_Name)[0].string
-    type_description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""    
+    type_description = get_formatted_description(comment_stack)
     attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
-    
+
+    # default access is public    
+    default_access = "PRIVATE" if walk(type_def, Private_Components_Stmt) else "PUBLIC"
+
+    # Extract binding type - check for BIND attribute
+    binding_type: Optional[BindingType] = None
+    for attr_spec in walk(type_def, Type_Attr_Spec):
+        if attr_spec.children[0] == "BIND":
+            # This is a bind attribute
+            if len(attr_spec.children) > 1 and attr_spec.children[1] == "C":
+                binding_type = {"type": BindingTypeEnum.BIND_C, "name": None}
+                # TODO: Handle named bindings when fparser supports them
+            break
+
     # look for inline access statements
     attr_spec_lists = walk(type_def, Type_Attr_Spec_List)
     if attr_spec_lists:
         access_specs = walk(attr_spec_lists[0], Access_Spec)
         for access_spec in access_specs:
-            attributes.append(access_spec.string.lower())  # 'public' or 'private'
+            attributes.append(access_spec.string.upper())  # 'public' or 'private'
 
     # if there's an extends attribute, find the parent type    
-    parent_name: str = None
+    parent_name: Optional[str] = None
     if any("EXTENDS" in attribute for attribute in attributes):
         attr_spec = [spec for spec in walk(type_def, Type_Attr_Spec) if spec.children[0] == "EXTENDS"] 
         if attr_spec:
@@ -72,7 +145,8 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         "procedures": {},
         "generic_interfaces": {},
         "extends": parent_name,
-        "type_parameters": {}  
+        "type_parameters": {},
+        "binding_type": binding_type
     }
 
     # Check if this is a parameterized derived type
@@ -82,29 +156,171 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         type_info["type_parameters"] = extract_type_parameters(type_def)
 
     # Process the nodes inside the type
-    type_comment_stack = []    
+    type_comment_stack: List[Comment] = []    
     for node in type_def.children:
         if isinstance(node, Comment):
             type_comment_stack.append(node)
         elif isinstance(node, Component_Part):
-            type_info["data_components"].update(handle_data_component(node, type_comment_stack))
+            # Check what kind of components are in this Component_Part
+            if walk(node, Data_Component_Def_Stmt):
+                type_info["data_components"].update(handle_data_component(node, type_comment_stack))
+            if walk(node, Proc_Component_Def_Stmt):
+                type_info["procedures"].update(handle_procedure_component(node, type_comment_stack))
             type_comment_stack.clear()
-        elif isinstance(node, Type_Bound_Procedure_Part): 
-            # is it a generic binding
-            if walk(node, Generic_Binding):
-                type_info["generic_interfaces"].update(handle_generic_interface(node))
-            # still need to handle all specific bindings even if there's a generic binding in there
-            type_info["procedures"].update(handle_type_bound_procedure(node))
-        else:
-            pass
+        elif isinstance(node, Type_Bound_Procedure_Part):
+            # Handle all type-bound procedures using the handler pattern
+            procedures, generic_interfaces = handle_type_bound_procedures(node)
+            type_info["procedures"].update(procedures)
+            type_info["generic_interfaces"].update(generic_interfaces)
+
+    # Post-process to add access information to components without explicit access
+    
+    # for type, only add if there isn't already an explicit declaration
+    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
+        attributes.append(default_access)
+
+    for component in type_info["data_components"].values():
+        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
+            component["attributes"].append(default_access)
+    for proc in type_info["procedures"].values():
+        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
+            proc["attributes"].append(default_access)
+    for component in type_info["generic_interfaces"].values():
+        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
+            component["attributes"].append(default_access)
 
     return type_info
+
+def handle_binding_private_stmt(node: Any, context: TypeBoundContext) -> None:
+    """Handle binding private statement - changes default access to PRIVATE."""
+    context.access = "PRIVATE"
+
+def handle_type_bound_procedures(type_bound_statement: Type_Bound_Procedure_Part) -> Tuple[Dict[str, ProcedureDescription], Dict[str, GenericInterface]]:
+    """Handle all type-bound procedures using the handler pattern."""
+    context = TypeBoundContext(
+        procedures={},
+        generic_interfaces={},
+        comment_stack=[]
+    )
+    handler = _get_type_bound_handler()
+    
+    for node in type_bound_statement.children:
+        handler.handle(node, context)
+        # Clear comment stack after non-comment nodes
+        if not isinstance(node, Comment):
+            context.comment_stack.clear()
+    
+    return context.procedures, context.generic_interfaces
+
+
+def handle_type_bound_comment(node: Comment, context: TypeBoundContext) -> None:
+    """Handle comment nodes by adding them to the comment stack."""
+    context.comment_stack.append(node)
+
+
+def handle_specific_binding(node: Specific_Binding, context: TypeBoundContext) -> None:
+    """Handle specific binding nodes."""
+    name, bound_to, implementation = extract_procedure_info(node)
+    # Handle the case where name is None
+    if name is None:
+        logger.error(f"Could not extract procedure name from specific binding: {node}")
+        return
+    description: str = get_formatted_description(context.comment_stack)
+    attributes: List[str] = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec, Component_Attr_Spec))
+                                 if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
+    binding_types = [attr.string.upper() for attr in walk(node, Binding_Attr)]            
+    binding_args = walk(node, Binding_PASS_Arg_Name)            
+    if "DEFERRED" in binding_types:
+        binding_types.remove("DEFERRED")
+        attributes.append("DEFERRED")         
+    pass_name = (walk(binding_args, Name)[0].string if binding_args 
+                 else None)
+    pass_type = (PassType.NONE if "NOPASS" in binding_types 
+                 else PassType.NAMED if pass_name 
+                 else PassType.DEFAULT)
+    # If no explicit access specifier, use the current default
+    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
+        attributes.append(context.access)    
+    procedure_description: ProcedureDescription = {
+        "name": name,
+        "description": description,
+        "attributes": attributes,
+        "is_final": False,
+        "bound_to": bound_to,
+        "pass_type": pass_type,
+        "pass_name": pass_name,
+        "implementation": implementation
+    }
+    context.procedures[name] = procedure_description
+
+
+def handle_final_binding(node: Final_Binding, context: TypeBoundContext) -> None:
+    """Handle final binding nodes."""
+    description: str = get_formatted_description(context.comment_stack)       
+    for name in walk(node, Name):
+        procedure_description: ProcedureDescription = {
+            "name": name.string,
+            "description": description,
+            "attributes": [],
+            "is_final": True,
+            "bound_to": None,
+            "pass_type": None,
+            "pass_name": None,
+            "implementation": None
+        }
+        context.procedures[name.string] = procedure_description
+
+
+def handle_generic_binding(node: Generic_Binding, context: TypeBoundContext) -> None:
+    """Handle generic binding nodes."""
+    generic_specs = walk(node, (Generic_Spec, Dtio_Generic_Spec))
+    generic_spec: str  # Declare the type
+    specific_procedures: List[str] = []
+    
+    if generic_specs:
+        # have an operator, assignment or I/O overload
+        generic_spec = generic_specs[0].string
+        specific_procedures = [name.string for name in walk(node, Name)]            
+    else:
+        names = walk(node, Name)
+        # first name is generic name, rest are the specific procedures
+        if not names:  # Handle edge case
+            logger.warning(f"No names found in generic binding: {node}")
+            return
+        generic_spec = names[0].string
+        specific_procedures = [name.string for name in names[1:]]
+    
+    description = get_formatted_description(context.comment_stack)     
+    attributes: List[str] = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec, Component_Attr_Spec))
+                                 if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
+    # If no explicit access specifier, use the current default
+    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
+        attributes.append(context.access)
+
+    generic_interface: GenericInterface = {
+        "generic_spec": generic_spec,
+        "description": description,
+        "attributes": attributes,
+        "specific_procedures": specific_procedures
+    }
+    
+    # If this generic spec already exists, merge the specific procedures
+    if generic_spec in context.generic_interfaces:
+        existing = context.generic_interfaces[generic_spec]
+        existing["specific_procedures"].extend(specific_procedures)
+        if description:
+            if existing["description"]:
+                existing["description"] += description
+            else:
+                existing["description"] = description            
+    else:
+        context.generic_interfaces[generic_spec] = generic_interface
 
 
 def extract_type_parameters(type_def: Derived_Type_Def) -> Dict[str, TypeParameter]:
     """Extract type parameters from a parameterized derived type definition."""
-    parameters = {}
-    comment_stack = []
+    parameters: Dict[str, TypeParameter] = {}
+    comment_stack: List[Comment] = []
     
     for node in type_def.children:
         if isinstance(node, Comment):
@@ -132,7 +348,7 @@ def extract_type_parameters(type_def: Derived_Type_Def) -> Dict[str, TypeParamet
                     continue
                 
                 # Get description from preceding comments
-                description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+                description = get_formatted_description(comment_stack)
                 
                 # Create the parameter entry
                 parameters[param_name] = {
@@ -157,18 +373,21 @@ def handle_data_component(data_component: Component_Part,
     components: Dict[str, DataComponent] = {}
     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
         #TODO not sure this is handling comments correctly 
+        data_type: str
+        polymorphism_type: PolymorphismType
+        type_params: Optional[str]
         data_type, polymorphism_type, type_params = _extract_type(def_stmt)
-        description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
-        dimension: Dimension = _extract_dimension_info(def_stmt)
+        description: str = get_formatted_description(comment_stack)
+        dimension: Optional[Dimension] = _extract_dimension_info(def_stmt)
         attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
         type_info: Dict[str, str] = _extract_type_info(def_stmt)
-        kind = type_info["kind"]
-        length = type_info["length"]
+        kind: str = type_info["kind"]
+        length: str = type_info["length"]
         declarations = walk(def_stmt, Component_Decl)
         for declaration in declarations:
             name: str = walk(declaration, Name)[0].string
-            initial_value: str = _extract_literal_value(declaration)
+            initial_value: Optional[str] = _extract_literal_value(declaration)
             component: DataComponent = {
                 "name": name,
                 "type": data_type,
@@ -184,146 +403,68 @@ def handle_data_component(data_component: Component_Part,
             components[name] = component
     return components
 
-# def handle_data_component(data_component: Component_Part, 
-#                           comment_stack: List[Comment]) -> Dict[str, DataComponent]:  
-#     components: Dict[str, DataComponent] = {}
-#     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
-#         #TODO not sure this is handling comments correctly 
-#         data_type, polymorphism_type = _extract_type(def_stmt)
-#         description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
-#         dimension: Dimension = _extract_dimension_info(def_stmt)
-#         attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
-#                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
-#         type_info: Dict[str, str] = _extract_type_info(def_stmt)
-#         kind = type_info["kind"]
-#         length = type_info["length"]
-#         declarations = walk(def_stmt, Component_Decl)
-#         for declaration in declarations:
-#             name: str = walk(declaration, Name)[0].string
-#             initial_value: str = _extract_literal_value(declaration)
-#             component: DataComponent = {
-#                 "name": name,
-#                 "type": data_type,
-#                 "kind": kind,
-#                 "description": description,
-#                 "dimension": dimension,
-#                 "polymorphism_type": polymorphism_type,
-#                 "len": length,
-#                 "initial_value": initial_value,
-#                 "attributes": attributes
-#             }
-#             components[name] = component
-#     return components
 
-def handle_type_bound_procedure(type_bound_statement: Type_Bound_Procedure_Part) -> Dict[str, ProcedureDescription]:
-    procedures = {}
-    comment_stack: List[Comment] = []
-    for node in type_bound_statement.children:
-        if isinstance(node, Comment):
-            comment_stack.append(node)
-        elif isinstance(node, Specific_Binding):  
-            name, bound_to, implementation = extract_procedure_info(node)
-            description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
-            attributes = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec))]
-            binding_types = [attr.string.upper() for attr in walk(node, Binding_Attr)]            
-            binding_args = walk(node, Binding_PASS_Arg_Name)            
-            if "DEFERRED" in binding_types:
-                binding_types.remove("DEFERRED")
-                attributes.append("DEFERRED")         
-            pass_name = (walk(binding_args, Name)[0].string if binding_args 
-                         else None)
-            pass_type = (PassType.NONE if "NOPASS" in binding_types 
-                         else PassType.NAMED if pass_name 
-                         else PassType.DEFAULT)
-            binding_type = None #TODO    
-            procedure_description: ProcedureDescription = {
+def handle_procedure_component(component_part: Component_Part, 
+                               comment_stack: List[Comment]) -> Dict[str, ProcedureDescription]:
+    procedures: Dict[str, ProcedureDescription] = {}
+    
+    for proc_stmt in walk(component_part, Proc_Component_Def_Stmt):
+        interface_name = proc_stmt.children[0].string
+        description = get_formatted_description(comment_stack)
+        
+        # Extract attributes
+        attributes = []
+        pass_type = PassType.DEFAULT  # Default for procedure components
+        pass_name = None
+        
+        attr_spec_list = walk(proc_stmt, Proc_Component_Attr_Spec_List)
+        #TODO check for bind(c) in here when fparser supports it
+        if attr_spec_list:
+            for attr_spec in walk(attr_spec_list[0], Proc_Component_Attr_Spec):                
+                attr_string = attr_spec.string.upper()
+                if attr_string == "NOPASS":
+                    pass_type = PassType.NONE
+                elif attr_string == "PASS":
+                    pass_type = PassType.DEFAULT
+                    # Check if PASS has an argument like PASS(arg_name)
+                    if hasattr(attr_spec, 'children') and len(attr_spec.children) > 1:
+                        pass_type = PassType.NAMED
+                        pass_name = attr_spec.children[1].string
+                else:
+                    attributes.append(attr_string.upper())
+        
+        # Look for access statements and append
+        attributes.extend(attr.string.upper() for attr in walk(component_part, Access_Spec))
+
+        # Extract procedure declarations
+        proc_decls = walk(proc_stmt, Proc_Decl)
+        for proc_decl in proc_decls:
+            name = proc_decl.children[0].string
+            
+            procedure_info: ProcedureDescription = {
                 "name": name,
                 "description": description,
                 "attributes": attributes,
-                "is_final": False,
-                "bound_to": bound_to,
+                "is_final": False,  # Procedure components can't be FINAL
+                "bound_to": interface_name,  # The interface it's bound to
                 "pass_type": pass_type,
                 "pass_name": pass_name,
-                "implementation": implementation,
-                "binding_type": binding_type
+                "implementation": None,  # No implementation for procedure pointer components
             }
-            procedures[name] = procedure_description
-            comment_stack.clear()
-        elif isinstance(node, Final_Binding):
-            binding_type = None
-            description: str = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""            
-            for name in walk(node, Name):
-                procedure_description: ProcedureDescription = {
-                    "name": name.string,
-                    "description": description,
-                    "attributes": [],
-                    "is_final": True,
-                    "bound_to": None,
-                    "pass_type": None,
-                    "pass_name": None,
-                    "implementation": None,
-                    "binding_type": binding_type
-                }
-                procedures[name.string] = procedure_description
-            comment_stack.clear()
-        else:
-            #ignoring everything else including generic interfaces
-            comment_stack.clear()
+            procedures[name] = procedure_info
+    
     return procedures
 
-def handle_generic_interface(generic_binding: Generic_Binding) -> Dict[str, GenericInterface]:
-    generic_interfaces = {}
-    comment_stack: List[Comment] = []
-    
-    for node in generic_binding.children:
-        if isinstance(node, Comment):
-            comment_stack.append(node)
-        elif isinstance(node, Generic_Binding):
-            generic_specs = walk(node, (Generic_Spec, Dtio_Generic_Spec))
-            generic_spec, specific_procedures = None, []
-            if generic_specs:
-                # have an operator, assignment or I/O overload
-                generic_spec = generic_specs[0].string
-                specific_procedures = [name.string for name in walk(node, Name)]            
-            else:
-                names = walk(node, Name)
-                # first name is generic name, rest are the specific procedures
-                generic_spec = names[0].string
-                specific_procedures = [name.string for name in names[1:]]
-            description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""        
-            attributes = [attr.string.upper() for attr in walk(node, (Access_Spec,))]            
-            generic_interface = {
-                "generic_spec": generic_spec,
-                "description": description,
-                "attributes": attributes,
-                "specific_procedures": specific_procedures
-            }            
-            # If this generic spec already exists, merge the specific procedures
-            if generic_spec in generic_interfaces:
-                existing = generic_interfaces[generic_spec]
-                existing["specific_procedures"].extend(specific_procedures)
-                if description:
-                    if existing["description"]:
-                        existing["description"] += description
-                    else:
-                        existing["description"] = description            
-            else:
-                generic_interfaces[generic_spec] = generic_interface            
-            comment_stack.clear()
-        else:
-            # ignore specific bindings and clear any accumulated comments from them
-            comment_stack.clear()
-            
-    return generic_interfaces
 
-def extract_procedure_info(specific_binding: Specific_Binding) -> Tuple[str, str, str]:
+def extract_procedure_info(specific_binding: Specific_Binding) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     names = [child for child in specific_binding.children if isinstance(child, Name)]
-    has_arrow = "=>" in specific_binding.string
+    binding_string = getattr(specific_binding, "string", "")
+    has_arrow: bool = "=>" in binding_string
     
     # Default values
-    procedure_name = None
-    bound_to = None
-    implementation = None
+    procedure_name: Optional[str] = None
+    bound_to: Optional[str] = None
+    implementation: Optional[str] = None
     
     if len(names) == 1:
         # Simple case: procedure :: name
@@ -339,4 +480,3 @@ def extract_procedure_info(specific_binding: Specific_Binding) -> Tuple[str, str
             procedure_name = names[1].string
     
     return procedure_name, bound_to, implementation
-    

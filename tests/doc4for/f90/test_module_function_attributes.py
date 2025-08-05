@@ -34,7 +34,7 @@ end module pure_functions
         self.assertIn("attributes", function)
         self.assertEqual(function["description"], "A test pure function\n")
         attributes = function["attributes"]
-        self.assertEqual(attributes, ["PURE"])
+        self.assertCountEqual(attributes, ["PURE", "PUBLIC"])
         return_value = function["return"]
         self.assertEqual(return_value["type"], "REAL")        
 
@@ -64,7 +64,7 @@ end module pure_functions
         function = module["functions"]["elem_func"]
         self.assertIn("attributes", function)
         attributes = function["attributes"]
-        self.assertEqual(attributes, ["ELEMENTAL"])
+        self.assertCountEqual(attributes, ["ELEMENTAL", "PUBLIC"])
 
 
     def test_find_recursive_functions(self):
@@ -94,7 +94,7 @@ end module pure_functions
         function = module["functions"]["fact"]
         self.assertIn("attributes", function)
         attributes = function["attributes"]
-        self.assertEqual(attributes, ["RECURSIVE"])
+        self.assertCountEqual(attributes, ["RECURSIVE", "PUBLIC"])
 
     def test_find_combined_functions(self):
         self.fs.create_file(
@@ -130,13 +130,13 @@ end module pure_functions
         square_function = module["functions"]["square"]
         self.assertIn("attributes", square_function)
         square_attributes = square_function["attributes"]
-        self.assertCountEqual(square_attributes, ["PURE", "ELEMENTAL"])
+        self.assertCountEqual(square_attributes, ["PURE", "ELEMENTAL", "PUBLIC"])
 
         self.assertIn("fact", module["functions"])
         fact_function = module["functions"]["fact"]
         self.assertIn("attributes", fact_function)
         fact_attributes = fact_function["attributes"]
-        self.assertCountEqual(fact_attributes, ["RECURSIVE", "IMPURE"])
+        self.assertCountEqual(fact_attributes, ["RECURSIVE", "IMPURE", "PUBLIC"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -86,7 +86,8 @@ def _get_module_handler() -> ModuleHandler:
         _module_handler_instance = handler
     return _module_handler_instance
 
-def parse_module_content(module: Any, module_data: ModuleDescription, comment_stack: List[Comment]) -> None:
+def parse_module_content(module: Any, module_data: ModuleDescription, comment_stack: List[Comment],
+                                     remove_private: bool = True) -> None:
     handlers = _get_module_handler()
         
     # only get the parts we care about
@@ -102,7 +103,7 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     # keep track of access statements before declaration entity_name -> access
     access_stack: Dict[str, str] = {}
     # keep track of lone bind statements e.g. for binding a common block
-    bind_stack: Dict[str, BindingType] = {}
+    bind_stack: Dict[str, Optional[BindingType]] = {}
     # gather data statements to populate initial values in variables
     data_statement_stack: List[Data_Stmt] = []
     # keep track of save statements
@@ -172,7 +173,7 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     # convert them to parameters and add the initial value
     if parameter_stack:
         process_parameter_statements(module_data, parameter_stack)
-    if access_stack:
+    if remove_private and access_stack:
         process_access_statements(module_data, access_stack)
     if bind_stack:
         process_bind_statements(module_data, bind_stack)
@@ -195,13 +196,16 @@ def process_parameter_statements(module_data: ModuleDescription, parameter_state
                 
                 # Create parameter description from variable description
                 parameter: ParameterDescription = {
-                    "name": variable["name"],
-                    "type": variable["type"],
                     "description": variable["description"],
+                    "type": variable["type"],
+                    "name": variable["name"],
                     "value": value.string,
                     "dimension": variable.get("dimension"),
+                    "polymorphism_type": variable.get("polymorphism_type"),
+                    "attributes": variable.get("attributes"),
                     "kind": variable.get("kind"),
                     "length": variable.get("length"),
+                    "binding_type": variable.get("binding_type")
                 }
                 
                 module_data["parameters"][name.string] = parameter
@@ -223,32 +227,49 @@ def process_common_block_variables(module_data: ModuleDescription) -> None:
                 common_block_variables[common_block_variable_name] = variables[common_block_variable_name]
 
 #TODO remove private entities if they shouldn't be documented
+#TODO in types, modules, etc: look for a top-level 'private' or 'public' attribute
+# Then walk the data structure and look for any child with attributes that 
+# have a 'private' attribute OR don't have any access attribute and are by 
+# default private because of the top-level attribute. Then, remove if it's private
 def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
-    # Update types that have access statements, preserve all others
-    updated_types = {}
+    def add_access_to_entity(entity: Dict[str, Any], access: str) -> None:
+        attrs = entity.get("attributes", [])
+        if access not in attrs:
+            entity["attributes"] = attrs + [access]
     
-    for name, desc in module_data["types"].items():
-        if name in access_stack:
-            # Add access from access_stack to existing attributes
-            existing_attrs = desc.get("attributes", [])
-            updated_types[name] = {
-                **desc, 
-                "attributes": existing_attrs + [access_stack[name]]
-            }
-        else:
-            # Keep the type as-is (it may have inline access specs)
-            updated_types[name] = desc
-    
-    module_data["types"] = updated_types
-    
+    for field_name, field_value in module_data.items():
+        # Skip non-collection fields
+        if not isinstance(field_value, (dict, list)):
+            continue
+            
+        if isinstance(field_value, dict):
+            # Process dict-based collections
+            for name, access in access_stack.items():
+                if name in field_value:
+                    entity = field_value[name]
+                    # Check if this entity has an attributes field
+                    if isinstance(entity, dict) and "attributes" in entity:
+                        add_access_to_entity(entity, access)
+                        
+        elif isinstance(field_value, list):
+            # Process list-based collections (like interfaces)
+            for entity in field_value:
+                if isinstance(entity, dict) and "attributes" in entity:
+                    # Need to determine the entity's name
+                    name = entity.get("name") or entity.get("interface_name") or entity.get("type_name")
+                    if name and name in access_stack:
+                        add_access_to_entity(entity, access_stack[name])
+                        
 # def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
-#     module_data["types"] = {
-#         name: {**desc, "attributes": desc.get("attributes", []) + [access_stack[name]]}
-#         for name, desc in module_data["types"].items()
-#         if name in access_stack
-#     }
+#     for name, access in access_stack.items():
+#         if name in module_data["types"]:
+#             type_desc = module_data["types"][name]
+#             attrs = type_desc.get("attributes", [])
+#             if access not in attrs:
+#                 type_desc["attributes"] = attrs + [access]
+    
 
-def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str, BindingType]) -> None:
+def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str, Optional[BindingType]]) -> None:
     """Process BIND statements and attach them to the appropriate entities."""
     
     # Check common blocks

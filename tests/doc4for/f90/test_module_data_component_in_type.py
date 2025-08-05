@@ -1722,6 +1722,7 @@ end module array_module
                                                     Expression(ExpressionType.LITERAL, "3")),
                                         ArrayBound(BoundType.FIXED, Expression(ExpressionType.LITERAL, "1"), 
                                                     Expression(ExpressionType.LITERAL, "3"))]})
+        #TODO
     #    self.assertEqual(data_components["matrix_2d_coarray"]["codimension"], {"codimensions": ["2", "*"]})
         self.assertEqual(data_components["matrix_2d_coarray"]["attributes"], ["PUBLIC"])
         
@@ -1734,7 +1735,7 @@ end module array_module
     #    self.assertEqual(data_components["multi_dim_coarray"]["codimension"], {"codimensions": ["2", "2", "*"]})
         self.assertEqual(data_components["multi_dim_coarray"]["attributes"], ["PUBLIC"])
         self.assertEqual(data_components["multi_dim_coarray"]["description"], "Multi-dimensional coarray\n")
-        
+    #  
         procedures = type["procedures"]
         self.assertEqual(len(procedures), 3)
         self.assertEqual(procedures["init"]["name"], "init")

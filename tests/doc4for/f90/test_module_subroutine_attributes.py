@@ -34,7 +34,7 @@ end module pure_subroutines
         self.assertIn("attributes", subroutine)
         self.assertEqual(subroutine["description"], "A test pure subroutine\n")
         attributes = subroutine["attributes"]
-        self.assertEqual(attributes, ["PURE"])
+        self.assertCountEqual(attributes, ["PURE", "PUBLIC"])
 
     def test_find_elemental_subroutines(self):
         self.fs.create_file(
@@ -64,7 +64,7 @@ end module pure_subroutines
         subroutine = module["subroutines"]["elem_sub"]
         self.assertIn("attributes", subroutine)
         attributes = subroutine["attributes"]
-        self.assertEqual(attributes, ["ELEMENTAL"])
+        self.assertEqual(attributes, ["ELEMENTAL", "PUBLIC"])
 
     def test_find_recursive_subroutines(self):
         self.fs.create_file(
@@ -99,7 +99,7 @@ end module pure_subroutines
         subroutine = module["subroutines"]["fact"]
         self.assertIn("attributes", subroutine)
         attributes = subroutine["attributes"]
-        self.assertEqual(attributes, ["RECURSIVE"])
+        self.assertEqual(attributes, ["RECURSIVE", "PUBLIC"])
 
     def test_find_combined_subroutines(self):
         self.fs.create_file(
@@ -143,13 +143,13 @@ end module pure_subroutines
         square_subroutine = module["subroutines"]["square"]
         self.assertIn("attributes", square_subroutine)
         square_attributes = square_subroutine["attributes"]
-        self.assertEqual(square_attributes, ["PURE", "ELEMENTAL"])
+        self.assertEqual(square_attributes, ["PURE", "ELEMENTAL", "PUBLIC"])
 
         self.assertIn("fact", module["subroutines"])
         fact_subroutine = module["subroutines"]["fact"]
         self.assertIn("attributes", fact_subroutine)
         fact_attributes = fact_subroutine["attributes"]
-        self.assertEqual(fact_attributes, ["RECURSIVE"])
+        self.assertEqual(fact_attributes, ["RECURSIVE", "PUBLIC"])
 
 if __name__ == "__main__":
     unittest.main()

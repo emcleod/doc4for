@@ -54,7 +54,7 @@ try:
 except ImportError:
     pass
 
-def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
+def extract_module_data(f90_files: List[Path], remove_private: bool = True) -> List[ModuleDescription]:
     modules: List[ModuleDescription] = []
     
     # Create a parser
@@ -78,7 +78,7 @@ def extract_module_data(f90_files: List[Path]) -> List[ModuleDescription]:
             elif isinstance(child, Module):
                 module_data: ModuleDescription = initialise_module_description(child, comment_stack, f90_file_path)
                 comment_stack.clear()
-                parse_module_content(child, module_data, comment_stack)
+                parse_module_content(child, module_data, comment_stack, remove_private)
                 modules.append(module_data)
                 comment_stack.clear()
                     

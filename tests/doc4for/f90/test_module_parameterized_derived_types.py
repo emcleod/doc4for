@@ -147,7 +147,7 @@ class TestParameterizedTypes(TestCase):
         self.assertEqual(data_comp["name"], "data")
         self.assertEqual(data_comp["type"], "REAL")
         self.assertEqual(data_comp["kind"], "k")  # Parameterized kind
-        self.assertEqual(data_comp["attributes"], ["ALLOCATABLE"])
+        self.assertCountEqual(data_comp["attributes"], ["ALLOCATABLE", "PUBLIC"])
         self.assertEqual(data_comp["dimension"]["dimensions"], 
                          [ArrayBound(BoundType.DEFERRED), ArrayBound(BoundType.DEFERRED)])
         self.assertEqual(data_comp["description"], "Matrix data with parameterized kind and dimensions\n")
@@ -563,7 +563,7 @@ class TestParameterizedTypes(TestCase):
         
         # Check allocatable components with parameterized types
         values = sparse["data_components"]["values"]
-        self.assertEqual(values["attributes"], ["ALLOCATABLE"])
+        self.assertCountEqual(values["attributes"], ["ALLOCATABLE", "PUBLIC"])
         self.assertEqual(values["kind"], "k")
         
         row_indices = sparse["data_components"]["row_indices"]
@@ -587,7 +587,7 @@ class TestParameterizedTypes(TestCase):
         options = config["data_components"]["options"]
         self.assertEqual(options["type"], "flexible_array")
         self.assertEqual(options["type_params"], "(kind(1.0), :)")
-        self.assertEqual(options["attributes"], ["ALLOCATABLE"])
+        self.assertCountEqual(options["attributes"], ["ALLOCATABLE", "PUBLIC"])
         # Should indicate it's an array of parameterized types
         self.assertEqual(options["dimension"]["dimensions"],
                         [ArrayBound(BoundType.DEFERRED)])
@@ -595,7 +595,7 @@ class TestParameterizedTypes(TestCase):
         metadata = config["data_components"]["metadata"]
         self.assertEqual(metadata["type"], "typed_buffer")
         self.assertEqual(metadata["type_params"], "(int32, 4, :)")
-        self.assertEqual(metadata["attributes"], ["ALLOCATABLE"])
+        self.assertCountEqual(metadata["attributes"], ["ALLOCATABLE", "PUBLIC"])
 
         # Test module procedures that return allocatable parameterized types
         procedures = module["functions"]

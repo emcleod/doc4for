@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from fparser.two.Fortran2003 import (
   Enum_Def, 
   Enum_Def_Stmt,
@@ -8,14 +8,14 @@ from fparser.two.Fortran2003 import (
   Comment,
   Name)
 from fparser.two.utils import walk
-from doc4for.models.common import EnumDescription, EnumeratorDescription, BindingTypeEnum
+from doc4for.models.common import EnumDescription, EnumeratorDescription, BindingTypeEnum, BindingType
 from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
 
-def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[str, EnumDescription]:
+def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[Optional[str], EnumDescription]:
     description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
     enumerators: Dict[str, EnumeratorDescription] = {}
-    first_enum_name: str = None # for the entry in the module description
-    binding_type = None
+    first_enum_name: Optional[str] = None # for the entry in the module description
+    binding_type: Optional[BindingType] = None
     enum_name = "__ENUM__"
 
     implicit_value = 0
@@ -60,7 +60,7 @@ def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[str, EnumD
                     "value": value,
                     "description": enum_desc
                 }
-    enum_description = {
+    enum_description: EnumDescription = {
         "name": enum_name,
         "description": description,
         "attributes": [],

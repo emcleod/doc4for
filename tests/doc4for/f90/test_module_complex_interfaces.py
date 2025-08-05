@@ -339,7 +339,7 @@ class TestInterfaces(TestCase):
         # Check sigmoid interface
         sigmoid_interface = module["interfaces"][0]
         sigmoid_proc = sigmoid_interface["procedures"]["sigmoid_scalar"]
-        self.assertEqual(sigmoid_proc["attributes"], ["ELEMENTAL", "PURE"])
+        self.assertEqual(sigmoid_proc["attributes"], ["ELEMENTAL", "PURE", "PUBLIC"])
         
         # Check safe_divide interface
         safe_divide_interface = module["interfaces"][1]

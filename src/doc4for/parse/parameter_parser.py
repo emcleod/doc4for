@@ -45,13 +45,13 @@ def parse_parameter(
             "description": description,
             "type": type_info.get("base_type"),
             "name": param_info.get("name"),
+            "value": param_info.get("value"),
             "dimension": dimension if dimension else param_info.get("dimension"),
             "polymorphism_type": type_info.get("polymorphism_type"),
             "attributes": attributes,
             "kind": type_info.get("kind"),
-            "value": param_info.get("value"),
             "length": type_info.get("length"),
-            "binding_type": type_info.get("binding_type")            
+            "binding_type": type_info.get("binding_type")
         }
         
         parameter_descriptions.append(parameter_description)

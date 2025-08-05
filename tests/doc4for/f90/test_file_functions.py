@@ -52,7 +52,7 @@ end module test_mod
         # Documented function
         func_doc = file_data["functions"]["simple"]
         expected_doc = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Returns a constant value\n\n",
             "arguments": [],
             "out": {},
@@ -71,7 +71,7 @@ end module test_mod
         # Undocumented function
         func_no_doc = file_data["functions"]["simple_no_doc"]
         expected_no_doc = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "",
             "arguments": [],
             "out": {},
@@ -126,7 +126,7 @@ end module test_mod
         # Documented function
         func_doc = file_data["functions"]["rectangle_area"]
         expected_doc = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Calculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale"],
             "in": {
@@ -155,7 +155,7 @@ end module test_mod
         # Undocumented function
         func_no_doc = file_data["functions"]["rectangle_area_no_doc"]
         expected_no_doc = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "",
             "arguments": ["length", "width"],
             "in": {
@@ -252,7 +252,7 @@ end module test_mod
 
         func_array = file_data["functions"]["process_matrix"]
         expected_array = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Function with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {
@@ -313,7 +313,7 @@ end module test_mod
 
         func_attached = file_data["functions"]["unnamed_return"]
         expected_attached = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Unnamed return\n\n",
             "arguments": [],
             "in": {},
@@ -626,7 +626,7 @@ end module test_mod
         # Unnamed array return
         func_vector = file_data["functions"]["vector_return"]
         expected_vector = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Function returning an array\n\n",
             "arguments": [],
             "in": {},
@@ -646,7 +646,7 @@ end module test_mod
         # Named matrix return
         func_matrix = file_data["functions"]["matrix_return"]
         expected_matrix = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Function with named array return\n\n",
             "arguments": [],
             "in": {},
@@ -669,7 +669,7 @@ end module test_mod
         # Spaced array spec
         func_spaced = file_data["functions"]["spaced_array"]
         expected_spaced = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Function with different spacing in array spec\n\n",
             "arguments": [],
             "in": {},
@@ -690,7 +690,7 @@ end module test_mod
         # Dense array spec
         func_dense = file_data["functions"]["dense_array"]
         expected_dense = {
-            "attributes": [],
+            "attributes": ["PUBLIC"],
             "description": "Function with no spaces around array spec\n\n",
             "arguments": [],
             "in": {},
