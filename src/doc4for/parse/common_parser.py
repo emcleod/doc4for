@@ -41,18 +41,11 @@ logger: logging.Logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 class HandlerProtocol(Protocol):
-    def __call__(self, item: Any, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    def __call__(self, item: Any, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
         ...  
 class FortranHandler(Generic[T]):
     TYPE_HANDLING = {
-        #TODO these all need to be removed when the migration is complete
-        # EndModule: None,
-        # EndType: None,
-        # Contains: None,
-        # Implicit: None,
         Comment: None,  # Though we shouldn't get here
-        # Private: "WARNING",
-        # Public: "WARNING",
     }
 
     def __init__(self):
@@ -77,10 +70,10 @@ class FortranHandler(Generic[T]):
                     
         return self.handle_unimplemented_item
     
-    def handle_unimplemented_item(self, item: Any, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    def handle_unimplemented_item(self, item: Any, data: T, comment_stack: List[Comment], default_access: str, **kwargs: Any) -> None:
         logger.warning("Unimplemented type %s", type(item))
         
-    def handle_ignored_item(self, item: Any, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+    def handle_ignored_item(self, item: Any, data: T, comment_stack: List[Comment], default_access: str, **kwargs: Any) -> None:
         logger.info("Ignored type %s", type(item))
 
 def _extract_type(declaration: Any) -> Tuple[str, PolymorphismType, Optional[str]]:

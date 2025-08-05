@@ -54,8 +54,8 @@ def _get_file_handler() -> FileHandler:
 
 def parse_file_content(file: Any, file_data: FileDescription) -> None:
     handlers = _get_file_handler()
-    visibility: VisibilityState = VisibilityState()
     comment_stack: List[Comment] = []
+    default_access: Optional[str] = None # access is irrelevant outside modules
     first_non_comment_node: bool = False
     # TODO look at post processing in parse_module_content
     for child in file.children:
@@ -69,12 +69,12 @@ def parse_file_content(file: Any, file_data: FileDescription) -> None:
         else:
             first_non_comment_node = True
             handler = handlers.get_handler(type(child))
-            handler(child, file_data, comment_stack)
+            handler(child, file_data, comment_stack, default_access)
             comment_stack.clear()
 
 T = TypeVar("T")
 
-def handle_module(item: Module, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_module(item: Module, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
     module_description = initialise_module_description(item, comment_stack, data["file_name"])
     # TODO we're populating the module description twice
     parse_module_content(item, module_description, comment_stack) 

@@ -1,8 +1,11 @@
 import unittest
 from pathlib import Path
+from typing import Optional
 from pyfakefs.fake_filesystem_unittest import TestCase
 from doc4for.f90.generate_module_tree import extract_module_data
 from doc4for.f90.generate_file_tree import extract_file_data
+from doc4for.models.file_models import ProgramDescription
+from doc4for.models.module_models import ModuleDescription, BlockDataDescription
 
 class TestUseStatementsInDifferentContexts(TestCase):
     maxDiff = None
@@ -66,9 +69,9 @@ end module geometry
             Path("/fake/path/geometry.f90")
         ])
         
-        geometry_module = next((m for m in result if m["module_name"] == "geometry"), None)
-        self.assertIsNotNone(geometry_module)
-        
+        geometry_module: Optional[ModuleDescription] = next((m for m in result if m["module_name"] == "geometry"), None)
+        assert geometry_module is not None
+
         # Check module-level USE statement
         self.assertEqual(len(geometry_module["uses"]), 1)
         self.assertIn("constants", geometry_module["uses"])
@@ -127,7 +130,7 @@ end module math_functions
         ])
         
         math_module = next((m for m in result if m["module_name"] == "math_functions"), None)
-        self.assertIsNotNone(math_module)
+        assert math_module is not None
         
         # Check function-level USE statement
         exp_func = math_module["functions"]["exponential_series"]
@@ -180,8 +183,8 @@ end module utilities
             Path("/fake/path/utilities.f90")
         ])
         
-        utilities_module = next((m for m in result if m["module_name"] == "utilities"), None)
-        self.assertIsNotNone(utilities_module)
+        utilities_module: Optional[ModuleDescription] = next((m for m in result if m["module_name"] == "utilities"), None)
+        assert utilities_module is not None
         
         # Check subroutine-level USE statement
         print_sub = utilities_module["subroutines"]["print_convergence_info"]
@@ -223,7 +226,7 @@ end program main_calculation
         ])
         
         # Programs should be captured in the result
-        program_data = None
+        program_data: ProgramDescription
         for item in result:
             if item.get("file_name") == "/fake/path/main_program.f90":
                 program_data = item["programs"]["main_calculation"]
@@ -268,13 +271,12 @@ end block data common_init
         ])
         
         # Block data should be captured in the result
-        block_data = None
+        block_data: Optional[BlockDataDescription]
         for item in result:
             if item.get("file_name") == "/fake/path/common_data.f90":
                 block_data = item["block_data"]["common_init"]
                 break
-        
-        self.assertIsNotNone(block_data)
+        assert block_data is not None
         
         # Check block data USE statement
         self.assertEqual(len(block_data["uses"]), 1)
@@ -341,9 +343,9 @@ end module complex_calculation
             Path("/fake/path/complex_calculation.f90")
         ])
         
-        complex_module = next((m for m in result if m["module_name"] == "complex_calculation"), None)
-        self.assertIsNotNone(complex_module)
-        
+        complex_module: Optional[ModuleDescription] = next((m for m in result if m["module_name"] == "complex_calculation"), None)
+        assert complex_module is not None
+
         # Check multiple USE statements in function
         complex_func = complex_module["functions"]["complex_function"]
         self.assertEqual(len(complex_func["uses"]), 2)

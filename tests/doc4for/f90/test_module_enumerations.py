@@ -37,7 +37,7 @@ class TestEnumerations(TestCase):
         
         self.assertEqual(enum["description"], "Basic color enumeration\n")
         self.assertEqual(enum["name"], "__ENUM__")
-        self.assertEqual(enum["attributes"], [])
+        self.assertEqual(enum["attributes"], ["PUBLIC"])
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
 
         # Check enumerators
@@ -81,7 +81,7 @@ class TestEnumerations(TestCase):
         
         self.assertEqual(enum["description"], "Days of the week\n")
         self.assertEqual(enum["name"], "__ENUM__")
-        self.assertEqual(enum["attributes"], [])
+        self.assertEqual(enum["attributes"], ["PUBLIC"])
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
 
         # Check enumerators
@@ -127,7 +127,7 @@ class TestEnumerations(TestCase):
         
         self.assertEqual(enum["description"], "Error code enumeration\n")
         self.assertEqual(enum["name"], "__ENUM__")
-        self.assertEqual(enum["attributes"], [])
+        self.assertEqual(enum["attributes"], ["PUBLIC"])
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
 
         # Check enumerators
@@ -183,7 +183,7 @@ class TestEnumerations(TestCase):
         color_enum = module["enums"]["RED"]
         self.assertEqual(color_enum["description"], "Color choices\n")
         self.assertEqual(color_enum["name"], "__ENUM__")
-        self.assertEqual(color_enum["attributes"], [])
+        self.assertEqual(color_enum["attributes"], ["PUBLIC"])
         self.assertEqual(color_enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
         
         # Check color enum enumerators
@@ -203,7 +203,7 @@ class TestEnumerations(TestCase):
         status_enum = module["enums"]["OK"]
         self.assertEqual(status_enum["description"], "Status codes\n")
         self.assertEqual(status_enum["name"], "__ENUM__")
-        self.assertEqual(status_enum["attributes"], [])
+        self.assertEqual(status_enum["attributes"], ["PUBLIC"])
         self.assertEqual(status_enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
         
         # Check status enum enumerators
@@ -258,7 +258,7 @@ class TestEnumerations(TestCase):
         )
         
         self.assertEqual(enum["name"], "__ENUM__")
-        self.assertEqual(enum["attributes"], [])
+        self.assertEqual(enum["attributes"], ["PUBLIC"])
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
         
         # Check enumerators
@@ -332,7 +332,7 @@ end module power_levels
         
         self.assertEqual(enum["description"], "Testing multiple enumerator statements\n")
         self.assertEqual(enum["name"], "__ENUM__")
-        self.assertEqual(enum["attributes"], [])
+        self.assertEqual(enum["attributes"], ["PUBLIC"])
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
         
         # Check enumerators

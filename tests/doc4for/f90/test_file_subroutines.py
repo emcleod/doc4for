@@ -51,7 +51,7 @@ end module test_mod
         # Documented subroutine
         sub_doc = file_data["subroutines"]["simple"]
         expected_doc = {
-            "attributes": ["PUBLIC"],
+            "attributes": [],
             "description": "Does nothing.\n",
             "arguments": [],
             "out": {},
@@ -67,7 +67,7 @@ end module test_mod
         # Undocumented subroutine
         func_no_doc = file_data["subroutines"]["simple_no_doc"]
         expected_no_doc = {
-            "attributes": ["PUBLIC"],
+            "attributes": [],
             "description": "",
             "arguments": [],
             "out": {},
@@ -121,7 +121,7 @@ end module test_mod
         # Documented function
         sub_doc = file_data["subroutines"]["rectangle_area"]
         expected_doc = {
-            "attributes": ["PUBLIC"],
+            "attributes": [],
             "description": "Calculates the area of a rectangle\n\n",
             "arguments": ["length", "width", "scale", "area"],
             "in": {
@@ -183,7 +183,7 @@ end module test_mod
         # Undocumented function
         sub_no_doc = file_data["subroutines"]["rectangle_area_no_doc"]
         expected_no_doc = {
-            "attributes": ["PUBLIC"],
+            "attributes": [],
             "description": "",
             "arguments": ["length", "width", "area"],
             "in": {
@@ -293,7 +293,7 @@ end module test_mod
         
         sub_array = file_data["subroutines"]["process_matrix"]
         expected_array = {
-            "attributes": ["PUBLIC"],
+            "attributes": [],
             "description": "Subroutine with array arguments\n\n",
             "arguments": ["matrix", "vector"],
             "in": {

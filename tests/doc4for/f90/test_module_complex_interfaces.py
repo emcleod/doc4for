@@ -256,7 +256,7 @@ class TestInterfaces(TestCase):
         self.assertEqual(len(interfaces), 1)
         
         for interface in module["interfaces"]:
-            self.assertEqual(interface["attributes"], ["ABSTRACT"])
+            self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         
         # Check the import statement was handled
         area_interface = module["interfaces"][0]

@@ -61,7 +61,7 @@ class TestTypeBindingProcedures(TestCase):
         
         # Check the abstract interface
         callback_interface = module["interfaces"][0]  # First interface
-        self.assertEqual(callback_interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(callback_interface["attributes"], ["ABSTRACT", "PUBLIC"])
         
         callback_func = callback_interface["procedures"]["callback_func"]
         self.assertIn("binding_type", callback_func)

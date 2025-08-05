@@ -43,6 +43,7 @@ class TestBlockData(TestCase):
             "description": "",
             "common_blocks": {
                 "": {
+                    "attributes": [],
                     "name": "",
                     "description": "",
                     "binding_type": None,
@@ -103,6 +104,7 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "attributes": [],
                     "name": "basic",
                     "description": "",
                     "binding_type": None,
@@ -164,6 +166,7 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "attributes": [],
                     "name": "basic",
                     "description": "",
                     "binding_type": None,
@@ -225,6 +228,7 @@ END BLOCK DATA simple
             "description": "",
             "common_blocks": {
                 "basic": {
+                    "attributes": [],
                     "name": "basic",
                     "description": "",
                     "binding_type": None,
@@ -311,6 +315,7 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "": {
+                    "attributes": [],
                     "name": "",
                     "description": "",
                     "binding_type": None,
@@ -358,6 +363,7 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "": {
+                    "attributes": [],
                     "name": "",
                     "description": "",
                     "binding_type": None,
@@ -419,6 +425,7 @@ END BLOCK DATA
             "description": "",
             "common_blocks": {
                 "arrays": {
+                    "attributes": [],
                     "name": "arrays",
                     "description": "",
                     "binding_type": None,
@@ -611,6 +618,7 @@ END BLOCK DATA
             "description": "Defines some constants\n",
             "common_blocks": {
                 "": {
+                    "attributes": [],
                     "name": "",
                     "description": "Coordinates\n",
                     "binding_type": None,

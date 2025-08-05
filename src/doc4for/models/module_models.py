@@ -9,8 +9,9 @@ from doc4for.models.common import EnumDescription, Uses, BindingType, Equivalenc
 CommonBlockDescription = TypedDict(
     "CommonBlockDescription",
     {
+        "attributes": List[str], # used for access specifiers
         "name": str,
-        "variables": Dict[str, VariableDescription], #TODO this should be ordered to keep declaration order
+        "variables": Dict[str, VariableDescription], # preserves declaration order as of Python 3.7
         "description": str,
         "binding_type": Optional[BindingType]
     },

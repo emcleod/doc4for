@@ -97,19 +97,19 @@ def _get_type_bound_handler() -> TypeBoundProcedureHandler:
         handler.register_handler(Specific_Binding, handle_specific_binding)
         handler.register_handler(Final_Binding, handle_final_binding)
         handler.register_handler(Generic_Binding, handle_generic_binding)
-        handler.register_handler(Binding_Private_Stmt, handle_binding_private_stmt)  # Add this
+        handler.register_handler(Binding_Private_Stmt, handle_binding_private_stmt)  
         _type_bound_handler_instance = handler
     return _type_bound_handler_instance
 
 
-def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comment]) -> TypeDescription:
+def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comment], default_access: Optional[str]) -> TypeDescription:
     # Extract type name
     type_name = walk(type_def, Type_Name)[0].string
     type_description = get_formatted_description(comment_stack)
     attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
 
-    # default access is public    
-    default_access = "PRIVATE" if walk(type_def, Private_Components_Stmt) else "PUBLIC"
+    # Determine type's component default access
+    component_default_access = "PRIVATE" if walk(type_def, Private_Components_Stmt) else "PUBLIC"
 
     # Extract binding type - check for BIND attribute
     binding_type: Optional[BindingType] = None
@@ -174,20 +174,22 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
             type_info["generic_interfaces"].update(generic_interfaces)
 
     # Post-process to add access information to components without explicit access
-    
-    # for type, only add if there isn't already an explicit declaration
-    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
+
+    # for type, use module-level access and only add if there isn't already an explicit declaration
+    if "PUBLIC" not in attributes and "PRIVATE" not in attributes:
         attributes.append(default_access)
 
+    # declarations inside the type use they type's access, which is public by default
     for component in type_info["data_components"].values():
         if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
-            component["attributes"].append(default_access)
+            component["attributes"].append(component_default_access)
     for proc in type_info["procedures"].values():
-        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
-            proc["attributes"].append(default_access)
+        if not proc["is_final"]: # final procedures don't have access statements
+            if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
+                proc["attributes"].append(component_default_access)
     for component in type_info["generic_interfaces"].values():
         if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
-            component["attributes"].append(default_access)
+            component["attributes"].append(component_default_access)
 
     return type_info
 

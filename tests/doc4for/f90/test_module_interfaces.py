@@ -40,7 +40,7 @@ module abstract_interface_mod
         self.assertEqual(len(module["interfaces"]), 1)
         interface = module["interfaces"][0]        
         self.assertEqual(interface["description"], "An abstract interface containing a function &lt;code&gt;func&lt;/code&gt;\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertIsNone(interface["operator_symbol"])
         self.assertEqual(len(interface["procedures"]), 1)
         function = interface["procedures"]["func"]
@@ -120,7 +120,7 @@ end module test_mod
 
         # Check main interface properties
         self.assertEqual(interface["description"], "Interface for numerical integration functions\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertIsNone(interface["operator_symbol"])
         # Check the integrand function
         self.assertEqual(len(interface["procedures"]), 1)
@@ -222,7 +222,7 @@ end module test_mod
             "type_params": None
             }
         )
-        self.assertEqual(nested_interface["attributes"], [])  # not abstract
+        self.assertEqual(nested_interface["attributes"], ["PUBLIC"])  # not abstract
         self.assertIsNone(nested_interface["operator_symbol"])
         self.assertEqual(nested_interface["name"], "")
         self.assertEqual(nested_interface["module_procedures"], {})
@@ -273,7 +273,7 @@ end module test_mod
         
         # Check integrand interface
         self.assertEqual(interface["description"], "Interface for numerical functions to integrate\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(len(interface["procedures"]), 1)
         
         integrand = interface["procedures"]["integrand"]
@@ -400,7 +400,7 @@ end module test_mod
 
         # Check main interface
         self.assertEqual(interface["description"], "Interface for data processing routines\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(len(interface["procedures"]), 1)
         
         # Check process_data subroutine
@@ -557,7 +557,7 @@ end module test_mod
         interface = module["interfaces"][0]
 
         # Check main interface
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(len(interface["procedures"]), 1)
         
         # Check optimize function
@@ -787,7 +787,7 @@ end module test_mod
 
         # Check main interface
         self.assertEqual(interface["description"], "Interface for optimization routines\n")
-        self.assertEqual(interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(len(interface["procedures"]), 1)
         
         # Check minimize function
@@ -851,7 +851,7 @@ end module test_mod
         # First interface should be associated with "objective" parameter
         objective_interface = minimize["argument_interfaces"]["objective"]
         self.assertEqual(objective_interface["description"], "Interface for objective function\n")
-        self.assertEqual(objective_interface["attributes"], [])
+        self.assertEqual(objective_interface["attributes"], ["PUBLIC"])
         self.assertIsNone(objective_interface["operator_symbol"])
         
         objective_proc = objective_interface["procedures"]["func1"]  # Note different name
@@ -887,7 +887,7 @@ end module test_mod
         # Second interface should be associated with "gradient" parameter
         gradient_interface = minimize["argument_interfaces"]["gradient"]
         self.assertEqual(gradient_interface["description"], "Interface for gradient function\n")
-        self.assertEqual(gradient_interface["attributes"], [])
+        self.assertEqual(gradient_interface["attributes"], ["PUBLIC"])
         self.assertIsNone(gradient_interface["operator_symbol"])
         
         gradient_proc = gradient_interface["procedures"]["grad"]  # Note different name
@@ -994,7 +994,7 @@ end module test_mod
 
         # Check interface properties
         self.assertEqual(interface["description"], "Interface for vector operations\nContains functions for various vector manipulations\n")
-        self.assertEqual(interface["attributes"], [])
+        self.assertEqual(interface["attributes"], ["PUBLIC"])
         self.assertEqual(interface["name"], "vector_ops")
         self.assertIsNone(interface["operator_symbol"])
         
@@ -1189,7 +1189,7 @@ end module matrix_ops_mod
         interface = module["interfaces"][0]
 
         self.assertEqual(interface["description"], "Interface for matrix operations\nProvides operations for matrix manipulation\n")
-        self.assertEqual(interface["attributes"], [])
+        self.assertEqual(interface["attributes"], ["PUBLIC"])
         self.assertEqual(interface["name"], "matrix_ops")
         self.assertIsNone(interface["operator_symbol"])
         
@@ -1311,7 +1311,7 @@ end module matrix_ops_mod
 
         # Check interface properties
         self.assertEqual(interface["description"], "Interface for vector addition\n")
-        self.assertEqual(interface["attributes"], [])
+        self.assertEqual(interface["attributes"], ["PUBLIC"])
         self.assertEqual(interface["operator_symbol"], "+")
 
         # Check that we have two procedures
@@ -1461,7 +1461,7 @@ end module matrix_ops_mod
             "Interface for vector addition operations\n"
             "Provides overloaded + operator for vector-vector and vector-scalar addition\n"
         )
-        self.assertEqual(interface["attributes"], [])
+        self.assertEqual(interface["attributes"], ["PUBLIC"])
         self.assertEqual(interface["operator_symbol"], "+")
         
         # Check module procedures are correctly recorded
@@ -1525,7 +1525,7 @@ end module matrix_ops_mod
             "Custom assignment interface for vector types\n"
             "Allows direct assignment between allocatable and non-allocatable vectors\n"
         )
-        self.assertEqual(interface["attributes"], [])
+        self.assertEqual(interface["attributes"], ["PUBLIC"])
         self.assertEqual(interface["operator_symbol"], "=")
         
         # Check module procedures are correctly recorded
@@ -1623,7 +1623,7 @@ end module matrix_ops_mod
             "User-defined cross product operator for 3D vectors\n"
             "Allows syntax like: c = a .cross. b\n"
         )
-        self.assertEqual(cross_interface["attributes"], [])
+        self.assertEqual(cross_interface["attributes"], ["PUBLIC"])
         self.assertEqual(cross_interface["operator_symbol"], ".CROSS.")
         self.assertEqual(cross_interface["name"], "")
         self.assertIsNone(cross_interface.get("generic_spec"))  # Should not have generic spec
@@ -1657,7 +1657,7 @@ end module matrix_ops_mod
             "User-defined dot product operator for 3D vectors\n"
             "Allows syntax like: scalar = a .dot. b\n"
         )
-        self.assertEqual(dot_interface["attributes"], [])
+        self.assertEqual(dot_interface["attributes"], ["PUBLIC"])
         self.assertEqual(dot_interface["operator_symbol"], ".DOT.")
         self.assertEqual(dot_interface["name"], "")
         
@@ -1815,7 +1815,7 @@ end module matrix_ops_mod
             "Interface for numerical function evaluation\n"
             "Used in integration and other numerical methods\n"
         )
-        self.assertEqual(func_interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(func_interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(func_interface["name"], "")
         self.assertIsNone(func_interface["operator_symbol"])
         
@@ -1861,7 +1861,7 @@ end module matrix_ops_mod
         dot_interface = module["interfaces"][1]
         self.assertEqual(dot_interface["operator_symbol"], ".DOT.")
         self.assertEqual(dot_interface["name"], "")
-        self.assertEqual(dot_interface["attributes"], [])
+        self.assertEqual(dot_interface["attributes"], ["PUBLIC"])
         self.assertEqual(len(dot_interface["module_procedures"]), 2)
         self.assertEqual(len(dot_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(
@@ -1886,7 +1886,7 @@ end module matrix_ops_mod
         assign_interface = module["interfaces"][2]
         self.assertEqual(assign_interface["operator_symbol"], "=")
         self.assertEqual(assign_interface["name"], "")
-        self.assertEqual(assign_interface["attributes"], [])
+        self.assertEqual(assign_interface["attributes"], ["PUBLIC"])
         self.assertEqual(len(assign_interface["module_procedures"]), 2)
         self.assertEqual(len(assign_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(
@@ -1911,7 +1911,7 @@ end module matrix_ops_mod
         norm_interface = module["interfaces"][3]
         self.assertEqual(norm_interface["name"], "norm")
         self.assertIsNone(norm_interface["operator_symbol"])
-        self.assertEqual(norm_interface["attributes"], [])
+        self.assertEqual(norm_interface["attributes"], ["PUBLIC"])
         self.assertEqual(len(norm_interface["module_procedures"]), 2)
         self.assertEqual(len(norm_interface["procedures"]), 0)  # No explicit procedures
         self.assertEqual(

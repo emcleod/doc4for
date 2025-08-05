@@ -18,6 +18,7 @@ from doc4for.parse.common_parser import _extract_type_info, _extract_entity_info
 def parse_variable(
     declaration: Type_Declaration_Stmt,
     comment_stack: List[Comment],
+    default_access: Optional[str],
     dimension_stack: Optional[List[Dimension_Stmt]]=None
 ) -> List[VariableDescription]:
 
@@ -29,6 +30,11 @@ def parse_variable(
     attributes = [attr.string for attr in walk(declaration, Attr_Spec)]
     attributes.extend([attr.string for attr in walk(declaration, Access_Spec)])
     
+    # Apply default access if no explicit access is specified. Need the null check in 
+    # case we're inside a block data
+    if default_access and "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+        attributes.append(default_access)
+
     # might have a dimension in the attributes e.g. real, dimension(10, 10) :: variable_name
     dimension = _extract_dimension_info(walk(declaration, Dimension_Attr_Spec))
 

@@ -1,4 +1,3 @@
-
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -629,12 +628,12 @@ end module derived_type_components_mod
         # Test access_test_type
         access_type = module["types"]["access_test_type"]
         
-        # Check type has private components by default
-        self.assertIn("PRIVATE", access_type["attributes"])
+        # Check type", acce has private components by default
+        self.assertEqual(access_type["attributes"], ["PUBLIC"])
         
         # Check data components
-        self.assertIn("PRIVATE", access_type["data_components"]["internal_data"]["attributes"])
-        self.assertIn("PUBLIC", access_type["data_components"]["public_data"]["attributes"])
+        self.assertEqual(access_type["data_components"]["internal_data"]["attributes"], ["PRIVATE"])
+        self.assertEqual(access_type["data_components"]["public_data"]["attributes"], ["PUBLIC"])
         
         # Check procedure access specifiers
         public_method = access_type["procedures"]["public_method"]

@@ -96,7 +96,7 @@ class TestExternalStatements(TestCase):
         
         # Check that func is marked as procedure and is intent in
         self.assertEqual(integrate_func["in"]["func"]["type"], "PROCEDURE")
-        self.assertEqual(integrate_func["in"]["func"]["attributes"], ["PUBLIC"])
+        self.assertEqual(integrate_func["in"]["func"]["attributes"], [])
         self.assertEqual(integrate_func["external_procedures"]["func"]["name"], "func")
         self.assertEqual(integrate_func["external_procedures"]["func"]["procedure_type"], "FUNCTION")
 

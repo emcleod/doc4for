@@ -52,17 +52,8 @@ ModuleHandler = FortranHandler[ModuleDescription]
 
 _module_handler_instance: Optional[ModuleHandler] = None
 
-# Types (derived types)
-# Variables (including parameters)
-# Procedures (functions and subroutines)
-# Interfaces (abstract and explicit)
-# Operators (defined operators)
-# Generic names (covered by interfaces)
+#TODO
 # Namelist groups
-# Common blocks
-# Generic interfaces/operators
-# Module procedures
-# Named constants (PARAMETER)
 def _get_module_handler() -> ModuleHandler:
     """Get an instance of ModuleHandler and initialize if necessary.
 
@@ -95,6 +86,8 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
     if not content:
         return
     
+    # keep track of access level of entities
+    default_access: str = "PUBLIC"
     #TODO does this need to be moved inside the loop?
     # for older-style fortran, dimension and type declarations can be on different lines
     dimension_stack: List[Dimension_Stmt] = []
@@ -124,12 +117,14 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                 if isinstance(node, Dimension_Stmt):
                     dimension_stack.append(node)
                 elif isinstance(node, Access_Stmt):
-                    access_value, access_ids = node.children    
+                    access_value, access_ids = node.children                        
                     # If access_ids is None, it's a global access statement like "private"
                     if access_ids:
                         access_stack.update({
                             name.string: access_value for name in walk(access_ids, Name)
                         })  
+                    else:
+                        default_access = access_value
                 elif isinstance(node, Bind_Stmt):
                     # Extract binding info during parsing (like access_stack does)
                     binding_info = _extract_binding_type(walk(node, Language_Binding_Spec))
@@ -164,7 +159,7 @@ def parse_module_content(module: Any, module_data: ModuleDescription, comment_st
                 else:
                     handler = handlers.get_handler(type(node))
                     if handler:
-                        handler(node, module_data, comment_stack, dimension_stack=dimension_stack)
+                        handler(node, module_data, comment_stack, default_access, dimension_stack=dimension_stack)
                         comment_stack.clear()
                     else:
                         logger.warning(f"Did not find a handler for {type(node)}")
@@ -234,14 +229,20 @@ def process_common_block_variables(module_data: ModuleDescription) -> None:
 def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
     def add_access_to_entity(entity: Dict[str, Any], access: str) -> None:
         attrs = entity.get("attributes", [])
+        # have overridden default access, so remove then add 
+        if access == "PUBLIC" and "PRIVATE" in attrs:
+            attrs.remove("PRIVATE")
+        elif access == "PRIVATE" and "PUBLIC" in attrs:
+            attrs.remove("PUBLIC")
         if access not in attrs:
             entity["attributes"] = attrs + [access]
     
-    for field_name, field_value in module_data.items():
+    for _, field_value in module_data.items():
         # Skip non-collection fields
+        temp = type(field_value)
         if not isinstance(field_value, (dict, list)):
             continue
-            
+
         if isinstance(field_value, dict):
             # Process dict-based collections
             for name, access in access_stack.items():
@@ -260,14 +261,6 @@ def process_access_statements(module_data: ModuleDescription, access_stack: Dict
                     if name and name in access_stack:
                         add_access_to_entity(entity, access_stack[name])
                         
-# def process_access_statements(module_data: ModuleDescription, access_stack: Dict[str, str]) -> None:
-#     for name, access in access_stack.items():
-#         if name in module_data["types"]:
-#             type_desc = module_data["types"][name]
-#             attrs = type_desc.get("attributes", [])
-#             if access not in attrs:
-#                 type_desc["attributes"] = attrs + [access]
-    
 
 def process_bind_statements(module_data: ModuleDescription, bind_stack: Dict[str, Optional[BindingType]]) -> None:
     """Process BIND statements and attach them to the appropriate entities."""

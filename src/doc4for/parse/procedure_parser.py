@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict, Optional, Any
 from collections import defaultdict
 from fparser.two.Fortran2003 import (
     Name,
@@ -39,7 +39,8 @@ def parse_procedure(procedure,
                     type_decls: List[Type_Declaration_Stmt], 
                     procedure_decls: List[Procedure_Declaration_Stmt], 
                     external_decls: List[External_Stmt],
-                    comment_stack: List[Comment]) -> Optional[Dict]:
+                    comment_stack: List[Comment],
+                    default_access: Optional[str]) -> Optional[Dict[str, Any]]:
     # accumulate comment stack before declaration
     for node in procedure.children:
         if isinstance(node, Comment):
@@ -154,9 +155,9 @@ def parse_procedure(procedure,
     uses = parse_uses_list(walk(procedure, Use_Stmt))
     imports = parse_imports_list(walk(procedure, Import_Stmt))
     
-    # Procedures are public by default
-    if not any(attr in ["PUBLIC", "PRIVATE"] for attr in attributes):
-        attributes.append("PUBLIC")
+    # Apply default access if no explicit access is specified
+    if default_access and "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+        attributes.append(default_access)
     
     return {
         "procedure_name": procedure_name,

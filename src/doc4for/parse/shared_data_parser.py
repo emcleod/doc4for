@@ -24,7 +24,7 @@ from fparser.two.Fortran2003 import (
     Char_Literal_Constant,
     Part_Ref,
     Data_Stmt_Set,
-    Section_Subscript_List,
+    Section_Subscript_List, # type: ignore[attr-defined]
     Subscript_Triplet,
     Use_Stmt
 )
@@ -41,7 +41,7 @@ from doc4for.logging_config import setup_logging
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comment]) -> Dict[str, CommonBlockDescription]:
+def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comment], default_access: Optional[str]) -> Dict[str, CommonBlockDescription]:
     common_blocks = {}
     for child in common_block_stmt.children:
         common_block_name = None
@@ -52,7 +52,7 @@ def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comme
             variables = {}
             for declaration in declarations.children:
                 name = declaration.children[0].string if declaration.children else declaration.string
-                dimension: Dimension = None
+                dimension: Optional[Dimension] = None
                 if len(declaration.children) > 1:
                     dimension = _extract_dimension_info(declaration.children[1])
                 # just get the dimensions - the post-processing step will
@@ -83,7 +83,8 @@ def parse_common_block(common_block_stmt: Common_Stmt, comment_stack: List[Comme
             if common_block_name in common_blocks:
                 common_blocks[common_block_name]["variables"].update(variables)
             else:
-                common_block = {
+                common_block: CommonBlockDescription = {
+                    "attributes": [default_access] if default_access else [],
                     "name": common_block_name,
                     "description": format_comments(comment_stack),
                     "variables": variables,
@@ -117,7 +118,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     # picks up comments for e.g. use statements
                     decl_comment_stack.extend(walk(spec_child, Comment))
                 elif isinstance(spec_child, Common_Stmt):
-                    common_blocks_desc = parse_common_block(spec_child, decl_comment_stack)
+                    common_blocks_desc = parse_common_block(spec_child, decl_comment_stack, None)
                     for common_block_name, common_block in common_blocks_desc.items():
                         for variable in common_block["variables"]:
                             variable_to_common_block[variable] = common_block_name
@@ -155,7 +156,7 @@ def parse_block_data(block_data: Block_Data, comment_stack: List[Comment]) -> Tu
                     decl_comment_stack.extend(walk(spec_child, Comment))
                 elif isinstance(spec_child, Type_Declaration_Stmt):
                     # get the type data from the declaration
-                    variable_descs = parse_variable(spec_child, decl_comment_stack, [])
+                    variable_descs = parse_variable(spec_child, decl_comment_stack, None, [])
                     for variable_desc in variable_descs:
                         variable_name = variable_desc["name"]
                         # Find which common block this variable belongs to
@@ -278,7 +279,7 @@ def _get_variable_info(
     variable_to_common_block: Dict[str, str],
     common_blocks: Dict[str, Any],
     other_variables: Dict[str, Any]
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     if variable_name in variable_to_common_block:
         common_block_name = variable_to_common_block[variable_name]
         if common_block_name in common_blocks:

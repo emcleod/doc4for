@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, Union, Dict, Any
+from typing import List, Tuple, Union, Dict, Any, Optional
 from fparser.two.Fortran2003 import (
     Function_Stmt,
     Subroutine_Stmt,
@@ -29,21 +29,20 @@ from fparser.two.Fortran2003 import (
     External_Stmt
 )
 from fparser.two.utils import walk
-from doc4for.models.procedure_models import InterfaceDescription
+from doc4for.models.procedure_models import InterfaceDescription, FunctionDescription, SubroutineDescription, Argument
 from doc4for.models.variable_models import PolymorphismType
-from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 from doc4for.parse.common_parser import _extract_binding_type
-from doc4for.utils.comment_utils import format_comments, is_doc4for_comment
+from doc4for.utils.comment_utils import get_formatted_description
 from doc4for.parse.uses_parser import parse_imports_list, parse_uses_list
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
 def parse_interface(
-    interface: Interface_Block, comment_stack: List[Comment]
+    interface: Interface_Block, comment_stack: List[Comment], default_access: Optional[str],
 ) -> Tuple[str, InterfaceDescription]:
-    description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+    description = get_formatted_description(comment_stack)
     
     # Extract basic interface information
     interface_stmt = walk(interface, Interface_Stmt)[0]
@@ -62,7 +61,7 @@ def parse_interface(
         elif isinstance(node, Procedure_Stmt):
             # Handle module procedures
             proc_names = walk(node, Name)
-            body_description = format_comments(body_comment_stack) if is_doc4for_comment(body_comment_stack) else ""
+            body_description = get_formatted_description(body_comment_stack)
             for proc_name in proc_names:
                 module_procedures[proc_name.string] = {
                     "name": proc_name.string,
@@ -72,17 +71,18 @@ def parse_interface(
             
         elif isinstance(node, Function_Body):
             # Process function body
-            proc_info = _process_procedure_body(node, Function_Stmt)
+            proc_info = _process_procedure_body(node, Function_Stmt, default_access)
             common = proc_info["common"]
             
             # Extract return information
+            return_argument: Argument
             _, return_argument = _extract_return_info(common)
             
             # Extract binding type
             binding_type = _extract_binding_type(walk(common["procedure_declaration"], Language_Binding_Spec))
             
             # Build function description
-            function_description = {
+            function_description: FunctionDescription = {
                 "attributes": common["attributes"],
                 "description": "",
                 "arguments": common["arguments"],
@@ -101,14 +101,14 @@ def parse_interface(
             
         elif isinstance(node, Subroutine_Body):
             # Process subroutine body
-            proc_info = _process_procedure_body(node, Subroutine_Stmt)
+            proc_info = _process_procedure_body(node, Subroutine_Stmt, default_access)
             common = proc_info["common"]
             
             # Extract binding type
             binding_type = _extract_binding_type(walk(common["procedure_declaration"], Language_Binding_Spec))
             
             # Build subroutine description
-            subroutine_description = {
+            subroutine_description: SubroutineDescription = {
                 "attributes": common["attributes"],
                 "description": "",
                 "arguments": common["arguments"],
@@ -124,6 +124,10 @@ def parse_interface(
             procedures[common["procedure_name"]] = subroutine_description
             update_arguments_with_comment_data(proc_info["procedure_comment_stack"], subroutine_description)
     
+    # Apply default access if no explicit access is specified
+    if "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+        attributes.append(default_access)
+
     interface_description: InterfaceDescription = {
         "description": description,
         "attributes": attributes,
@@ -136,7 +140,7 @@ def parse_interface(
     
     return name, interface_description
 
-def _extract_operator_symbol(interface: Interface_Block) -> str:
+def _extract_operator_symbol(interface: Interface_Block) -> Optional[str]:
     """Extract operator symbol from interface if it's an operator interface."""
     generic_specs = walk(interface, Generic_Spec)
     if not generic_specs:
@@ -167,7 +171,8 @@ def _extract_interface_name_and_attributes(interface_stmt: Interface_Stmt) -> Tu
     return name, attributes
 
 def _process_specification_part(
-    spec_part: Specification_Part
+    spec_part: Specification_Part,
+    default_access: str
 ) -> Tuple[List[InterfaceDescription], List[Type_Declaration_Stmt], List[Procedure_Declaration_Stmt]]:
     spec_comment_stack = []
     interface_blocks_in_order = []
@@ -185,7 +190,7 @@ def _process_specification_part(
                 if isinstance(implicit_child, Comment):
                     spec_comment_stack.append(implicit_child)
         elif isinstance(spec_child, Interface_Block):
-            _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack)
+            _, nested_interface_desc = parse_interface(spec_child, spec_comment_stack, default_access)
             spec_comment_stack.clear()
             interface_blocks_in_order.append(nested_interface_desc)
     return interface_blocks_in_order, argument_decls, procedure_decls
@@ -203,7 +208,7 @@ def _match_interfaces_to_procedure_arguments(
     interface_blocks: List[InterfaceDescription],
     dummy_arg_names: List[str],
     parsed_arguments: Dict[str, Any],
-    procedure_decls: List[Procedure_Declaration_Stmt] = None
+    procedure_decls: Optional[List[Procedure_Declaration_Stmt]] = None
 ) -> Tuple[Dict[str, InterfaceDescription], Dict[str, Dict[str, Any]]]:
     argument_interfaces = {}
     procedure_arguments = {}
@@ -283,7 +288,8 @@ def _match_interfaces_to_procedure_arguments(
 
 def _process_procedure_body(
     node: Union[Function_Body, Subroutine_Body],
-    stmt_type: type
+    stmt_type: type,
+    default_access: Optional[str]
 ) -> Dict[str, Any]:
     """Process function or subroutine body and extract all relevant information."""
     # Extract the procedure statement
@@ -300,14 +306,19 @@ def _process_procedure_body(
         elif isinstance(child, Type_Declaration_Stmt):
             argument_decls.append(child)
         elif isinstance(child, Specification_Part):
-            interface_blocks, argument_decls, procedure_decls = _process_specification_part(child)
+            interface_blocks, argument_decls, procedure_decls = _process_specification_part(child, default_access)
             break
     else:
         interface_blocks = []
     
     external_decls = walk(node, External_Stmt)
     # Parse the procedure - note that the external statements list is deliberately empty
-    common = parse_procedure(proc_stmt, stmt_type, argument_decls, procedure_decls, external_decls, procedure_comment_stack)
+    common: Optional[Dict[str, Any]] = parse_procedure(proc_stmt, stmt_type, argument_decls, 
+                                             procedure_decls, external_decls, 
+                                             procedure_comment_stack, default_access)
+    if not common:
+        #TODO log this or do something sensible
+        return None
     
     # Match interfaces to arguments
     argument_interfaces, procedure_arguments = _match_interfaces_to_procedure_arguments(
@@ -344,7 +355,7 @@ def _process_procedure_body(
         "uses": uses
     }
 
-def _extract_return_info(common: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+def _extract_return_info(common: Dict[str, Any]) -> Tuple[str, Optional[Argument]]:
     return_type, return_variable = None, None
     
     if common["prefixes"]:
@@ -362,7 +373,7 @@ def _extract_return_info(common: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         return_variable = common["procedure_name"]
     
     # Handle return argument
-    return_argument = None
+    return_argument: Optional[Argument] = None
     if return_variable in common["all_parsed_arguments"]:
         return_argument = common["all_parsed_arguments"][return_variable]
     

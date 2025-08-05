@@ -9,10 +9,10 @@ from fparser.two.Fortran2003 import (
   Name)
 from fparser.two.utils import walk
 from doc4for.models.common import EnumDescription, EnumeratorDescription, BindingTypeEnum, BindingType
-from doc4for.utils.comment_utils import is_doc4for_comment, format_comments
+from doc4for.utils.comment_utils import get_formatted_description
 
-def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[Optional[str], EnumDescription]:
-    description = format_comments(comment_stack) if is_doc4for_comment(comment_stack) else ""
+def parse_enum(enum: Enum_Def, comment_stack: List[Comment], default_access: Optional[str]) -> Tuple[Optional[str], EnumDescription]:
+    description = get_formatted_description(comment_stack)
     enumerators: Dict[str, EnumeratorDescription] = {}
     first_enum_name: Optional[str] = None # for the entry in the module description
     binding_type: Optional[BindingType] = None
@@ -28,7 +28,7 @@ def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[Optional[s
                 #TODO can have a kind in F2018, but it's not supported in fparser yet
                 binding_type = {"type": BindingTypeEnum.BIND_C, "name": None}
         elif isinstance(node, Enumerator_Def_Stmt):
-            enum_desc = format_comments(enum_comment_stack) if is_doc4for_comment(enum_comment_stack) else ""
+            enum_desc = get_formatted_description(enum_comment_stack)
             enum_comment_stack.clear()
             enum_list = walk(node, Enumerator_List)[0].children
             for decl in enum_list:
@@ -60,10 +60,16 @@ def parse_enum(enum: Enum_Def, comment_stack: List[Comment]) -> Tuple[Optional[s
                     "value": value,
                     "description": enum_desc
                 }
+
+    attributes: List[str] = []
+    # Apply default access if no explicit access is specified
+    if default_access and "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+        attributes.append(default_access)
+
     enum_description: EnumDescription = {
         "name": enum_name,
         "description": description,
-        "attributes": [],
+        "attributes": attributes,
         "enumerators": enumerators,
         "binding_type": binding_type
     }

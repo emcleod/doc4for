@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import TypeVar, List, Any
+from typing import TypeVar, List, Any, Optional
 from fparser.two.Fortran2003 import (
     Type_Declaration_Stmt,
     Derived_Type_Def,
@@ -44,51 +44,51 @@ class VisibilityState:
     explicit_public: List[str] = field(default_factory=list)
     explicit_private: List[str] = field(default_factory=list)
 
-def handle_derived_type(item: Derived_Type_Def, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    type_desc: TypeDescription = handle_type_definition(item, comment_stack)
+def handle_derived_type(item: Derived_Type_Def, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
+    type_desc: TypeDescription = handle_type_definition(item, comment_stack, default_access)
     data["types"][type_desc["type_name"]] = type_desc
 
 def handle_type_declaration(item: Type_Declaration_Stmt, data: T,
-                            comment_stack: List[Comment], **kwargs: Any) -> None:
+                            comment_stack: List[Comment], default_access: str, **kwargs: Any) -> None:
     dimension_stack = kwargs.get("dimension_stack", None)  
 
     if has_attribute(item, "PARAMETER"):
-        parameter_descriptions = parse_parameter(item, comment_stack, dimension_stack)
+        parameter_descriptions = parse_parameter(item, comment_stack, default_access, dimension_stack)
         for param in parameter_descriptions:
             data["parameters"][param["name"]] = param
     else:
-        variable_descriptions = parse_variable(item, comment_stack, dimension_stack)
+        variable_descriptions = parse_variable(item, comment_stack, default_access, dimension_stack)
         for var in variable_descriptions:
             data["variables"][var["name"]] = var                
 
 
-def handle_function(item: Function_Subprogram, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    function_name, function_description = parse_function(item, comment_stack)
+def handle_function(item: Function_Subprogram, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
+    function_name, function_description = parse_function(item, comment_stack, default_access)
     data["functions"][function_name] = function_description
 
-def handle_subroutine(item: Subroutine_Subprogram, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    subroutine_name, subroutine_description = parse_subroutine(item, comment_stack)
+def handle_subroutine(item: Subroutine_Subprogram, data: T, comment_stack: List[Comment],  default_access: Optional[str], **kwargs: Any) -> None:
+    subroutine_name, subroutine_description = parse_subroutine(item, comment_stack, default_access)
     data["subroutines"][subroutine_name] = subroutine_description
 
 
-def handle_interface(item: Interface_Block, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    interface_name, interface_description = parse_interface(item, comment_stack)
+def handle_interface(item: Interface_Block, data: T, comment_stack: List[Comment],  default_access: Optional[str], **kwargs: Any) -> None:
+    interface_name, interface_description = parse_interface(item, comment_stack, default_access)
     data["interfaces"].append(interface_description)
 
-def handle_enum(item: Enum_Def, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    enumerator_name, enumerator_description = parse_enum(item, comment_stack)
+def handle_enum(item: Enum_Def, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
+    enumerator_name, enumerator_description = parse_enum(item, comment_stack, default_access)
     data["enums"][enumerator_name] = enumerator_description
 
-def handle_program(item: Main_Program, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_program(item: Main_Program, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
     name, program_description = parse_program(item, comment_stack, data["file_name"])
     data["programs"][name] = program_description
 
-def handle_block_data(item: Block_Data, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_block_data(item: Block_Data, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
     name, block_data_description = parse_block_data(item, comment_stack)
     data["block_data"][name] = block_data_description
 
-def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-    common_block_dicts = parse_common_block(item, comment_stack)
+def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
+    common_block_dicts = parse_common_block(item, comment_stack, default_access)
     for name, common_block in common_block_dicts.items():
         if name in data["common_blocks"]:
             # Common block already exists - merge variables and preserve first description
@@ -101,7 +101,7 @@ def handle_common_block(item: Common_Stmt, data: T, comment_stack: List[Comment]
             # New common block
             data["common_blocks"][name] = common_block
             
-def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
     equivalence_relationship = parse_equivalence(item, comment_stack)
     
     # Initialize the equivalence list if it doesn't exist
@@ -110,7 +110,7 @@ def handle_equivalence(item: Equivalence_Stmt, data: T, comment_stack: List[Comm
     
     data["equivalence"].append(equivalence_relationship)
 
-def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
+def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], default_access: Optional[str], **kwargs: Any) -> None:
     new_uses = parse_uses(item, comment_stack)
     
     if not data["uses"]:
@@ -121,13 +121,6 @@ def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], **kwargs: 
                 data["uses"][module_name] = merge_use_statements(data["uses"][module_name], use_data)
             else:
                 data["uses"][module_name] = use_data
-
-# def handle_use(item: Use_Stmt, data: T, comment_stack: List[Comment], **kwargs: Any) -> None:
-#     uses = parse_uses(item, comment_stack)
-#     if data["uses"]:
-#         data["uses"].update(uses)
-#     else:
-#         data["uses"] = uses
 
 #TODO move this
 def parse_equivalence(equivalence_stmt: Equivalence_Stmt, comment_stack: List[Comment]) -> EquivalenceRelationship:

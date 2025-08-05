@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from fparser.two.Fortran2003 import (
     Subroutine_Subprogram,
     Subroutine_Stmt,
@@ -17,11 +17,11 @@ from doc4for.parse.procedure_parser import parse_procedure, update_arguments_wit
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comment]) -> Tuple[str, SubroutineDescription]:
+def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comment], default_access: Optional[str]) -> Tuple[str, SubroutineDescription]:
     type_decls = walk(subroutine, Type_Declaration_Stmt)
     procedure_decls = walk(subroutine, Procedure_Declaration_Stmt)
     external_decls = walk(subroutine, External_Stmt)
-    common = parse_procedure(subroutine, Subroutine_Stmt, type_decls, procedure_decls, external_decls, comment_stack)
+    common = parse_procedure(subroutine, Subroutine_Stmt, type_decls, procedure_decls, external_decls, comment_stack, default_access)
     if common is None:
         return None
     

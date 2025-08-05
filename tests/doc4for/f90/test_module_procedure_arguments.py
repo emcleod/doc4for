@@ -54,7 +54,7 @@ class TestInterfaces(TestCase):
         
         # First interface should contain both objective_func and gradient_func
         first_interface = module["interfaces"][0]
-        self.assertEqual(first_interface["attributes"], ["ABSTRACT"])
+        self.assertEqual(first_interface["attributes"], ["ABSTRACT", "PUBLIC"])
         self.assertEqual(len(first_interface["procedures"]), 2)
         self.assertIn("objective_func", first_interface["procedures"])
         self.assertIn("gradient_func", first_interface["procedures"])
