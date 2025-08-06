@@ -10,436 +10,433 @@ class TestImportStatements(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-#     def test_import_all_implicit(self):
-#         self.fs.create_file(
-#             "/fake/path/import_interfaces.f90",
-#             contents="""\
-# !!*
-# ! Module for optimization algorithms
-# ! Provides interfaces for objective functions, constraints, and optimizers
-# !*!
-# module optimization_mod
-#     implicit none
-#     private
+    def test_import_all_implicit(self):
+        self.fs.create_file(
+            "/fake/path/import_interfaces.f90",
+            contents="""\
+!!*
+! Module for optimization algorithms
+! Provides interfaces for objective functions, constraints, and optimizers
+!*!
+module optimization_mod
+    implicit none
+    private
     
-#     ! Kind parameter that needs to be imported
-#     integer, parameter, public :: wp = selected_real_kind(15)
+    ! Kind parameter that needs to be imported
+    integer, parameter, public :: wp = selected_real_kind(15)
     
-#     ! Custom type that needs to be imported  
-#     type, public :: bounds_type
-#         real(wp) :: lower, upper
-#     end type
+    ! Custom type that needs to be imported  
+    type, public :: bounds_type
+        real(wp) :: lower, upper
+    end type
     
-#     !!* 
-#     ! Interface for objective functions
-#     ! Functions that take a vector and return a scalar value to minimize
-#     !*!
-#     public :: objective_func
-#     abstract interface
-#         !!*
-#         ! Objective function interface
-#         ! @in x Input vector
-#         ! @return Function value
-#         !*!
-#         function objective_func(x) result(f)
-#             real(wp), dimension(:), intent(in) :: x
-#             real(wp) :: f
-#         end function objective_func
-#     end interface
+    !!* 
+    ! Interface for objective functions
+    ! Functions that take a vector and return a scalar value to minimize
+    !*!
+    public :: objective_func
+    abstract interface
+        !!*
+        ! Objective function interface
+        ! @in x Input vector
+        ! @return Function value
+        !*!
+        function objective_func(x) result(f)
+            real(wp), dimension(:), intent(in) :: x
+            real(wp) :: f
+        end function objective_func
+    end interface
     
-#     !!* 
-#     ! Interface for constraint functions
-#     ! Functions that return true if constraints are satisfied
-#     !*!
-#     public :: constraint_func
-#     abstract interface
-#         !!*
-#         ! Constraint function interface
-#         ! @in x Input vector
-#         ! @in bounds Variable bounds
-#         ! @return True if constraints are satisfied
-#         !*!
-#         function constraint_func(x, bounds) result(c)
-#             real(wp), dimension(:), intent(in) :: x
-#             type(bounds_type), intent(in) :: bounds
-#             logical :: c
-#         end function constraint_func
-#     end interface
+    !!* 
+    ! Interface for constraint functions
+    ! Functions that return true if constraints are satisfied
+    !*!
+    public :: constraint_func
+    abstract interface
+        !!*
+        ! Constraint function interface
+        ! @in x Input vector
+        ! @in bounds Variable bounds
+        ! @return True if constraints are satisfied
+        !*!
+        function constraint_func(x, bounds) result(c)
+            real(wp), dimension(:), intent(in) :: x
+            type(bounds_type), intent(in) :: bounds
+            logical :: c
+        end function constraint_func
+    end interface
     
-#     !!* 
-#     ! Interface for optimization algorithms
-#     ! Standard interface for all optimization methods
-#     !*!
-#     public :: optimizer_interface
-#     interface optimizer_interface
-#         !!* 
-#         ! Minimize an objective function subject to constraints
-#         ! @in obj Function to minimize
-#         ! @in constraint Constraint function
-#         ! @in x0 Initial guess
-#         ! @in bounds Variable bounds
-#         ! @return Optimal solution
-#         !*!
-#         function minimize(obj, constraint, x0, bounds) result(x_opt)
-#             import                                    ! Import ALL implicitly
-#             procedure(objective_func) :: obj
-#             procedure(constraint_func) :: constraint
-#             real(wp), dimension(:), intent(in) :: x0
-#             type(bounds_type), intent(in) :: bounds
-#             real(wp), dimension(size(x0)) :: x_opt
-#         end function
-#     end interface
+    !!* 
+    ! Interface for optimization algorithms
+    ! Standard interface for all optimization methods
+    !*!
+    public :: optimizer_interface
+    interface optimizer_interface
+        !!* 
+        ! Minimize an objective function subject to constraints
+        ! @in obj Function to minimize
+        ! @in constraint Constraint function
+        ! @in x0 Initial guess
+        ! @in bounds Variable bounds
+        ! @return Optimal solution
+        !*!
+        function minimize(obj, constraint, x0, bounds) result(x_opt)
+            import                                    ! Import ALL implicitly
+            procedure(objective_func) :: obj
+            procedure(constraint_func) :: constraint
+            real(wp), dimension(:), intent(in) :: x0
+            type(bounds_type), intent(in) :: bounds
+            real(wp), dimension(size(x0)) :: x_opt
+        end function
+    end interface
     
-# contains
-#     !!* 
-#     ! Implementation of conjugate gradient optimizer
-#     ! Uses Fletcher-Reeves formula for beta calculation
-#     ! @in obj Function to minimize
-#     ! @in constraint Constraint function
-#     ! @in x0 Initial guess
-#     ! @in bounds Variable bounds
-#     ! @return Optimal solution
-#     !*!
-#     function conjugate_gradient(obj, constraint, x0, bounds) result(x_opt)
-#         procedure(objective_func) :: obj
-#         procedure(constraint_func) :: constraint
-#         real(wp), dimension(:), intent(in) :: x0
-#         type(bounds_type), intent(in) :: bounds
-#         real(wp), dimension(size(x0)) :: x_opt
+contains
+    !!* 
+    ! Implementation of conjugate gradient optimizer
+    ! Uses Fletcher-Reeves formula for beta calculation
+    ! @in obj Function to minimize
+    ! @in constraint Constraint function
+    ! @in x0 Initial guess
+    ! @in bounds Variable bounds
+    ! @return Optimal solution
+    !*!
+    function conjugate_gradient(obj, constraint, x0, bounds) result(x_opt)
+        procedure(objective_func) :: obj
+        procedure(constraint_func) :: constraint
+        real(wp), dimension(:), intent(in) :: x0
+        type(bounds_type), intent(in) :: bounds
+        real(wp), dimension(size(x0)) :: x_opt
         
-#         ! Simplified implementation
-#         x_opt = x0  ! Just return initial guess
-#     end function
-# end module optimization_mod
-#     """
-#         )
+        ! Simplified implementation
+        x_opt = x0  ! Just return initial guess
+    end function
+end module optimization_mod
+    """
+        )
             
-#         result = extract_module_data([Path("/fake/path/import_interfaces.f90")])
-#         self.assertEqual(len(result), 1)
-#         module = result[0]
+        result = extract_module_data([Path("/fake/path/import_interfaces.f90")])
+        self.assertEqual(len(result), 1)
+        module = result[0]
         
-#         # Check module description
-#         self.assertEqual(module["module_description"], 
-#                         "Module for optimization algorithms\n"
-#                         "Provides interfaces for objective functions, constraints, and optimizers\n")
+        # Check module description
+        self.assertEqual(module["module_description"], 
+                        "Module for optimization algorithms\n"
+                        "Provides interfaces for objective functions, constraints, and optimizers\n")
         
-#         # Check that all interfaces are parsed
-#         self.assertEqual(len(module["interfaces"]), 3)
+        # Check that all interfaces are parsed
+        self.assertEqual(len(module["interfaces"]), 3)
                 
-#         # Find the optimizer interface
-#         optimizer_interface = None
-#         for interface in module["interfaces"]:
-#             if interface.get("name") == "optimizer_interface":
-#                 optimizer_interface = interface
-#                 break
+        # Find the optimizer interface
+        optimizer_interface = None
+        for interface in module["interfaces"]:
+            if interface.get("name") == "optimizer_interface":
+                optimizer_interface = interface
+                break
 
-#         self.assertIsNotNone(optimizer_interface)
+        assert optimizer_interface is not None
 
-#         # Check the minimize function within the interface
-#         self.assertIn("minimize", optimizer_interface["procedures"])
-#         minimize = optimizer_interface["procedures"]["minimize"]
+        # Check the minimize function within the interface
+        self.assertIn("minimize", optimizer_interface["procedures"])
+        minimize = optimizer_interface["procedures"]["minimize"]
 
-#         # Check function description
-#         self.assertEqual(minimize["description"], 
-#                         "Minimize an objective function subject to constraints\n\n")
+        # Check function description
+        self.assertEqual(minimize["description"], 
+                        "Minimize an objective function subject to constraints\n\n")
 
-#         # Check parameter descriptions
-#         self.assertEqual(minimize["in"]["obj"]["description"], "Function to minimize")
-#         self.assertEqual(minimize["in"]["constraint"]["description"], "Constraint function")
-#         self.assertEqual(minimize["in"]["x0"]["description"], "Initial guess")
-#         self.assertEqual(minimize["in"]["bounds"]["description"], "Variable bounds")
-#         self.assertEqual(minimize["return"]["description"], "Optimal solution")
+        # Check parameter descriptions
+        self.assertEqual(minimize["in"]["obj"]["description"], "Function to minimize")
+        self.assertEqual(minimize["in"]["constraint"]["description"], "Constraint function")
+        self.assertEqual(minimize["in"]["x0"]["description"], "Initial guess")
+        self.assertEqual(minimize["in"]["bounds"]["description"], "Variable bounds")
+        self.assertEqual(minimize["return"]["description"], "Optimal solution")
 
-#         # Check that import statements are tracked - NOW IN THE PROCEDURE
-#         self.assertEqual(len(minimize["imports"]), 1)  # One import statement
+        # Check that import statements are tracked - NOW IN THE PROCEDURE
+        self.assertEqual(len(minimize["imports"]), 1)  # One import statement
 
-#         import_stmt = minimize["imports"][0]
-#         self.assertEqual(import_stmt["import_type"], ImportType.IMPLICIT)  # "import" without :: means import all
-#         self.assertEqual(len(import_stmt["entities"]), 0)  # No specific entities listed
-#         self.assertEqual(len(import_stmt["renames"]), 0)   # No renames
+        import_stmt = minimize["imports"][0]
+        self.assertEqual(import_stmt["import_type"], ImportType.ALL)  # "import" without :: means import all
+        self.assertEqual(len(import_stmt["entities"]), 0)  # No specific entities listed
 
-#         # Check that procedure parameters correctly reference interfaces
-#         self.assertEqual(minimize["in"]["obj"]["interface_name"], "objective_func")
-#         self.assertEqual(minimize["in"]["constraint"]["interface_name"], "constraint_func")
+        # Check that procedure parameters correctly reference interfaces
+        self.assertEqual(minimize["in"]["obj"]["interface_name"], "objective_func")
+        self.assertEqual(minimize["in"]["constraint"]["interface_name"], "constraint_func")
 
-#     def test_import_all(self):
-#         self.fs.create_file(
-#             "/fake/path/import_interfaces.f90",
-#             contents="""\
-# !!*
-# ! Module for optimization algorithms
-# ! Provides interfaces for objective functions, constraints, and optimizers
-# !*!
-# module optimization_mod
-#     implicit none
-#     private
+    def test_import_all(self):
+        self.fs.create_file(
+            "/fake/path/import_interfaces.f90",
+            contents="""\
+!!*
+! Module for optimization algorithms
+! Provides interfaces for objective functions, constraints, and optimizers
+!*!
+module optimization_mod
+    implicit none
+    private
     
-#     ! Kind parameter that needs to be imported
-#     integer, parameter, public :: wp = selected_real_kind(15)
+    ! Kind parameter that needs to be imported
+    integer, parameter, public :: wp = selected_real_kind(15)
     
-#     ! Custom type that needs to be imported  
-#     type, public :: bounds_type
-#         real(wp) :: lower, upper
-#     end type
+    ! Custom type that needs to be imported  
+    type, public :: bounds_type
+        real(wp) :: lower, upper
+    end type
     
-#     !!* 
-#     ! Interface for objective functions
-#     ! Functions that take a vector and return a scalar value to minimize
-#     !*!
-#     public :: objective_func
-#     abstract interface
-#         !!*
-#         ! Objective function interface
-#         ! @in x Input vector
-#         ! @return Function value
-#         !*!
-#         function objective_func(x) result(f)
-#             real(wp), dimension(:), intent(in) :: x
-#             real(wp) :: f
-#         end function objective_func
-#     end interface
+    !!* 
+    ! Interface for objective functions
+    ! Functions that take a vector and return a scalar value to minimize
+    !*!
+    public :: objective_func
+    abstract interface
+        !!*
+        ! Objective function interface
+        ! @in x Input vector
+        ! @return Function value
+        !*!
+        function objective_func(x) result(f)
+            real(wp), dimension(:), intent(in) :: x
+            real(wp) :: f
+        end function objective_func
+    end interface
     
-#     !!* 
-#     ! Interface for constraint functions
-#     ! Functions that return true if constraints are satisfied
-#     !*!
-#     public :: constraint_func
-#     abstract interface
-#         !!*
-#         ! Constraint function interface
-#         ! @in x Input vector
-#         ! @in bounds Variable bounds
-#         ! @return True if constraints are satisfied
-#         !*!
-#         function constraint_func(x, bounds) result(c)
-#             real(wp), dimension(:), intent(in) :: x
-#             type(bounds_type), intent(in) :: bounds
-#             logical :: c
-#         end function constraint_func
-#     end interface
+    !!* 
+    ! Interface for constraint functions
+    ! Functions that return true if constraints are satisfied
+    !*!
+    public :: constraint_func
+    abstract interface
+        !!*
+        ! Constraint function interface
+        ! @in x Input vector
+        ! @in bounds Variable bounds
+        ! @return True if constraints are satisfied
+        !*!
+        function constraint_func(x, bounds) result(c)
+            real(wp), dimension(:), intent(in) :: x
+            type(bounds_type), intent(in) :: bounds
+            logical :: c
+        end function constraint_func
+    end interface
     
-#     !!* 
-#     ! Interface for optimization algorithms
-#     ! Standard interface for all optimization methods
-#     !*!
-#     public :: optimizer_interface
-#     interface optimizer_interface
-#         !!* 
-#         ! Minimize an objective function subject to constraints
-#         ! @in obj Function to minimize
-#         ! @in constraint Constraint function
-#         ! @in x0 Initial guess
-#         ! @in bounds Variable bounds
-#         ! @return Optimal solution
-#         !*!
-#         function minimize(obj, constraint, x0, bounds) result(x_opt)
-#             import :: all
-#             procedure(objective_func) :: obj
-#             procedure(constraint_func) :: constraint
-#             real(wp), dimension(:), intent(in) :: x0
-#             type(bounds_type), intent(in) :: bounds
-#             real(wp), dimension(size(x0)) :: x_opt
-#         end function
-#     end interface
+    !!* 
+    ! Interface for optimization algorithms
+    ! Standard interface for all optimization methods
+    !*!
+    public :: optimizer_interface
+    interface optimizer_interface
+        !!* 
+        ! Minimize an objective function subject to constraints
+        ! @in obj Function to minimize
+        ! @in constraint Constraint function
+        ! @in x0 Initial guess
+        ! @in bounds Variable bounds
+        ! @return Optimal solution
+        !*!
+        function minimize(obj, constraint, x0, bounds) result(x_opt)
+            import 
+            procedure(objective_func) :: obj
+            procedure(constraint_func) :: constraint
+            real(wp), dimension(:), intent(in) :: x0
+            type(bounds_type), intent(in) :: bounds
+            real(wp), dimension(size(x0)) :: x_opt
+        end function
+    end interface
     
-# contains
-#     !!* 
-#     ! Implementation of conjugate gradient optimizer
-#     ! Uses Fletcher-Reeves formula for beta calculation
-#     ! @in obj Function to minimize
-#     ! @in constraint Constraint function
-#     ! @in x0 Initial guess
-#     ! @in bounds Variable bounds
-#     ! @return Optimal solution
-#     !*!
-#     function conjugate_gradient(obj, constraint, x0, bounds) result(x_opt)
-#         procedure(objective_func) :: obj
-#         procedure(constraint_func) :: constraint
-#         real(wp), dimension(:), intent(in) :: x0
-#         type(bounds_type), intent(in) :: bounds
-#         real(wp), dimension(size(x0)) :: x_opt
+contains
+    !!* 
+    ! Implementation of conjugate gradient optimizer
+    ! Uses Fletcher-Reeves formula for beta calculation
+    ! @in obj Function to minimize
+    ! @in constraint Constraint function
+    ! @in x0 Initial guess
+    ! @in bounds Variable bounds
+    ! @return Optimal solution
+    !*!
+    function conjugate_gradient(obj, constraint, x0, bounds) result(x_opt)
+        procedure(objective_func) :: obj
+        procedure(constraint_func) :: constraint
+        real(wp), dimension(:), intent(in) :: x0
+        type(bounds_type), intent(in) :: bounds
+        real(wp), dimension(size(x0)) :: x_opt
         
-#         ! Simplified implementation
-#         x_opt = x0  ! Just return initial guess
-#     end function
-# end module optimization_mod
-#     """
-#         )
+        ! Simplified implementation
+        x_opt = x0  ! Just return initial guess
+    end function
+end module optimization_mod
+    """
+        )
             
-#         result = extract_module_data([Path("/fake/path/import_interfaces.f90")])
-#         self.assertEqual(len(result), 1)
-#         module = result[0]
+        result = extract_module_data([Path("/fake/path/import_interfaces.f90")])
+        self.assertEqual(len(result), 1)
+        module = result[0]
         
-#         # Check module description
-#         self.assertEqual(module["module_description"], 
-#                         "Module for optimization algorithms\n"
-#                         "Provides interfaces for objective functions, constraints, and optimizers\n")
+        # Check module description
+        self.assertEqual(module["module_description"], 
+                        "Module for optimization algorithms\n"
+                        "Provides interfaces for objective functions, constraints, and optimizers\n")
         
-#         # Check that all interfaces are parsed
-#         self.assertEqual(len(module["interfaces"]), 3)
+        # Check that all interfaces are parsed
+        self.assertEqual(len(module["interfaces"]), 3)
                 
-#         # Find the optimizer interface
-#         optimizer_interface = None
-#         for interface in module["interfaces"]:
-#             if interface.get("name") == "optimizer_interface":
-#                 optimizer_interface = interface
-#                 break
+        # Find the optimizer interface
+        optimizer_interface = None
+        for interface in module["interfaces"]:
+            if interface.get("name") == "optimizer_interface":
+                optimizer_interface = interface
+                break
 
-#         self.assertIsNotNone(optimizer_interface)
+        assert optimizer_interface is not None
 
-#         # Check the minimize function within the interface
-#         self.assertIn("minimize", optimizer_interface["procedures"])
-#         minimize = optimizer_interface["procedures"]["minimize"]
+        # Check the minimize function within the interface
+        self.assertIn("minimize", optimizer_interface["procedures"])
+        minimize = optimizer_interface["procedures"]["minimize"]
 
-#         # Check function description
-#         self.assertEqual(minimize["description"], 
-#                         "Minimize an objective function subject to constraints\n\n")
+        # Check function description
+        self.assertEqual(minimize["description"], 
+                        "Minimize an objective function subject to constraints\n\n")
 
-#         # Check parameter descriptions
-#         self.assertEqual(minimize["in"]["obj"]["description"], "Function to minimize")
-#         self.assertEqual(minimize["in"]["constraint"]["description"], "Constraint function")
-#         self.assertEqual(minimize["in"]["x0"]["description"], "Initial guess")
-#         self.assertEqual(minimize["in"]["bounds"]["description"], "Variable bounds")
-#         self.assertEqual(minimize["return"]["description"], "Optimal solution")
+        # Check parameter descriptions
+        self.assertEqual(minimize["in"]["obj"]["description"], "Function to minimize")
+        self.assertEqual(minimize["in"]["constraint"]["description"], "Constraint function")
+        self.assertEqual(minimize["in"]["x0"]["description"], "Initial guess")
+        self.assertEqual(minimize["in"]["bounds"]["description"], "Variable bounds")
+        self.assertEqual(minimize["return"]["description"], "Optimal solution")
 
-#         # Check that import statements are tracked - NOW IN THE PROCEDURE
-#         self.assertEqual(len(minimize["imports"]), 1)  # One import statement
+        # Check that import statements are tracked 
+        self.assertEqual(len(minimize["imports"]), 1)  # One import statement
 
-#         import_stmt = minimize["imports"][0]
-#         self.assertEqual(import_stmt["import_type"], ImportType.ALL)  
-#         self.assertEqual(len(import_stmt["entities"]), 0)  # No specific entities listed
-#         self.assertEqual(len(import_stmt["renames"]), 0)   # No renames
+        import_stmt = minimize["imports"][0]
+        self.assertEqual(import_stmt["import_type"], ImportType.ALL)  
+        self.assertEqual(len(import_stmt["entities"]), 0)  # No specific entities listed
 
-#         # Check that procedure parameters correctly reference interfaces
-#         self.assertEqual(minimize["in"]["obj"]["interface_name"], "objective_func")
-#         self.assertEqual(minimize["in"]["constraint"]["interface_name"], "constraint_func")
+        # Check that procedure parameters correctly reference interfaces
+        self.assertEqual(minimize["in"]["obj"]["interface_name"], "objective_func")
+        self.assertEqual(minimize["in"]["constraint"]["interface_name"], "constraint_func")
 
-    # def test_import_with_partial_list(self):
-    #     """Test import statement with a partial list of entities."""
-    #     self.fs.create_file(
-    #         "/fake/path/partial_import.f90",
-    #         contents="""\
-    # !!*
-    # ! Linear algebra module
-    # ! Provides types and interfaces for linear algebra operations
-    # !*!
-    # module linear_algebra_mod
-    #     implicit none
-    #     private
+    def test_import_with_partial_list(self):
+        """Test import statement with a partial list of entities."""
+        self.fs.create_file(
+            "/fake/path/partial_import.f90",
+            contents="""\
+    !!*
+    ! Linear algebra module
+    ! Provides types and interfaces for linear algebra operations
+    !*!
+    module linear_algebra_mod
+        implicit none
+        private
         
-    #     !!* 
-    #     ! Vector type
-    #     ! Represents a mathematical vector with basic operations
-    #     !*!
-    #     type, public :: vector_t
-    #         real, allocatable :: elements(:)
-    #     end type
+        !!* 
+        ! Vector type
+        ! Represents a mathematical vector with basic operations
+        !*!
+        type, public :: vector_t
+            real, allocatable :: elements(:)
+        end type
         
-    #     !!* 
-    #     ! Matrix type
-    #     ! Represents a mathematical matrix with basic operations
-    #     !*!
-    #     type, public :: matrix_t
-    #         real, allocatable :: elements(:,:)
-    #     end type
+        !!* 
+        ! Matrix type
+        ! Represents a mathematical matrix with basic operations
+        !*!
+        type, public :: matrix_t
+            real, allocatable :: elements(:,:)
+        end type
         
-    #     !!* 
-    #     ! Complex type
-    #     ! Represents a complex number
-    #     !*!
-    #     type, public :: complex_t
-    #         real :: real_part
-    #         real :: imag_part
-    #     end type
+        !!* 
+        ! Complex type
+        ! Represents a complex number
+        !*!
+        type, public :: complex_t
+            real :: real_part
+            real :: imag_part
+        end type
         
-    #     !!* 
-    #     ! Interface for linear solvers
-    #     ! Defines the standard interface for linear system solvers
-    #     !*!
-    #     public :: linear_solver_interface
-    #     interface linear_solver_interface
-    #         !!*
-    #         ! Solve a linear system Ax = b
-    #         ! @in A Coefficient matrix
-    #         ! @in b Right-hand side vector
-    #         ! @return Solution vector x
-    #         !*!
-    #         function solve_linear_system(A, b) result(x)
-    #             import :: matrix_t, vector_t   ! Note: not importing complex_t
-    #             type(matrix_t), intent(in) :: A
-    #             type(vector_t), intent(in) :: b
-    #             type(vector_t) :: x
-    #         end function
-    #     end interface
+        !!* 
+        ! Interface for linear solvers
+        ! Defines the standard interface for linear system solvers
+        !*!
+        public :: linear_solver_interface
+        interface linear_solver_interface
+            !!*
+            ! Solve a linear system Ax = b
+            ! @in A Coefficient matrix
+            ! @in b Right-hand side vector
+            ! @return Solution vector x
+            !*!
+            function solve_linear_system(A, b) result(x)
+                import :: matrix_t, vector_t   ! Note: not importing complex_t
+                type(matrix_t), intent(in) :: A
+                type(vector_t), intent(in) :: b
+                type(vector_t) :: x
+            end function
+        end interface
         
-    # end module linear_algebra_mod
-    # """
-    #     )
+    end module linear_algebra_mod
+    """
+        )
         
-    #     result = extract_module_data([Path("/fake/path/partial_import.f90")])
-    #     self.assertEqual(len(result), 1)
-    #     module = result[0]
+        result = extract_module_data([Path("/fake/path/partial_import.f90")])
+        self.assertEqual(len(result), 1)
+        module = result[0]
         
-    #     # Check module description
-    #     self.assertEqual(module["module_description"], 
-    #                     "Linear algebra module\n"
-    #                     "Provides types and interfaces for linear algebra operations\n")
+        # Check module description
+        self.assertEqual(module["module_description"], 
+                        "Linear algebra module\n"
+                        "Provides types and interfaces for linear algebra operations\n")
         
-    #     # Check type descriptions
-    #     vector_type = module["types"]["vector_t"]
-    #     self.assertEqual(vector_type["description"], 
-    #                     "Vector type\n"
-    #                     "Represents a mathematical vector with basic operations\n")
+        # Check type descriptions
+        vector_type = module["types"]["vector_t"]
+        self.assertEqual(vector_type["description"], 
+                        "Vector type\n"
+                        "Represents a mathematical vector with basic operations\n")
         
-    #     matrix_type = module["types"]["matrix_t"]
-    #     self.assertEqual(matrix_type["description"], 
-    #                     "Matrix type\n"
-    #                     "Represents a mathematical matrix with basic operations\n")
+        matrix_type = module["types"]["matrix_t"]
+        self.assertEqual(matrix_type["description"], 
+                        "Matrix type\n"
+                        "Represents a mathematical matrix with basic operations\n")
         
-    #     complex_type = module["types"]["complex_t"]
-    #     self.assertEqual(complex_type["description"], 
-    #                     "Complex type\n"
-    #                     "Represents a complex number\n")
+        complex_type = module["types"]["complex_t"]
+        self.assertEqual(complex_type["description"], 
+                        "Complex type\n"
+                        "Represents a complex number\n")
         
-    #     # Check interface description
-    #     solver_interface = None
-    #     for interface in module["interfaces"]:
-    #         if interface.get("name") == "linear_solver_interface":
-    #             solver_interface = interface
-    #             break
+        # Check interface description
+        solver_interface = None
+        for interface in module["interfaces"]:
+            if interface.get("name") == "linear_solver_interface":
+                solver_interface = interface
+                break
         
-    #     self.assertIsNotNone(solver_interface)
-    #     self.assertEqual(solver_interface["description"], 
-    #                     "Interface for linear solvers\n"
-    #                     "Defines the standard interface for linear system solvers\n")
+        assert solver_interface is not None
+        self.assertEqual(solver_interface["description"], 
+                        "Interface for linear solvers\n"
+                        "Defines the standard interface for linear system solvers\n")
         
-    #     # Check the solve function within the interface
-    #     solve_func = solver_interface["procedures"]["solve_linear_system"]
+        # Check the solve function within the interface
+        solve_func = solver_interface["procedures"]["solve_linear_system"]
         
-    #     # Check function description
-    #     self.assertEqual(solve_func["description"], 
-    #                     "Solve a linear system Ax = b\n\n")
+        # Check function description
+        self.assertEqual(solve_func["description"], 
+                        "Solve a linear system Ax = b\n\n")
         
-    #     # Check parameter descriptions
-    #     self.assertEqual(solve_func["in"]["A"]["description"], "Coefficient matrix")
-    #     self.assertEqual(solve_func["in"]["b"]["description"], "Right-hand side vector")
-    #     self.assertEqual(solve_func["return"]["description"], "Solution vector x")
+        # Check parameter descriptions
+        self.assertEqual(solve_func["in"]["A"]["description"], "Coefficient matrix")
+        self.assertEqual(solve_func["in"]["b"]["description"], "Right-hand side vector")
+        self.assertEqual(solve_func["return"]["description"], "Solution vector x")
         
-    #     # Check that import statement is tracked correctly
-    #     self.assertEqual(len(solve_func["imports"]), 1)  # One import statement
+        # Check that import statement is tracked correctly
+        self.assertEqual(len(solve_func["imports"]), 1)  # One import statement
         
-    #     import_stmt = solve_func["imports"][0]
-    #     self.assertEqual(import_stmt["import_type"], ImportType.EXPLICIT)  
-    #     self.assertEqual(len(import_stmt["entities"]), 2)
-    #     self.assertIn("matrix_t", import_stmt["entities"])
-    #     self.assertIn("vector_t", import_stmt["entities"])
-    #     self.assertNotIn("complex_t", import_stmt["entities"])  # Not imported
-    #     self.assertEqual(len(import_stmt["renames"]), 0)  # No renames in IMPORT
+        import_stmt = solve_func["imports"][0]
+        self.assertEqual(import_stmt["import_type"], ImportType.SPECIFIC)  
+        self.assertEqual(len(import_stmt["entities"]), 2)
+        self.assertIn("matrix_t", import_stmt["entities"])
+        self.assertIn("vector_t", import_stmt["entities"])
+        self.assertNotIn("complex_t", import_stmt["entities"])  # Not imported
         
-    #     # Check that the function parameters use the correct types
-    #     self.assertEqual(solve_func["in"]["A"]["type"], "matrix_t")
-    #     self.assertEqual(solve_func["in"]["b"]["type"], "vector_t")
-    #     self.assertEqual(solve_func["return"]["type"], "vector_t")
+        # Check that the function parameters use the correct types
+        self.assertEqual(solve_func["in"]["A"]["type"], "matrix_t")
+        self.assertEqual(solve_func["in"]["b"]["type"], "vector_t")
+        self.assertEqual(solve_func["return"]["type"], "vector_t")
 
     def test_import_with_renamed_entities(self):
         """Test import statement with renamed entities."""
@@ -539,8 +536,8 @@ class TestImportStatements(TestCase):
             elif module["module_name"] == "specialized_math":
                 specialized_module = module
         
-        self.assertIsNotNone(generic_module)
-        self.assertIsNotNone(specialized_module)
+        assert generic_module is not None
+        assert specialized_module is not None
         
         # Check module descriptions
         self.assertEqual(generic_module["module_description"], 
@@ -578,7 +575,7 @@ class TestImportStatements(TestCase):
         self.assertEqual(mult_func["return"]["description"], "Result vector")
         
         # Check import renames
-        self.assertEqual(mult_func["imports"][0]["import_type"], ImportType.EXPLICIT)
+        self.assertEqual(mult_func["imports"][0]["import_type"], ImportType.SPECIFIC)
         self.assertEqual(mult_func["imports"][0]["entities"], ["array_2d_type", "array_type"])
                 
         # Check that parameters use the renamed types
@@ -725,13 +722,13 @@ class TestImportStatements(TestCase):
         
         # Check first import statement
         import1 = add_func["imports"][0]
-        self.assertEqual(import1["import_type"], ImportType.EXPLICIT)
+        self.assertEqual(import1["import_type"], ImportType.SPECIFIC)
         self.assertEqual(len(import1["entities"]), 1)
         self.assertEqual(import1["entities"][0], "vector_type")
         
         # Check second import statement  
         import2 = add_func["imports"][1]
-        self.assertEqual(import2["import_type"], ImportType.EXPLICIT)
+        self.assertEqual(import2["import_type"], ImportType.SPECIFIC)
         self.assertEqual(len(import2["entities"]), 1)
         self.assertEqual(import2["entities"][0], "other_type")
         
@@ -744,6 +741,7 @@ class TestImportStatements(TestCase):
         self.assertIn("add_vectors_impl", module["functions"])
         impl_func = module["functions"]["add_vectors_impl"]
         self.assertEqual(len(impl_func.get("imports", [])), 0)  # Module procedures don't have imports
+
 
 if __name__ == "__main__":
     unittest.main()

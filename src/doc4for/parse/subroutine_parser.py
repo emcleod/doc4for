@@ -34,7 +34,7 @@ def parse_subroutine(subroutine: Subroutine_Subprogram, comment_stack: List[Comm
         "arguments": common["arguments"],
         "in": common["intent_in"],
         "out": common["intent_out"],
-        "argument_interfaces": {},
+        "argument_interfaces": common["argument_interfaces"],
         "binding_type": binding_type,
         "uses": common["uses"],
         "imports": common["imports"],

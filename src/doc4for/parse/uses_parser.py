@@ -120,19 +120,17 @@ def parse_imports_list(import_stmts: List[Import_Stmt]) -> List[Import]:
 
 def parse_import(import_stmt: Import_Stmt) -> Import:
     import_name_list = walk(import_stmt, Import_Name_List)
+    
     if not import_name_list:
-        return {
-            "import_type": ImportType.IMPLICIT,
-            "entities": [],
-        }
-    imports = [name.string for name in walk(import_name_list, Name)]
-    if len(imports) == 1 and imports[0] == "all":
+        # Just "import" with no list - imports everything from host
         return {
             "import_type": ImportType.ALL,
             "entities": [],
         }
+    
+    # "import :: name1, name2, ..." - specific imports
+    imports = [name.string for name in walk(import_name_list, Name)]
     return {
-        "import_type": ImportType.EXPLICIT,
+        "import_type": ImportType.SPECIFIC,
         "entities": imports,
     }
-

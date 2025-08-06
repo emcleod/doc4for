@@ -95,15 +95,14 @@ Uses = TypedDict(
 )
 
 class ImportType(Enum):
-    ALL = auto()
-    EXPLICIT = auto()
-    IMPLICIT = auto()
-
+    ALL = "all"          # import (no list)
+    SPECIFIC = "specific"  # import :: entity1, entity2
+    
 Import = TypedDict(
     "Import",
     {
         "import_type": ImportType,
-        "entities": List[str],  # empty for ALL/IMPLICIT
+        "entities": List[str],  # empty for ALL
     }
 )
 

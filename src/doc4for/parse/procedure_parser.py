@@ -15,7 +15,10 @@ from fparser.two.Fortran2003 import (
     Import_Stmt,
     External_Stmt, 
     Part_Ref,
-    Section_Subscript_List # type: ignore[attr-defined]
+    Section_Subscript_List, # type: ignore[attr-defined]
+    Specification_Part,
+    Interface_Block,
+    Interface_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.procedure_models import (
@@ -27,8 +30,8 @@ from doc4for.models.procedure_models import FunctionDescription, SubroutineDescr
 from doc4for.models.variable_models import PolymorphismType
 from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.argument_parser import parse_arguments, parse_procedure_argument
-from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.uses_parser import parse_uses_list, parse_imports_list
+from doc4for.parse.interface_helper import match_interfaces_to_procedure_arguments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -71,6 +74,20 @@ def parse_procedure(procedure,
         for dummy_arg in walk(dummy_args, Name):
             dummy_arg_names.append(dummy_arg.string)
     
+    # Parse interface blocks within the procedure
+    interface_blocks = []
+    spec_parts = walk(procedure, Specification_Part)
+    if spec_parts:
+        from doc4for.parse.interface_helper import process_specification_part
+        interface_blocks, additional_type_decls, additional_proc_decls = process_specification_part(
+            spec_parts[0], default_access
+        )
+        # Add any additional declarations found in the specification part
+        if additional_type_decls:
+            type_decls = type_decls + additional_type_decls if type_decls else additional_type_decls
+        if additional_proc_decls:
+            procedure_decls = procedure_decls + additional_proc_decls if procedure_decls else additional_proc_decls
+    
     # process declarations
     intent_in = {}
     intent_out = {}
@@ -80,6 +97,7 @@ def parse_procedure(procedure,
     # filled in in a post-processing step when all modules have been processed
     argument_interfaces = {}
     external_procedures = {}
+    
     if type_decls:        
         for decl in type_decls:
             parsed_arguments, intent = parse_arguments(decl)
@@ -151,6 +169,24 @@ def parse_procedure(procedure,
                     "name": name_str,
                     "procedure_type": procedure_type
                 }
+
+    # Match interface blocks to procedure arguments
+    # This needs to happen after all arguments are parsed
+    matched_interfaces, procedure_arguments = match_interfaces_to_procedure_arguments(
+        interface_blocks, dummy_arg_names, {"intent_in": intent_in, "intent_out": intent_out}, procedure_decls
+    )
+    
+    # Update argument_interfaces with matched interfaces
+    argument_interfaces.update(matched_interfaces)
+    
+    # Update intent_in with any procedure arguments identified by interface matching
+    intent_in.update(procedure_arguments)
+    
+    # Rebuild arguments list in correct order if new procedure arguments were added
+    dummy_arg_names = []
+    for arg_name in walk(procedure_stmt, Dummy_Arg_List)[0].children if dummy_args else []:
+        if isinstance(arg_name, Name):
+            dummy_arg_names.append(arg_name.string)
 
     uses = parse_uses_list(walk(procedure, Use_Stmt))
     imports = parse_imports_list(walk(procedure, Import_Stmt))

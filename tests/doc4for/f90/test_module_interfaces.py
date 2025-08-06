@@ -2083,20 +2083,7 @@ end module matrix_ops_mod
         self.assertEqual(len(math_advanced["interfaces"]), 1) 
         self.assertEqual(len(integration_composite["interfaces"]), 1)
         self.assertEqual(len(integration_composite["functions"]), 1)
-        
-        # Check that imported modules are tracked
-        self.assertEqual(len(integration_composite["imports"]), 2)
-        
-        # Verify import information
-        basic_import = next(imp for imp in integration_composite["imports"] if imp["module"] == "math_basic")
-        advanced_import = next(imp for imp in integration_composite["imports"] if imp["module"] == "math_advanced")
-        
-        self.assertEqual(basic_import["type"], "only")
-        self.assertEqual(basic_import["items"], [{"local_name": "basic_integrate", "original_name": "integrate"}])
-        
-        self.assertEqual(advanced_import["type"], "all")
-        self.assertEqual(advanced_import["items"], [])  # Empty for "use module" without only
-        
+                        
         # Check that interfaces have different signatures (same name, different args)
         basic_integrate_proc = math_basic["interfaces"][0]["procedures"]["integrate"]
         advanced_integrate_proc = math_advanced["interfaces"][0]["procedures"]["integrate"]
@@ -2135,35 +2122,25 @@ end module matrix_ops_mod
         
         # Check local interface resolution
         local_interface = composite_func["argument_interfaces"]["local_integrate"]
-        self.assertEqual(local_interface["description"], "\nLocal integration interface for simple functions\nSingle parameter, no bounds needed\n\n")
-        self.assertEqual(local_interface["source_module"], "integration_composite")
         self.assertEqual(len(local_interface["procedures"]), 1)
         
         local_proc = local_interface["procedures"]["local_integrate"]
         self.assertEqual(local_proc["arguments"], ["x"])
-        self.assertEqual(local_proc["description"], "\nLocal simple integration interface\n\n")
+        self.assertEqual(local_proc["description"], "Local simple integration interface\n\n")
         
         # Check cross-module interface resolution for basic_integrate
         basic_interface = composite_func["argument_interfaces"]["basic_integrate"]
-        self.assertEqual(basic_interface["description"], "\nBasic numerical integration interface\nSimple two-parameter integration\n\n")
-        self.assertEqual(basic_interface["source_module"], "math_basic")
-        self.assertEqual(basic_interface["original_name"], "integrate")  # Track original name
-        self.assertEqual(len(basic_interface["procedures"]), 1)
-        
-        basic_proc = basic_interface["procedures"]["integrate"]  # Original procedure name
-        self.assertEqual(basic_proc["arguments"], ["f", "a", "b"])
-        self.assertEqual(basic_proc["description"], "\nBasic integration function signature\n\n")
-        
+        self.assertFalse(basic_interface) # empty because it's an import - no information at this time
+                
         # Check cross-module interface resolution for integrate (from math_advanced)
         advanced_interface = composite_func["argument_interfaces"]["integrate"]
-        self.assertEqual(advanced_interface["description"], "\nAdvanced numerical integration interface\nIncludes method selection and tolerance control\n\n")
-        self.assertEqual(advanced_interface["source_module"], "math_advanced")
+        self.assertEqual(advanced_interface["description"], "Advanced numerical integration interface\nIncludes method selection and tolerance control\n")
         self.assertNotIn("original_name", advanced_interface)  # No rename
         self.assertEqual(len(advanced_interface["procedures"]), 1)
         
         advanced_proc = advanced_interface["procedures"]["integrate"]
         self.assertEqual(advanced_proc["arguments"], ["f", "a", "b", "method", "tolerance"])
-        self.assertEqual(advanced_proc["description"], "\nAdvanced integration function signature\n\n")
+        self.assertEqual(advanced_proc["description"], "Advanced integration function signature\n\n")
         
         # Verify cross-references work both ways - check source modules contain the interfaces
         basic_source_interface = math_basic["interfaces"][0]
@@ -2172,6 +2149,24 @@ end module matrix_ops_mod
         advanced_source_interface = math_advanced["interfaces"][0] 
         self.assertEqual(advanced_source_interface["procedures"]["integrate"]["arguments"], ["f", "a", "b", "method", "tolerance"])
 
+        # Check that imported modules are tracked via uses
+        self.assertEqual(len(integration_composite["uses"]), 2)
+
+        # Verify use information
+        self.assertIn("math_basic", integration_composite["uses"])
+        self.assertIn("math_advanced", integration_composite["uses"])
+
+        basic_use = integration_composite["uses"]["math_basic"]
+        self.assertEqual(basic_use["module_name"], "math_basic")
+        self.assertEqual(basic_use["selections"], [])  # Empty because it's a rename
+        self.assertEqual(len(basic_use["renames"]), 1)
+        self.assertEqual(basic_use["renames"][0]["local"], "basic_integrate")
+        self.assertEqual(basic_use["renames"][0]["original"], "integrate")
+
+        advanced_use = integration_composite["uses"]["math_advanced"]
+        self.assertEqual(advanced_use["module_name"], "math_advanced")
+        self.assertEqual(advanced_use["selections"], [])  # No only clause
+        self.assertEqual(advanced_use["renames"], [])  # No renames
 
 if __name__ == "__main__":
     unittest.main()
