@@ -63,7 +63,7 @@ end module procedures_binding_mod
         
         # Check C-compatible type
         c_type = module["types"]["c_type1"]
-        self.assertIsNotNone(c_type["binding_type"])
+        assert c_type["binding_type"] is not None
         self.assertEqual(c_type["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(c_type["binding_type"]["name"])
         
@@ -86,7 +86,7 @@ end module procedures_binding_mod
         
         # Check implementation function has C binding
         calc_add = module["functions"]["calculator_add"] 
-        self.assertIsNotNone(calc_add["binding_type"])
+        assert calc_add["binding_type"] is not None
         self.assertEqual(calc_add["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(calc_add["binding_type"]["name"])
         self.assertEqual(calc_add["attributes"], ["PUBLIC"])
@@ -173,7 +173,7 @@ end module derived_type_with_procedures_mod
         
         # Check C-compatible calculator type
         calculator = module["types"]["calculator_t"]
-        self.assertIsNotNone(calculator["binding_type"])
+        assert calculator["binding_type"] is not None
         self.assertEqual(calculator["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(calculator["binding_type"]["name"])  # No name support yet
         
@@ -194,7 +194,7 @@ end module derived_type_with_procedures_mod
         
         # Check procedure implementations - calculator_add with C binding
         calculator_add = module["functions"]["calculator_add"]
-        self.assertIsNotNone(calculator_add["binding_type"])
+        assert calculator_add["binding_type"] is not None
         self.assertEqual(calculator_add["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(calculator_add["binding_type"]["name"])
         self.assertEqual(calculator_add["attributes"], ["PUBLIC"])
@@ -269,13 +269,13 @@ end module derived_type_binding_mod
         
         # Check basic type with C binding
         point = module["types"]["c_point_t"]
-        self.assertIsNotNone(point["binding_type"])
+        assert point["binding_type"] is not None
         self.assertEqual(point["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(point["binding_type"]["name"])
         
         # Check type with C binding (would have explicit name but fparser doesn't support it)
         vector = module["types"]["c_vector_t"]
-        self.assertIsNotNone(vector["binding_type"])
+        assert vector["binding_type"] is not None
         self.assertEqual(vector["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(vector["binding_type"]["name"])  # Would be "c_vector_s" if supported
         
@@ -285,14 +285,14 @@ end module derived_type_binding_mod
         
         # Check type with multiple attributes including bind(c)
         public_type = module["types"]["public_c_type"]
-        self.assertIsNotNone(public_type["binding_type"])
+        assert public_type["binding_type"] is not None
         self.assertEqual(public_type["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(public_type["binding_type"]["name"])
         self.assertIn("PUBLIC", public_type["attributes"])
         
         # Check type with unusual spacing (would have name if supported)
         weird = module["types"]["weird_type"]
-        self.assertIsNotNone(weird["binding_type"])
+        assert weird["binding_type"] is not None
         self.assertEqual(weird["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(weird["binding_type"]["name"])  # Would be "weird_c_type" if supported
 
@@ -356,7 +356,7 @@ end module derived_type_components_mod
         
         # Check complex struct with mixed components
         complex_struct = module["types"]["complex_struct"]
-        self.assertIsNotNone(complex_struct["binding_type"])
+        assert complex_struct["binding_type"] is not None
         self.assertEqual(complex_struct["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(complex_struct["binding_type"]["name"])
         self.assertEqual(len(complex_struct["data_components"]), 3)
@@ -364,20 +364,21 @@ end module derived_type_components_mod
         # Check nested struct
         parent = module["types"]["parent_struct"]
         self.assertIsNotNone(parent["binding_type"])
+        assert parent["binding_type"] is not None
         self.assertEqual(parent["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(parent["binding_type"]["name"])
         self.assertEqual(parent["data_components"]["child"]["type"], "complex_struct")
         
         # Check array container (would have name if supported)
         array_container = module["types"]["array_container"]
-        self.assertIsNotNone(array_container["binding_type"])
+        assert array_container["binding_type"] is not None
         self.assertEqual(array_container["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(array_container["binding_type"]["name"])  # Would be "c_array_container" if supported
         self.assertIn("dimension", array_container["data_components"]["sizes"])
         
         # Check function returning C-compatible type with C binding
         create_func = module["functions"]["create_complex_struct"]
-        self.assertIsNotNone(create_func["binding_type"])
+        assert create_func["binding_type"] is not None
         self.assertEqual(create_func["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(create_func["binding_type"]["name"])
         self.assertEqual(create_func["return"]["type"], "complex_struct")
@@ -387,7 +388,7 @@ end module derived_type_components_mod
         
         # Check subroutine with C binding
         modify_sub = module["subroutines"]["modify_parent_struct"]
-        self.assertIsNotNone(modify_sub["binding_type"])
+        assert modify_sub["binding_type"] is not None
         self.assertEqual(modify_sub["binding_type"]["type"], BindingTypeEnum.BIND_C)
         self.assertIsNone(modify_sub["binding_type"]["name"])
         self.assertIn("p", modify_sub["in"])
@@ -955,6 +956,373 @@ end module derived_type_components_mod
         self.assertIn("PUBLIC", private_type["procedures"]["public_override_2"]["attributes"])
         self.assertIn("PUBLIC", private_type["generic_interfaces"]["operator(*)"]["attributes"])
         self.assertIn("PRIVATE", private_type["generic_interfaces"]["operator(-)"]["attributes"])
+            
+    def test_procedure_pointer_component_access(self):
+        self.fs.create_file(
+            "/fake/path/proc_pointer_access.f90",
+            contents="""\
+    module proc_pointer_access_mod
+        implicit none
+        
+        ! Define some interfaces
+        abstract interface
+            function func_interface(x) result(y)
+                real, intent(in) :: x
+                real :: y
+            end function func_interface
+            
+            subroutine sub_interface(a, b)
+                integer, intent(in) :: a
+                integer, intent(out) :: b
+            end subroutine sub_interface
+        end interface
+        
+        ! Type with private components including procedure pointers
+        type :: private_component_type
+            private
+            real :: data
+            procedure(func_interface), pointer :: func_ptr  ! Should be PRIVATE
+            procedure(sub_interface), pointer :: sub_ptr    ! Should be PRIVATE
+            procedure(func_interface), pointer, public :: public_func_ptr  ! Explicitly PUBLIC
+        contains
+            ! No private statement here, so procedures default to PUBLIC
+            procedure :: set_func_ptr
+            procedure :: call_func_ptr
+            procedure, private :: internal_method  ! Explicitly PRIVATE
+        end type private_component_type
+        
+        ! Type with public components but private procedures
+        type :: mixed_access_type
+            ! No private statement, so components are PUBLIC by default
+            real :: data
+            procedure(func_interface), pointer :: func_ptr  ! Should be PUBLIC
+            procedure(sub_interface), pointer, private :: private_sub_ptr  ! Explicitly PRIVATE
+        contains
+            private  ! Makes following procedures PRIVATE by default
+            procedure :: method1
+            procedure :: method2
+            procedure, public :: public_method  ! Explicitly PUBLIC
+        end type mixed_access_type
+        
+        ! Type with all private
+        type :: all_private_type
+            private
+            procedure(func_interface), pointer :: comp_ptr  ! PRIVATE from component section
+            procedure(func_interface), pointer, nopass :: static_ptr  ! PRIVATE, with NOPASS
+        contains
+            private
+            procedure :: proc1  ! PRIVATE from procedure section
+            procedure, nopass :: static_proc  ! PRIVATE, with NOPASS
+        end type all_private_type
+
+    contains
+        
+        ! Implementation for private_component_type
+        subroutine set_func_ptr(this, fptr)
+            class(private_component_type), intent(inout) :: this
+            procedure(func_interface) :: fptr
+            this%func_ptr => fptr
+        end subroutine set_func_ptr
+        
+        function call_func_ptr(this, x) result(y)
+            class(private_component_type), intent(in) :: this
+            real, intent(in) :: x
+            real :: y
+            if (associated(this%func_ptr)) then
+                y = this%func_ptr(x)
+            else
+                y = 0.0
+            end if
+        end function call_func_ptr
+        
+        subroutine internal_method(this)
+            class(private_component_type), intent(inout) :: this
+            ! Internal processing
+        end subroutine internal_method
+        
+        ! Implementation for mixed_access_type
+        subroutine method1(this)
+            class(mixed_access_type), intent(inout) :: this
+            ! Implementation
+        end subroutine method1
+        
+        subroutine method2(this)
+            class(mixed_access_type), intent(inout) :: this
+            ! Implementation
+        end subroutine method2
+        
+        subroutine public_method(this)
+            class(mixed_access_type), intent(inout) :: this
+            ! Implementation
+        end subroutine public_method
+        
+        ! Implementation for all_private_type
+        subroutine proc1(this)
+            class(all_private_type), intent(inout) :: this
+            ! Implementation
+        end subroutine proc1
+        
+        subroutine static_proc()
+            ! No this argument
+        end subroutine static_proc
+
+    end module proc_pointer_access_mod
+    """
+        )
+        
+        result = extract_module_data([Path("/fake/path/proc_pointer_access.f90")], False)
+        module = result[0]
+        
+        # Test private_component_type
+        private_comp_type = module["types"]["private_component_type"]
+        
+        # Check procedure pointer components - should follow component access (PRIVATE)
+        self.assertIn("func_ptr", private_comp_type["procedures"])
+        func_ptr = private_comp_type["procedures"]["func_ptr"]
+        self.assertEqual(func_ptr["attributes"], ["POINTER", "PRIVATE"])
+        self.assertEqual(func_ptr["bound_to"], "func_interface")
+        self.assertEqual(func_ptr["pass_type"], PassType.DEFAULT)
+        
+        self.assertIn("sub_ptr", private_comp_type["procedures"])
+        sub_ptr = private_comp_type["procedures"]["sub_ptr"]
+        self.assertEqual(sub_ptr["attributes"], ["POINTER", "PRIVATE"])
+        self.assertEqual(sub_ptr["bound_to"], "sub_interface")
+        
+        self.assertIn("public_func_ptr", private_comp_type["procedures"])
+        public_func_ptr = private_comp_type["procedures"]["public_func_ptr"]
+        self.assertIn("PUBLIC", public_func_ptr["attributes"])
+        self.assertIn("POINTER", public_func_ptr["attributes"])
+        
+        # Check type-bound procedures - should be PUBLIC (no private in contains)
+        self.assertIn("set_func_ptr", private_comp_type["procedures"])
+        self.assertEqual(private_comp_type["procedures"]["set_func_ptr"]["attributes"], ["PUBLIC"])
+        
+        self.assertIn("call_func_ptr", private_comp_type["procedures"])
+        self.assertEqual(private_comp_type["procedures"]["call_func_ptr"]["attributes"], ["PUBLIC"])
+        
+        self.assertIn("internal_method", private_comp_type["procedures"])
+        self.assertEqual(private_comp_type["procedures"]["internal_method"]["attributes"], ["PRIVATE"])
+        
+        # Test mixed_access_type
+        mixed_type = module["types"]["mixed_access_type"]
+        
+        # Check procedure pointer components - should follow component access (PUBLIC by default)
+        self.assertIn("func_ptr", mixed_type["procedures"])
+        self.assertEqual(mixed_type["procedures"]["func_ptr"]["attributes"], ["POINTER", "PUBLIC"])
+        
+        self.assertIn("private_sub_ptr", mixed_type["procedures"])
+        private_sub = mixed_type["procedures"]["private_sub_ptr"]
+        self.assertIn("PRIVATE", private_sub["attributes"])
+        self.assertIn("POINTER", private_sub["attributes"])
+        
+        # Check type-bound procedures - should be PRIVATE (private in contains)
+        self.assertEqual(mixed_type["procedures"]["method1"]["attributes"], ["PRIVATE"])
+        self.assertEqual(mixed_type["procedures"]["method2"]["attributes"], ["PRIVATE"])
+        self.assertEqual(mixed_type["procedures"]["public_method"]["attributes"], ["PUBLIC"])
+        
+        # Test all_private_type
+        all_private_type = module["types"]["all_private_type"]
+        
+        # Procedure pointer components with NOPASS
+        comp_ptr = all_private_type["procedures"]["comp_ptr"]
+        self.assertEqual(comp_ptr["attributes"], ["POINTER", "PRIVATE"])
+        self.assertEqual(comp_ptr["pass_type"], PassType.DEFAULT)
+        
+        static_ptr = all_private_type["procedures"]["static_ptr"]
+        self.assertEqual(static_ptr["attributes"], ["POINTER", "PRIVATE"])
+        self.assertEqual(static_ptr["pass_type"], PassType.NONE)  # NOPASS
+        
+        # Type-bound procedures
+        self.assertEqual(all_private_type["procedures"]["proc1"]["attributes"], ["PRIVATE"])
+        self.assertEqual(all_private_type["procedures"]["static_proc"]["attributes"], ["PRIVATE"])
+        self.assertEqual(all_private_type["procedures"]["static_proc"]["pass_type"], PassType.NONE)
+            
+    def test_procedure_pointer_edge_cases(self):
+        self.fs.create_file(
+            "/fake/path/proc_pointer_edge_cases.f90",
+            contents="""\
+    module proc_pointer_edge_cases_mod
+        implicit none
+        
+        abstract interface
+            function scalar_func(x) result(y)
+                real, intent(in) :: x
+                real :: y
+            end function scalar_func
+            
+            subroutine array_sub(arr)
+                real, dimension(:), intent(inout) :: arr
+            end subroutine array_sub
+            
+            function no_arg_func() result(val)
+                integer :: val
+            end function no_arg_func
+        end interface
+        
+        type :: edge_case_type
+            private
+            
+            ! Multiple procedure pointers in one declaration
+            procedure(scalar_func), pointer :: func1, func2, func3
+            
+            ! Procedure pointer with null initialization
+            procedure(scalar_func), pointer :: null_func => null()
+            
+            ! Multiple with different attributes
+            procedure(array_sub), pointer, public :: pub_sub1, pub_sub2
+            
+            ! Procedure pointer with nopass
+            procedure(no_arg_func), pointer, nopass :: static_func => null()
+            
+            ! Mix of public and private in separate declarations
+            procedure(scalar_func), pointer, public :: public_ptr
+            procedure(scalar_func), pointer :: private_ptr  ! Should be PRIVATE (default)
+            
+        contains
+            procedure :: init_pointers
+            procedure :: test_pointers
+        end type edge_case_type
+        
+        ! Type with procedure pointers but no private statement
+        type :: default_access_type
+            ! No private statement, so components are PUBLIC by default
+            procedure(scalar_func), pointer :: default_ptr1, default_ptr2
+            procedure(array_sub), pointer, private :: explicit_private_ptr
+            procedure(no_arg_func), pointer, nopass :: default_static => null()
+        contains
+            private  ! Only affects procedures, not components
+            procedure :: method1
+            procedure, public :: public_method
+        end type default_access_type
+        
+        ! Type testing initialization edge cases
+        type :: init_edge_cases
+            procedure(scalar_func), pointer :: uninitialized_ptr
+            procedure(scalar_func), pointer :: null_init_ptr => null()
+            procedure(scalar_func), pointer, private :: private_null_ptr => null()
+            ! Multiple with mixed initialization
+            procedure(no_arg_func), pointer :: ptr_a => null(), ptr_b, ptr_c => null()
+        end type init_edge_cases
+
+    contains
+        
+        subroutine init_pointers(this)
+            class(edge_case_type), intent(inout) :: this
+            ! Initialize pointers
+        end subroutine init_pointers
+        
+        subroutine test_pointers(this)
+            class(edge_case_type), intent(in) :: this
+            ! Test pointer usage
+        end subroutine test_pointers
+        
+        subroutine method1(this)
+            class(default_access_type), intent(inout) :: this
+            ! Implementation
+        end subroutine method1
+        
+        subroutine public_method(this)
+            class(default_access_type), intent(inout) :: this
+            ! Implementation
+        end subroutine public_method
+
+    end module proc_pointer_edge_cases_mod
+    """
+        )
+        
+        result = extract_module_data([Path("/fake/path/proc_pointer_edge_cases.f90")], False)
+        module = result[0]
+        
+        # Test edge_case_type
+        edge_type = module["types"]["edge_case_type"]
+        
+        # Test multiple procedure pointers in one declaration
+        self.assertIn("func1", edge_type["procedures"])
+        self.assertIn("func2", edge_type["procedures"])
+        self.assertIn("func3", edge_type["procedures"])
+        
+        # All should have same attributes and interface
+        for func_name in ["func1", "func2", "func3"]:
+            func = edge_type["procedures"][func_name]
+            self.assertEqual(func["attributes"], ["POINTER", "PRIVATE"])
+            self.assertEqual(func["bound_to"], "scalar_func")
+            self.assertEqual(func["pass_type"], PassType.DEFAULT)
+        
+        # Test null initialization
+        self.assertIn("null_func", edge_type["procedures"])
+        null_func = edge_type["procedures"]["null_func"]
+        self.assertEqual(null_func["attributes"], ["POINTER", "PRIVATE"])
+        self.assertEqual(null_func["bound_to"], "scalar_func")
+        # Note: We might want to track initialization in the future
+        
+        # Test multiple public pointers
+        self.assertIn("pub_sub1", edge_type["procedures"])
+        self.assertIn("pub_sub2", edge_type["procedures"])
+        for pub_name in ["pub_sub1", "pub_sub2"]:
+            pub_sub = edge_type["procedures"][pub_name]
+            self.assertIn("PUBLIC", pub_sub["attributes"])
+            self.assertIn("POINTER", pub_sub["attributes"])
+            self.assertEqual(pub_sub["bound_to"], "array_sub")
+        
+        # Test nopass with null init
+        self.assertIn("static_func", edge_type["procedures"])
+        static_func = edge_type["procedures"]["static_func"]
+        self.assertEqual(static_func["pass_type"], PassType.NONE)
+        self.assertIn("POINTER", static_func["attributes"])
+        self.assertIn("PRIVATE", static_func["attributes"])
+        
+        # Test mixed access
+        self.assertIn("public_ptr", edge_type["procedures"])
+        self.assertIn("PUBLIC", edge_type["procedures"]["public_ptr"]["attributes"])
+        
+        self.assertIn("private_ptr", edge_type["procedures"])
+        self.assertIn("PRIVATE", edge_type["procedures"]["private_ptr"]["attributes"])
+        
+        # Test type-bound procedures
+        self.assertEqual(edge_type["procedures"]["init_pointers"]["attributes"], ["PUBLIC"])
+        self.assertEqual(edge_type["procedures"]["test_pointers"]["attributes"], ["PUBLIC"])
+        
+        # Test default_access_type
+        default_type = module["types"]["default_access_type"]
+        
+        # Components should be PUBLIC by default
+        self.assertIn("default_ptr1", default_type["procedures"])
+        self.assertIn("default_ptr2", default_type["procedures"])
+        self.assertIn("PUBLIC", default_type["procedures"]["default_ptr1"]["attributes"])
+        self.assertIn("PUBLIC", default_type["procedures"]["default_ptr2"]["attributes"])
+        
+        # Explicit private
+        self.assertIn("explicit_private_ptr", default_type["procedures"])
+        self.assertIn("PRIVATE", default_type["procedures"]["explicit_private_ptr"]["attributes"])
+        
+        # Default with nopass
+        self.assertIn("default_static", default_type["procedures"])
+        self.assertEqual(default_type["procedures"]["default_static"]["pass_type"], PassType.NONE)
+        self.assertIn("PUBLIC", default_type["procedures"]["default_static"]["attributes"])
+        
+        # Type-bound procedures affected by private statement
+        self.assertEqual(default_type["procedures"]["method1"]["attributes"], ["PRIVATE"])
+        self.assertEqual(default_type["procedures"]["public_method"]["attributes"], ["PUBLIC"])
+        
+        # Test init_edge_cases
+        init_type = module["types"]["init_edge_cases"]
+        
+        # All procedure pointers should be captured regardless of initialization
+        self.assertIn("uninitialized_ptr", init_type["procedures"])
+        self.assertIn("null_init_ptr", init_type["procedures"])
+        self.assertIn("private_null_ptr", init_type["procedures"])
+        
+        # Multiple with mixed initialization
+        self.assertIn("ptr_a", init_type["procedures"])
+        self.assertIn("ptr_b", init_type["procedures"])
+        self.assertIn("ptr_c", init_type["procedures"])
+        
+        # Check private attribute on private_null_ptr
+        self.assertIn("PRIVATE", init_type["procedures"]["private_null_ptr"]["attributes"])
+        
+        # All others should be PUBLIC (no private statement in type)
+        for ptr_name in ["uninitialized_ptr", "null_init_ptr", "ptr_a", "ptr_b", "ptr_c"]:
+            self.assertIn("PUBLIC", init_type["procedures"][ptr_name]["attributes"])
         
 if __name__ == "__main__":
     unittest.main()

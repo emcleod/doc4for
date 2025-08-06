@@ -36,7 +36,8 @@ from fparser.two.Fortran2003 import (
     Component_Attr_Spec_List, # type: ignore[attr-defined]
     Binding_Name_List, # type: ignore[attr-defined]
     Private_Components_Stmt,
-    Binding_Private_Stmt
+    Binding_Private_Stmt,
+    Proc_Decl_List # type: ignore[attr-defined]
 )
 from fparser.two.utils import walk
 from doc4for.models.common import BindingType, BindingTypeEnum
@@ -187,9 +188,9 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         if not proc["is_final"]: # final procedures don't have access statements
             if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
                 proc["attributes"].append(component_default_access)
-    for component in type_info["generic_interfaces"].values():
-        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
-            component["attributes"].append(component_default_access)
+    # for component in type_info["generic_interfaces"].values():
+    #     if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
+    #         component["attributes"].append(component_default_access)
 
     return type_info
 
@@ -202,7 +203,8 @@ def handle_type_bound_procedures(type_bound_statement: Type_Bound_Procedure_Part
     context = TypeBoundContext(
         procedures={},
         generic_interfaces={},
-        comment_stack=[]
+        comment_stack=[], 
+        access="PUBLIC" # public by default, have to be explicitly marked as private
     )
     handler = _get_type_bound_handler()
     
@@ -418,7 +420,7 @@ def handle_procedure_component(component_part: Component_Part,
         attributes = []
         pass_type = PassType.DEFAULT  # Default for procedure components
         pass_name = None
-        
+                
         attr_spec_list = walk(proc_stmt, Proc_Component_Attr_Spec_List)
         #TODO check for bind(c) in here when fparser supports it
         if attr_spec_list:
@@ -434,11 +436,13 @@ def handle_procedure_component(component_part: Component_Part,
                         pass_name = attr_spec.children[1].string
                 else:
                     attributes.append(attr_string.upper())
-        
-        # Look for access statements and append
-        attributes.extend(attr.string.upper() for attr in walk(component_part, Access_Spec))
+            
+            # Look for access specifiers in the attribute list only
+            for attr_spec in walk(attr_spec_list[0], Access_Spec):
+                attributes.append(attr_spec.string.upper())        
 
         # Extract procedure declarations
+        # Handle more complex declarations that produce Proc_Decl nodes
         proc_decls = walk(proc_stmt, Proc_Decl)
         for proc_decl in proc_decls:
             name = proc_decl.children[0].string
@@ -455,6 +459,28 @@ def handle_procedure_component(component_part: Component_Part,
             }
             procedures[name] = procedure_info
     
+        # Handle simple procedure pointers: procedure(interface), pointer :: name
+        proc_decl_list = walk(proc_stmt, Proc_Decl_List)
+        if proc_decl_list:
+            for item in proc_decl_list[0].children:
+                if isinstance(item, Name):
+                    name = item.string
+                elif isinstance(item, Proc_Decl):
+                    name = item.children[0].string
+                else:
+                    continue  # Skip commas and other separators
+                
+                procedure_info: ProcedureDescription = {
+                    "name": name,
+                    "description": description,
+                    "attributes": attributes,
+                    "is_final": False,  # Procedure components can't be FINAL
+                    "bound_to": interface_name,  # The interface it's bound to
+                    "pass_type": pass_type,
+                    "pass_name": pass_name,
+                    "implementation": None,  # No implementation for procedure pointer components
+                }
+                procedures[name] = procedure_info
     return procedures
 
 
