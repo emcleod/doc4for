@@ -1,13 +1,18 @@
-[build-system]
+[
+build-system
+]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[project]
+[
+project
+]
 name = "doc4for"
 version = "0.1.0"
 description = "A tool for generating documentation for Fortran code"
 readme = "README.md"
 authors = [{name = "emcleod"}]
+license = {text = "MIT"}
 urls = {Repository = "https://github.com/emcleod/doc4for"}
 requires-python = ">=3.6"
 dependencies = [
@@ -18,16 +23,97 @@ dependencies = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Documentation",
 ]
 
-[tool.setuptools]
+[
+project.optional-dependencies
+]
+test = [
+    "pytest>=7.0",
+    "pyfakefs>=5.0",
+]
+dev = [
+    "flake8>=6.0",
+    "black>=23.0",
+    "mypy>=1.0",
+    "pre-commit>=3.0",
+]
+# Better way to combine dependencies
+all = [
+    "doc4for[test,dev]",
+]
+
+[
+tool.setuptools
+]
 package-dir = {"" = "src"}
 
-[tool.setuptools.packages.find]
+[
+tool.setuptools.packages.find
+]
 where = ["src"]
 
-[project.scripts]
+[
+project.scripts
+]
 doc4for = "doc4for.generate_docs:main"
 
+[
+tool.pytest.ini_options
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+
+[
+tool.coverage.run
+]
+source = ["src/doc4for"]
+branch = true
+
+[
+tool.coverage.report
+]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[
+tool.black
+]
+line-length = 127
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+
+[
+tool.isort
+]
+profile = "black"
+line_length = 127
+src_paths = ["src", "tests"]
+
+[
+tool.mypy
+]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
