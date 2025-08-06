@@ -13,7 +13,7 @@ from fparser.two.Fortran2003 import (
 )
 from fparser.two.utils import walk
 from doc4for.models.common import Uses, Import, ImportType, UseType
-from doc4for.utils.comment_utils import get_formatted_description
+from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def parse_uses(use_stmt: Use_Stmt, comment_stack: List[Comment]) -> Dict[str, Us
         "module_name": module_name,
         "selections": selections,
         "renames": renames,
-        "description": get_formatted_description(comment_stack),
+        "description": format_comments(comment_stack),
         "use_type": use_type
     }
     uses[module_name] = use

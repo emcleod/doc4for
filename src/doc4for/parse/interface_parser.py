@@ -33,7 +33,7 @@ from doc4for.models.procedure_models import InterfaceDescription, FunctionDescri
 from doc4for.models.variable_models import PolymorphismType
 from doc4for.parse.procedure_parser import parse_procedure, update_arguments_with_comment_data
 from doc4for.parse.common_parser import _extract_binding_type
-from doc4for.utils.comment_utils import get_formatted_description
+from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.uses_parser import parse_imports_list, parse_uses_list
 from doc4for.parse.interface_helper import process_specification_part, match_interfaces_to_procedure_arguments
 
@@ -43,7 +43,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 def parse_interface(
     interface: Interface_Block, comment_stack: List[Comment], default_access: Optional[str],
 ) -> Tuple[str, InterfaceDescription]:
-    description = get_formatted_description(comment_stack)
+    description = format_comments(comment_stack)
     
     # Extract basic interface information
     interface_stmt = walk(interface, Interface_Stmt)[0]
@@ -62,7 +62,7 @@ def parse_interface(
         elif isinstance(node, Procedure_Stmt):
             # Handle module procedures
             proc_names = walk(node, Name)
-            body_description = get_formatted_description(body_comment_stack)
+            body_description = format_comments(body_comment_stack)
             for proc_name in proc_names:
                 module_procedures[proc_name.string] = {
                     "name": proc_name.string,

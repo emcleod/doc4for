@@ -377,7 +377,7 @@ end module power_levels
         # Get the enum (using first enumerator name)
         enum = module["enums"]["WEEKDAY"]
         
-        self.assertEqual(enum["description"], "") # note the description attaches to the public declaration for now
+        self.assertEqual(enum["description"], "Public enum values\n") 
         self.assertEqual(enum["name"], "__ENUM__")
         self.assertEqual(enum["binding_type"], { "type": BindingTypeEnum.BIND_C, "name": None})
         

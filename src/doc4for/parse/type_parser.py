@@ -37,14 +37,15 @@ from fparser.two.Fortran2003 import (
     Binding_Name_List, # type: ignore[attr-defined]
     Private_Components_Stmt,
     Binding_Private_Stmt,
-    Proc_Decl_List # type: ignore[attr-defined]
+    Proc_Decl_List, # type: ignore[attr-defined]
+    Proc_Component_PASS_Arg_Name
 )
 from fparser.two.utils import walk
 from doc4for.models.common import BindingType, BindingTypeEnum
 from doc4for.models.variable_models import DataComponent, PolymorphismType
 from doc4for.models.type_models import TypeDescription, GenericInterface, TypeParameter
 from doc4for.models.procedure_models import ProcedureDescription, PassType
-from doc4for.utils.comment_utils import get_formatted_description
+from doc4for.utils.comment_utils import format_comments
 from doc4for.parse.common_parser import (_extract_literal_value, _extract_type,
                                          _extract_dimension_info, _extract_type_info
                                         )
@@ -106,7 +107,7 @@ def _get_type_bound_handler() -> TypeBoundProcedureHandler:
 def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comment], default_access: Optional[str]) -> TypeDescription:
     # Extract type name
     type_name = walk(type_def, Type_Name)[0].string
-    type_description = get_formatted_description(comment_stack)
+    type_description = format_comments(comment_stack)
     attributes = [attr.string.upper() for attr in walk(type_def, Type_Attr_Spec)]
 
     # Determine type's component default access
@@ -156,17 +157,20 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         # Extract type parameters
         type_info["type_parameters"] = extract_type_parameters(type_def)
 
+    component_visibility = "PUBLIC" # public by default for types
     # Process the nodes inside the type
     type_comment_stack: List[Comment] = []    
     for node in type_def.children:
         if isinstance(node, Comment):
             type_comment_stack.append(node)
+        elif isinstance(node, Private_Components_Stmt):
+            component_visibility = "PRIVATE"
         elif isinstance(node, Component_Part):
             # Check what kind of components are in this Component_Part
             if walk(node, Data_Component_Def_Stmt):
-                type_info["data_components"].update(handle_data_component(node, type_comment_stack))
+                type_info["data_components"].update(handle_data_component(node, type_comment_stack, component_visibility))
             if walk(node, Proc_Component_Def_Stmt):
-                type_info["procedures"].update(handle_procedure_component(node, type_comment_stack))
+                type_info["procedures"].update(handle_procedure_component(node, type_comment_stack, component_visibility))
             type_comment_stack.clear()
         elif isinstance(node, Type_Bound_Procedure_Part):
             # Handle all type-bound procedures using the handler pattern
@@ -180,14 +184,14 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
     if "PUBLIC" not in attributes and "PRIVATE" not in attributes:
         attributes.append(default_access)
 
-    # declarations inside the type use they type's access, which is public by default
-    for component in type_info["data_components"].values():
-        if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
-            component["attributes"].append(component_default_access)
-    for proc in type_info["procedures"].values():
-        if not proc["is_final"]: # final procedures don't have access statements
-            if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
-                proc["attributes"].append(component_default_access)
+    # # declarations inside the type use the type's access, which is public by default
+    # for component in type_info["data_components"].values():
+    #     if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
+    #         component["attributes"].append(component_default_access)
+    # for proc in type_info["procedures"].values():
+    #     if not proc["is_final"]: # final procedures don't have access statements
+    #         if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
+    #             proc["attributes"].append(component_default_access)
 
     return type_info
 
@@ -226,7 +230,7 @@ def handle_specific_binding(node: Specific_Binding, context: TypeBoundContext) -
     if name is None:
         logger.error(f"Could not extract procedure name from specific binding: {node}")
         return
-    description: str = get_formatted_description(context.comment_stack)
+    description: str = format_comments(context.comment_stack)
     attributes: List[str] = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec, Component_Attr_Spec))
                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
     binding_types = [attr.string.upper() for attr in walk(node, Binding_Attr)]            
@@ -257,7 +261,7 @@ def handle_specific_binding(node: Specific_Binding, context: TypeBoundContext) -
 
 def handle_final_binding(node: Final_Binding, context: TypeBoundContext) -> None:
     """Handle final binding nodes."""
-    description: str = get_formatted_description(context.comment_stack)       
+    description: str = format_comments(context.comment_stack)       
     for name in walk(node, Name):
         procedure_description: ProcedureDescription = {
             "name": name.string,
@@ -291,7 +295,7 @@ def handle_generic_binding(node: Generic_Binding, context: TypeBoundContext) -> 
         generic_spec = names[0].string
         specific_procedures = [name.string for name in names[1:]]
     
-    description = get_formatted_description(context.comment_stack)     
+    description = format_comments(context.comment_stack)     
     attributes: List[str] = [attr.string.upper() for attr in walk(node, (Attr_Spec, Access_Spec, Component_Attr_Spec))
                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
     # If no explicit access specifier, use the current default
@@ -349,7 +353,7 @@ def extract_type_parameters(type_def: Derived_Type_Def) -> Dict[str, TypeParamet
                     continue
                 
                 # Get description from preceding comments
-                description = get_formatted_description(comment_stack)
+                description = format_comments(comment_stack)
                 
                 # Create the parameter entry
                 parameters[param_name] = {
@@ -370,7 +374,7 @@ def extract_type_parameters(type_def: Derived_Type_Def) -> Dict[str, TypeParamet
     return parameters
 
 def handle_data_component(data_component: Component_Part, 
-                          comment_stack: List[Comment]) -> Dict[str, DataComponent]:  
+                          comment_stack: List[Comment], default_visibility: str) -> Dict[str, DataComponent]:  
     components: Dict[str, DataComponent] = {}
     for def_stmt in walk(data_component, Data_Component_Def_Stmt):            
         #TODO not sure this is handling comments correctly 
@@ -378,10 +382,13 @@ def handle_data_component(data_component: Component_Part,
         polymorphism_type: PolymorphismType
         type_params: Optional[str]
         data_type, polymorphism_type, type_params = _extract_type(def_stmt)
-        description: str = get_formatted_description(comment_stack)
+        description: str = format_comments(comment_stack)
         dimension: Optional[Dimension] = _extract_dimension_info(def_stmt)
         attributes: List[str] = [attr.string.upper() for attr in walk(def_stmt, (Attr_Spec, Access_Spec, Component_Attr_Spec))
                                  if not (hasattr(attr, 'string') and attr.string.upper().startswith('DIMENSION'))]
+        # add visibility if it's not explicitly stated
+        if "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+            attributes.append(default_visibility)
         type_info: Dict[str, str] = _extract_type_info(def_stmt)
         kind: str = type_info["kind"]
         length: str = type_info["length"]
@@ -406,12 +413,12 @@ def handle_data_component(data_component: Component_Part,
 
 
 def handle_procedure_component(component_part: Component_Part, 
-                               comment_stack: List[Comment]) -> Dict[str, ProcedureDescription]:
+                               comment_stack: List[Comment], default_visibility: str) -> Dict[str, ProcedureDescription]:
     procedures: Dict[str, ProcedureDescription] = {}
     
     for proc_stmt in walk(component_part, Proc_Component_Def_Stmt):
         interface_name = proc_stmt.children[0].string
-        description = get_formatted_description(comment_stack)
+        description = format_comments(comment_stack)
         
         # Extract attributes
         attributes = []
@@ -423,6 +430,7 @@ def handle_procedure_component(component_part: Component_Part,
         if attr_spec_list:
             for attr_spec in walk(attr_spec_list[0], Proc_Component_Attr_Spec):                
                 attr_string = attr_spec.string.upper()
+                # in some cases, this is where the pass information is stored
                 if attr_string == "NOPASS":
                     pass_type = PassType.NONE
                 elif attr_string == "PASS":
@@ -437,6 +445,21 @@ def handle_procedure_component(component_part: Component_Part,
             # Look for access specifiers in the attribute list only
             for attr_spec in walk(attr_spec_list[0], Access_Spec):
                 attributes.append(attr_spec.string.upper())        
+
+            for pass_arg in walk(attr_spec_list[0], Proc_Component_PASS_Arg_Name):                
+                pass_type, pass_name_obj = pass_arg.children
+                if pass_type == "NOPASS":
+                    pass_type = PassType.NONE
+                elif pass_type == "PASS":
+                    pass_type = PassType.DEFAULT
+                    # Check if PASS has an argument like PASS(arg_name)
+                    if hasattr(pass_arg, 'children') and len(pass_arg.children) > 1:
+                        pass_type = PassType.NAMED
+                        pass_name = pass_name_obj.string
+            
+        # add visibility if it's not explicitly stated
+        if "PUBLIC" not in attributes and "PRIVATE" not in attributes:
+            attributes.append(default_visibility)
 
         # Extract procedure declarations
         # Handle more complex declarations that produce Proc_Decl nodes
