@@ -177,8 +177,7 @@ def load_user_config(config_file_name: str) -> Optional[ConfigDict]:
 
             return user_config
     except json.JSONDecodeError as e:
-        logger.warning(f"Error reading configuration file: {
-                       e}. Using defaults.")
+        logger.warning(f"Error reading configuration file: {e}. Using defaults.")
         return None
 
 
@@ -275,11 +274,11 @@ def validate_safe_path(path: str, base_path: str) -> bool:
     """
     try:
         # Resolve to absolute paths, following symlinks
-        base_path = Path(base_path).resolve()
-        full_path = Path(base_path / path).resolve()
+        resolved_base_path = Path(base_path).resolve()
+        resolved_full_path = Path(resolved_base_path / path).resolve()
 
         # Check if the resolved path starts with the base path
-        return str(full_path).startswith(str(base_path))
+        return str(resolved_full_path).startswith(str(base_path))
     except Exception as e:
         logger.warning(f"Path validation failed: {e}")
         return False

@@ -188,9 +188,6 @@ def handle_type_definition(type_def: Derived_Type_Def, comment_stack: List[Comme
         if not proc["is_final"]: # final procedures don't have access statements
             if not any(attr in ["PUBLIC", "PRIVATE"] for attr in proc["attributes"]):
                 proc["attributes"].append(component_default_access)
-    # for component in type_info["generic_interfaces"].values():
-    #     if not any(attr in ["PUBLIC", "PRIVATE"] for attr in component["attributes"]):
-    #         component["attributes"].append(component_default_access)
 
     return type_info
 
