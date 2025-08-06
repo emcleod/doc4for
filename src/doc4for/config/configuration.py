@@ -438,8 +438,7 @@ def validate_pdf_config(config: Dict[str, Any]) -> None:
         ValueError: If the configuration is invalid.
     """
     if CommonOutputKeys.ENABLED.value not in config:
-        raise ValueError(f"PDF format configuration missing '{
-                         CommonOutputKeys.ENABLED.value}' field")
+        raise ValueError(f"PDF format configuration missing '{CommonOutputKeys.ENABLED.value}' field")
 
 
 def validate_markdown_config(config: Dict[str, Any]) -> None:
@@ -453,8 +452,7 @@ def validate_markdown_config(config: Dict[str, Any]) -> None:
         ValueError: If the configuration is invalid.
     """
     if CommonOutputKeys.ENABLED.value not in config:
-        raise ValueError(f"Markdown format configuration missing '{
-                         CommonOutputKeys.ENABLED.value}' field")
+        raise ValueError(f"Markdown format configuration missing '{CommonOutputKeys.ENABLED.value}' field")
 
 def validate_template_keys(templates_config: Dict[str, Any]) -> None:
     """
@@ -487,8 +485,7 @@ def validate_static_config(static_config: Dict[str, Any]) -> None:
     missing_static_keys: Set[str] = required_static_keys - \
         set(static_config.keys())
     if missing_static_keys:
-        raise ValueError(f"Missing required static configuration keys: {
-                         missing_static_keys}")
+        raise ValueError(f"Missing required static configuration keys: {missing_static_keys}")
 
 
 def validate_template_directories(templates_config: Dict[str, Any]) -> None:
