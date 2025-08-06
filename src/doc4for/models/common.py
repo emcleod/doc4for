@@ -78,13 +78,19 @@ Rename = TypedDict(
     }
 )
 
+class UseType(Enum):
+    NONE = auto()
+    INTRINSIC = auto()
+    NON_INTRINSIC = auto()
+
 Uses = TypedDict(
     "Uses", 
     {
         "module_name": str, 
         "selections": List[str], 
         "renames": List[Rename],
-        "description": Optional[str]
+        "description": Optional[str],
+        "use_type": UseType
     }
 )
 

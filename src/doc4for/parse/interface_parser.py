@@ -134,8 +134,7 @@ def parse_interface(
         "procedures": procedures,
         "module_procedures": module_procedures,
         "name": name,
-        "operator_symbol": operator_symbol,
-        "uses": {} #TODO
+        "operator_symbol": operator_symbol
     }
     
     return name, interface_description

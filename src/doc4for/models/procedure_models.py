@@ -48,7 +48,6 @@ InterfaceDescription = TypedDict(
         "operator_symbol": Optional[str],
         "procedures": Dict[str, Any], # deferred 
         "module_procedures": Dict[str, ModuleProcedureDescription],
-        "uses": Dict[str, Uses]
     },
 )
 

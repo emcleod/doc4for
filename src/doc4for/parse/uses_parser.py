@@ -7,10 +7,12 @@ from fparser.two.Fortran2003 import (
     Only_List,  # type: ignore[attr-defined]
     Rename,
     Import_Stmt,
-    Import_Name_List  # type: ignore[attr-defined]
+    Import_Name_List,  # type: ignore[attr-defined]
+    Module_Nature,
+    Generic_Spec
 )
 from fparser.two.utils import walk
-from doc4for.models.common import Uses, Import, ImportType
+from doc4for.models.common import Uses, Import, ImportType, UseType
 from doc4for.utils.comment_utils import get_formatted_description
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -18,30 +20,42 @@ logger: logging.Logger = logging.getLogger(__name__)
 def parse_uses(use_stmt: Use_Stmt, comment_stack: List[Comment]) -> Dict[str, Uses]:
     uses = {}
     module_name = walk(use_stmt, Name)[0].string
-    only = walk(use_stmt, Only_List)
+    only_lists = walk(use_stmt, Only_List)
     
     selections = []
     renames = []
     
-    if only:
-        rename_nodes = walk(only, Rename)
-        if rename_nodes:
-            for rename in rename_nodes:                        
-                local_name = rename.children[1].string     
-                original_name = rename.children[2].string  
+    if only_lists:
+        only_list = only_lists[0]  # There should only be one Only_List per Use_Stmt
+        # Iterate through the children of Only_List
+        for item in only_list.children:
+            if isinstance(item, Rename):
+                local_name = item.children[1].string     
+                original_name = item.children[2].string  
                 renames.append({
                     "local": local_name,
                     "original": original_name
-                })
-        else:
-            selections = [selection.string for selection in walk(only, Name)]
-    
-    uses[module_name] = {
+                })            
+            elif isinstance(item, (Name, Generic_Spec)):
+                selections.append(item.string)
+                
+    natures: List[Module_Nature] = walk(use_stmt, Module_Nature) 
+    use_type: UseType = UseType.NONE
+    if natures:
+        match natures[0].string:
+            case "INTRINSIC":
+                use_type = UseType.INTRINSIC
+            case "NON_INTRINSIC":
+                use_type = UseType.NON_INTRINSIC
+
+    use: Uses = {
         "module_name": module_name,
         "selections": selections,
         "renames": renames,
-        "description": get_formatted_description(comment_stack)
+        "description": get_formatted_description(comment_stack),
+        "use_type": use_type
     }
+    uses[module_name] = use
     comment_stack.clear()
     return uses
 
@@ -62,11 +76,23 @@ def merge_use_statements(existing_use: Uses, new_use: Uses) -> Uses:
     # Merge renames (assuming no conflicts for now)
     combined_renames = existing_use["renames"] + new_use["renames"]
     
+    use_type: UseType
+    if existing_use["use_type"] == new_use["use_type"]:
+        use_type = existing_use["use_type"]
+    else:
+        if existing_use["use_type"] == UseType.NONE and new_use["use_type"] != UseType.NONE:
+            use_type = new_use["use_type"]
+        elif new_use["use_type"] == UseType.NONE and existing_use["use_type"] != UseType.NONE:
+            use_type = existing_use["use_type"]
+        else:
+            logger.error(f"Have conflicting use types in {existing_use} and {new_use}: using existing")
+            use_type = existing_use["use_type"]
     return {
         "module_name": existing_use["module_name"], 
         "selections": unique_selections,
         "renames": combined_renames,
-        "description": new_use.get("description") or existing_use.get("description")
+        "description": new_use.get("description") or existing_use.get("description"),
+        "use_type": use_type
     }
 
 def parse_uses_list(use_stmts: List[Use_Stmt], comment_stack: List[Comment] = []) -> Dict[str, Uses]:

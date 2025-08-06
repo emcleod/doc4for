@@ -1,7 +1,6 @@
 import unittest
 import json
 import copy
-from pathlib import Path
 from unittest.mock import patch, mock_open
 from doc4for.config.configuration import (
     load_configuration,
