@@ -41,8 +41,12 @@ dev = [
     "pre-commit>=3.0",
 ]
 all = [
-    "doc4for[test]",
-    "doc4for[dev]",
+    "pytest>=7.0",
+    "pyfakefs>=5.0",
+    "flake8>=6.0",
+    "black>=23.0",
+    "mypy>=1.0",
+    "pre-commit>=3.0",
 ]
 
 [tool.setuptools]
