@@ -317,8 +317,7 @@ def validate_output_formats(formats: FormatDict) -> None:
     required_formats = {format_key.value for format_key in OutputFormatKeys}
     missing_formats = required_formats - set(formats.keys())
     if missing_formats:
-        raise ValueError(f"Missing required output formats: {
-                         ', '.join(f for f in missing_formats)}")
+        raise ValueError(f"Missing required output formats: {', '.join(f for f in missing_formats)}")
 
     for format_key in OutputFormatKeys:
         format_config = formats[format_key.value]
