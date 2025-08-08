@@ -16,7 +16,7 @@ from doc4for.models.procedure_models import InterfaceDescription
 
 def process_specification_part(
     spec_part: Specification_Part,
-    default_access: str
+    default_access: Optional[str]
 ) -> Tuple[List[InterfaceDescription], List[Type_Declaration_Stmt], List[Procedure_Declaration_Stmt]]:
     """Extract interfaces, type declarations, and procedure declarations from a specification part."""
     # avoid a circular dependency
@@ -92,11 +92,18 @@ def match_interfaces_to_procedure_arguments(
                         "type_params": None
                     }
     
-    # Now handle implicit procedure arguments (old style)
-    # Find which arguments are NOT covered by type declarations or procedure declarations
+    # Find which arguments are procedures that don't have interfaces yet
     procedure_arg_names = [name for name in dummy_arg_names 
-                          if name not in parsed_arguments["intent_in"] 
-                          and name not in declared_procedure_args]
+                      if (name not in argument_interfaces and
+                          ((name in parsed_arguments.get("intent_in", {}) and 
+                            parsed_arguments["intent_in"][name].get("type") == "PROCEDURE") or
+                           name not in parsed_arguments.get("intent_in", {})))]
+
+    # # Now handle implicit procedure arguments (old style)
+    # # Find which arguments are NOT covered by type declarations or procedure declarations
+    # procedure_arg_names = [name for name in dummy_arg_names 
+    #                       if name not in parsed_arguments["intent_in"] 
+    #                       and name not in declared_procedure_args]
     
     # Match remaining interface blocks to procedure arguments positionally
     remaining_interfaces = [block for block in interface_blocks 

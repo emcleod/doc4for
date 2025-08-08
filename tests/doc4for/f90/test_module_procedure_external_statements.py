@@ -92,8 +92,10 @@ class TestExternalStatements(TestCase):
         self.assertEqual(integrate_func["in"]["func"]["description"], "External function to integrate")
         self.assertEqual(integrate_func["in"]["a"]["description"], "Lower bound")
         self.assertEqual(integrate_func["in"]["b"]["description"], "Upper bound")
+        self.assertFalse(integrate_func["out"])
         self.assertEqual(integrate_func["return"]["description"], "Integral value")
         
+        assert integrate_func["external_procedures"] is not None
         # Check that func is marked as procedure and is intent in
         self.assertEqual(integrate_func["in"]["func"]["type"], "PROCEDURE")
         self.assertEqual(integrate_func["in"]["func"]["attributes"], [])
@@ -106,6 +108,7 @@ class TestExternalStatements(TestCase):
                         "Wrapper for BLAS dgemm routine\n"
                         "Shows external declaration for well-known library functions\n\n")
         
+        assert multiply_func["external_procedures"] is not None
         # Check that dgemm external declaration was detected
         self.assertNotIn("dgemm", multiply_func["in"])
         self.assertEqual(multiply_func["external_procedures"]["dgemm"]["name"], "dgemm")
@@ -194,6 +197,10 @@ class TestExternalStatements(TestCase):
         self.assertEqual(process_func["in"]["user_func"]["type"], "PROCEDURE")
         self.assertEqual(process_func["in"]["user_func"]["attributes"], ["PUBLIC"])
         
+        # External procedure can't be intent(out)
+        self.assertNotIn("user_func", process_func["out"])
+
+        assert process_func["external_procedures"] is not None
         # Check external procedures
         self.assertEqual(process_func["external_procedures"]["user_func"]["name"], "user_func")
         self.assertEqual(process_func["external_procedures"]["user_func"]["procedure_type"], "FUNCTION")
@@ -215,6 +222,10 @@ class TestExternalStatements(TestCase):
         self.assertEqual(apply_sub["in"]["transform2"]["type"], "PROCEDURE")
         self.assertEqual(apply_sub["in"]["transform2"]["attributes"], ["PUBLIC"])
         
+        self.assertNotIn("transform1", process_func["out"])
+        self.assertNotIn("transform2", process_func["out"])
+
+        assert apply_sub["external_procedures"] is not None
         # Check external procedures
         self.assertEqual(apply_sub["external_procedures"]["transform1"]["name"], "transform1")
         self.assertEqual(apply_sub["external_procedures"]["transform1"]["procedure_type"], "FUNCTION")
@@ -324,8 +335,6 @@ class TestExternalStatements(TestCase):
     """
         )
         
-            #TODO callback appears in 'out'
-            #TODO the interface isn't being picked up - maybe because of place?
         result = extract_module_data([Path("/fake/path/complex_external.f90")])
         self.assertEqual(len(result), 1)
         module = result[0]
@@ -370,6 +379,10 @@ class TestExternalStatements(TestCase):
         self.assertEqual(optimize_func["in"]["objective"]["type"], "PROCEDURE")
         self.assertEqual(optimize_func["in"]["objective"]["attributes"], ["PUBLIC"])
         
+        self.assertNotIn("objective", optimize_func["out"])
+        self.assertNotIn("lbfgs_minimize", optimize_func["out"])
+
+        assert optimize_func["external_procedures"] is not None
         # Check external procedures
         self.assertEqual(len(optimize_func["external_procedures"]), 2)
         
@@ -388,8 +401,12 @@ class TestExternalStatements(TestCase):
         
         # Check callback parameter
         self.assertEqual(process_func["in"]["callback"]["type"], "PROCEDURE")
-        self.assertEqual(process_func["in"]["callback"]["attributes"], ["PUBLIC"])
+        self.assertFalse(process_func["in"]["callback"]["attributes"])
         
+        self.assertNotIn("callback", process_func["out"])
+
+        assert process_func["external_procedures"] is not None
+
         # Check callback external procedure
         self.assertEqual(process_func["external_procedures"]["callback"]["name"], "callback")
         self.assertEqual(process_func["external_procedures"]["callback"]["procedure_type"], "FUNCTION")
@@ -403,7 +420,132 @@ class TestExternalStatements(TestCase):
         # Check function signature in nested interface
         callback_func = callback_interface["procedures"]["callback_interface"]
         self.assertEqual(callback_func["description"], "Expected signature for callback\n")
+
+    def test_interface_declaration_order_independence(self):
+        """Test that interface blocks are matched positionally regardless of names."""
+        self.fs.create_file(
+            "/fake/path/order_test.f90",
+            contents="""\
+    module order_test_mod
+        implicit none
+    contains
+        !!*
+        ! Test function with mixed declaration order
+        ! @in f1 First function parameter
+        ! @in f2 Second function parameter  
+        ! @return Sum of function results
+        !*!
+        function test(f1, f2) result(sum)
+            real :: sum
+            
+            !!* Interface for first parameter (despite name func2) *!
+            interface
+                function func2() result(y)
+                    real :: y
+                end function
+            end interface
+
+            external :: f2
+            real :: f2
+
+            !!* Interface for second parameter (despite name func1) *!
+            interface 
+                function func1() result(x)
+                    real :: x
+                end function
+            end interface
+
+            external :: f1  ! Declared after interface
+            real :: f1
+
+            sum = f1() + f2()
+        end function
+    end module order_test_mod
+    """
+        )
         
+        result = extract_module_data([Path("/fake/path/order_test.f90")])
+        module = result[0]
+        test_func = module["functions"]["test"]
+        
+        assert test_func["external_procedures"] is not None 
+        # Check that both parameters are marked as external procedures
+        self.assertEqual(len(test_func["external_procedures"]), 2)
+        self.assertIn("f1", test_func["external_procedures"])
+        self.assertIn("f2", test_func["external_procedures"])
+        
+        # Check external procedure details
+        self.assertEqual(test_func["external_procedures"]["f1"]["name"], "f1")
+        self.assertEqual(test_func["external_procedures"]["f1"]["procedure_type"], "FUNCTION")
+        self.assertEqual(test_func["external_procedures"]["f2"]["name"], "f2")
+        self.assertEqual(test_func["external_procedures"]["f2"]["procedure_type"], "FUNCTION")
+        
+        # Check that both are in intent_in (external procedures are always input)
+        self.assertIn("f1", test_func["in"])
+        self.assertIn("f2", test_func["in"])
+        self.assertEqual(test_func["in"]["f1"]["type"], "PROCEDURE")
+        self.assertEqual(test_func["in"]["f2"]["type"], "PROCEDURE")
+        
+        # Check that neither is in intent_out (external procedures can't be output)
+        self.assertNotIn("f1", test_func["out"])
+        self.assertNotIn("f2", test_func["out"])
+        
+        # Check that interfaces are matched by position
+        self.assertEqual(len(test_func["argument_interfaces"]), 2)
+        
+        # f1 should be matched to the FIRST interface (func2)
+        f1_interface = test_func["argument_interfaces"]["f1"]
+        self.assertIn("func2", f1_interface["procedures"])
+        
+        # f2 should be matched to the SECOND interface (func1)
+        f2_interface = test_func["argument_interfaces"]["f2"] 
+        self.assertIn("func1", f2_interface["procedures"])
+        
+        # Check interface names are set correctly in the arguments
+        self.assertEqual(test_func["in"]["f1"]["interface_name"], "func2")
+        self.assertEqual(test_func["in"]["f2"]["interface_name"], "func1")        
+
+    def test_procedure_pointer_with_interface(self):
+        """Test procedure pointers with explicit interfaces."""
+        self.fs.create_file(
+            "/fake/path/proc_pointer.f90",
+            contents="""\
+    module proc_pointer_mod
+        implicit none
+        
+        interface
+            subroutine callback_interface(x, y)
+                real, intent(in) :: x
+                real, intent(out) :: y
+            end subroutine
+        end interface
+        
+    contains
+        !!*
+        ! Function using procedure pointer
+        ! @in data Input array
+        ! @return Processed result
+        !*!
+        function process_with_pointer(data) result(sum)
+            real, dimension(:), intent(in) :: data
+            real :: sum
+            
+            !!* Procedure pointer with interface *!
+            procedure(callback_interface), pointer :: proc_ptr => null()
+            
+            !!* External procedure to point to *!
+            external :: external_processor
+            
+            ! Point to the external procedure
+            proc_ptr => external_processor
+            
+            sum = 0.0
+            ! Use proc_ptr...
+        end function
+    end module proc_pointer_mod
+    """
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

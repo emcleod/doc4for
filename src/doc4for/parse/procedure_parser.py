@@ -35,7 +35,6 @@ from doc4for.parse.interface_helper import match_interfaces_to_procedure_argumen
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-
 #TODO look at differing types passed in from interface_parser and function_parser
 def parse_procedure(procedure, 
                     stmt_type, 
@@ -121,8 +120,7 @@ def parse_procedure(procedure,
                 argument_interfaces[dummy_argument["interface_name"]] = {}
     else:
         # there were no specific declarations of the type, so the only thing that we
-        # can do is to assume intent inout and fill in the name
-        #
+        # can do is to assume intent inout and fill in the name        
         for dummy_argument in dummy_arg_names:
             #TODO need to check if implicit none has been used
             type = "INTEGER" if dummy_argument.upper()[0] in "IJKLMN" else "REAL"
@@ -150,12 +148,12 @@ def parse_procedure(procedure,
             for external_name in external_names:
                 name_str = external_name.string
                 if name_str in dummy_arg_names:
-                    # This is a parameter - add to intent_in as before
+                    # This is a parameter - add to intent_in
                     argument = {
                         "type": "PROCEDURE",  
                         "kind": "",
                         "length": "", 
-                        "description": "",  # Will be filled in later
+                        "description": "",
                         "dimension": "",
                         "attributes": attributes,
                         "default_value": "",
@@ -164,11 +162,14 @@ def parse_procedure(procedure,
                         "polymorphism_type": PolymorphismType.NONE
                     } 
                     intent_in[name_str] = argument
+                    # external procedures cannot be intent(out) by definition, so remove it
+                    intent_out.pop(name_str, None)
+                # Add whether it's a parameter or declared inside the procedure
                 procedure_type = determine_procedure_type(procedure, name_str, all_parsed_arguments)
                 external_procedures[name_str] = {
                     "name": name_str,
                     "procedure_type": procedure_type
-                }
+                }    
 
     # Match interface blocks to procedure arguments
     # This needs to happen after all arguments are parsed

@@ -1614,8 +1614,8 @@ end module matrix_ops_mod
             elif interface.get("operator_symbol") == ".DOT.":
                 dot_interface = interface
         
-        self.assertIsNotNone(cross_interface, "Should find .cross. operator interface")
-        self.assertIsNotNone(dot_interface, "Should find .dot. operator interface")
+        assert cross_interface is not None
+        assert dot_interface is not None
         
         # Check .cross. interface properties
         self.assertEqual(
