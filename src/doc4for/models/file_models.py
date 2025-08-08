@@ -14,8 +14,7 @@ FileDescription = TypedDict(
         "programs": Dict[str, ProgramDescription],
         "block_data": Dict[str, BlockDataDescription],
         "equivalence": Optional[List[EquivalenceRelationship]], # optional because this is obsolete
-        "uses": Dict[str, Uses],
-        "external_procedures": Optional[Dict[str, ExternalDescription]] #TODO test this
+        "external_procedures": Optional[Dict[str, ExternalDescription]] 
     },
 )
 

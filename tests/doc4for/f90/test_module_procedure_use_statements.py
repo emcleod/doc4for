@@ -101,8 +101,8 @@ class TestUseStatements(TestCase):
             elif module["module_name"] == "numerical_integrator":
                 num_module = module
         
-        self.assertIsNotNone(func_utils_module)
-        self.assertIsNotNone(num_module)
+        assert func_utils_module is not None
+        assert num_module is not None
         
         # Check module descriptions
         self.assertEqual(func_utils_module["module_description"], 
@@ -242,8 +242,8 @@ class TestUseStatements(TestCase):
             elif module["module_name"] == "math_ops":
                 math_module = module
         
-        self.assertIsNotNone(types_module)
-        self.assertIsNotNone(math_module)
+        assert types_module is not None
+        assert math_module is not None
         
         # Check module descriptions
         self.assertEqual(types_module["module_description"], 
@@ -267,7 +267,7 @@ class TestUseStatements(TestCase):
         self.assertEqual(len(angle_func["uses"]), 1)
         self.assertIn("types_mod", angle_func["uses"])
         self.assertEqual(len(angle_func["uses"]["types_mod"]["renames"]), 1)
-        self.assertFalse(angle_func["uses"]["types_mod"]["selections"])
+        self.assertEqual(angle_func["uses"]["types_mod"]["selections"], ["vector_t"])
         self.assertEqual(angle_func["uses"]["types_mod"]["renames"][0]["local"], "vec")
         self.assertEqual(angle_func["uses"]["types_mod"]["renames"][0]["original"], "vector_t")
         

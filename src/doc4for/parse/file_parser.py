@@ -47,7 +47,6 @@ def _get_file_handler() -> FileHandler:
         handler.register_handler(Main_Program, handle_program)
         handler.register_handler(Block_Data, handle_block_data)
         handler.register_handler(Equivalence_Stmt, handle_equivalence)
-        handler.register_handler(Use_Stmt, handle_use)
         _file_handler_instance = handler
     return _file_handler_instance
 

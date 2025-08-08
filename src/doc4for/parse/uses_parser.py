@@ -5,14 +5,15 @@ from fparser.two.Fortran2003 import (
     Use_Stmt,
     Name,
     Only_List,  # type: ignore[attr-defined]
-    Rename,
+    Rename as FP_Rename,
     Import_Stmt,
     Import_Name_List,  # type: ignore[attr-defined]
     Module_Nature,
-    Generic_Spec
+    Generic_Spec,
+    Rename_List  # type: ignore[attr-defined]
 )
 from fparser.two.utils import walk
-from doc4for.models.common import Uses, Import, ImportType, UseType
+from doc4for.models.common import Uses, Import, ImportType, UseType, Rename
 from doc4for.utils.comment_utils import format_comments
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -20,22 +21,31 @@ logger: logging.Logger = logging.getLogger(__name__)
 def parse_uses(use_stmt: Use_Stmt, comment_stack: List[Comment]) -> Dict[str, Uses]:
     uses = {}
     module_name = walk(use_stmt, Name)[0].string
+    
+    selections: List[str] = []
+    renames: List[Rename] = []
+    
+    # Handle renames without 'only' (direct Rename_List)
+    rename_lists: List[Rename_List] = walk(use_stmt, Rename_List)
+    if rename_lists:
+        rename_list = rename_lists[0]
+        for item in rename_list.children:
+            if isinstance(item, FP_Rename):
+                local_name: str = item.children[1].string     
+                original_name: str = item.children[2].string  
+                selections.append(original_name)  # Add to selections
+                renames.append({ "local": local_name, "original": original_name })
+    
+    # Handle 'only' lists (which may contain both names and renames)
     only_lists = walk(use_stmt, Only_List)
-    
-    selections = []
-    renames = []
-    
     if only_lists:
-        only_list = only_lists[0]  # There should only be one Only_List per Use_Stmt
-        # Iterate through the children of Only_List
+        only_list = only_lists[0]
         for item in only_list.children:
-            if isinstance(item, Rename):
+            if isinstance(item, FP_Rename):
                 local_name = item.children[1].string     
-                original_name = item.children[2].string  
-                renames.append({
-                    "local": local_name,
-                    "original": original_name
-                })            
+                original_name = item.children[2].string
+                selections.append(original_name)  # Add original name to selections
+                renames.append({"local": local_name, "original": original_name })            
             elif isinstance(item, (Name, Generic_Spec)):
                 selections.append(item.string)
                 

@@ -2158,7 +2158,7 @@ end module matrix_ops_mod
 
         basic_use = integration_composite["uses"]["math_basic"]
         self.assertEqual(basic_use["module_name"], "math_basic")
-        self.assertEqual(basic_use["selections"], [])  # Empty because it's a rename
+        self.assertEqual(basic_use["selections"], ["integrate"])  
         self.assertEqual(len(basic_use["renames"]), 1)
         self.assertEqual(basic_use["renames"][0]["local"], "basic_integrate")
         self.assertEqual(basic_use["renames"][0]["original"], "integrate")

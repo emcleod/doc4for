@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Set
 import os
 from pathlib import Path
 from doc4for.models.module_models import ModuleDescription
-from doc4for.f90.generate_uses_tree import generate_imports_tree
+from doc4for.process.generate_uses_tree import generate_imports_tree
 
 def generate_module_diagram(module_descriptions: List[ModuleDescription], 
                            output_dir: str, 

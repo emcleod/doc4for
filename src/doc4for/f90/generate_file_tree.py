@@ -88,7 +88,6 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
             "modules": {},
             "programs": {},
             "block_data": {},
-            "uses": {},
             "equivalence": [],
             "external_procedures": {}
         }

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from doc4for.f90.generate_uses_tree import generate_imports_tree, ALL
+from doc4for.process.generate_uses_tree import generate_imports_tree, ALL
 from doc4for.f90.generate_module_tree import extract_module_data
 
 

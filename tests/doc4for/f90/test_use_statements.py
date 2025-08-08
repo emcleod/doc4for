@@ -644,13 +644,13 @@ end module complex_calculation
         assert e_rename is not None 
         self.assertEqual(e_rename["original"], "e")
         # Should have no regular selections when using renames
-        self.assertEqual(constants_use["selections"], [])
+        self.assertEqual(constants_use["selections"], ["pi", "e"])
         
         # Check mixed renamed and non-renamed
         self.assertIn("iso_fortran_env", renamed_module["uses"])
         iso_use = renamed_module["uses"]["iso_fortran_env"]
         self.assertEqual(len(iso_use["renames"]), 2)
-        self.assertEqual(iso_use["selections"], ["int32"])  # Non-renamed import
+        self.assertEqual(iso_use["selections"], ["real32", "real64", "int32"]) 
         sp_rename = next((r for r in iso_use["renames"] if r["local"] == "sp"), None)
         assert sp_rename is not None 
         self.assertEqual(sp_rename["original"], "real32")
@@ -908,7 +908,7 @@ end module complex_calculation
         
         # Should have both renames and the non-renamed import
         self.assertEqual(len(iso_use["renames"]), 2)
-        self.assertEqual(iso_use["selections"], ["int32"])
+        self.assertEqual(iso_use["selections"], ["int32", "int64"])
         rename_map = {r["local"]: r["original"] for r in iso_use["renames"]}
         self.assertEqual(rename_map["i32"], "int32")
         self.assertEqual(rename_map["i64"], "int64")
