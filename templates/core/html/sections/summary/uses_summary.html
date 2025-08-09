@@ -1,39 +1,57 @@
-{% if module_data.uses %}
+{%- if module_data.uses -%}
   <section class="uses-summary">
     <h2>Uses</h2>
     <table>
       <thead>
         <tr>
-        <th>Module</th>
-        <th>Items</th>
-        <th>Description</th>
+          <th>Module</th>
+          <th>Imported Items</th>
+          <th>Description</th>
         </tr>
       </thead>
       <tbody>
-        {% for use_name, use_data in module_data.uses.items() %}
+        {%- for use_name, use_data in module_data.uses.items() %}
         <tr>
-        <td>{{ use_name }}</td>
-        <td>
-          {% if use_data.selections and use_data.selections|length > 0 %}
-          <ul>
-            {% for selection in use_data.selections %}
-            <li>
-              {% if selection is mapping %}
-                {{ selection.keys()|first }} => {{ selection.values()|first }}
-              {% else %}
-                {{ selection }}
-              {% endif %}
-            </li>
-            {% endfor %}
-          </ul>
-          {% else %}
-            <em>All exported items</em>
-          {% endif %}
+            <td>
+              {%- if use_data.module_name.endswith('.html') -%}
+                <a href="{{ use_data.module_name }}">{{ use_name }}</a>
+              {%- else -%}
+                {{ use_data.module_name }}
+              {%- endif -%}
+            </td>          
+          <td>
+            {%- if use_data.selections and use_data.selections|length > 0 -%}
+              <ul class="import-list">
+                {%- for selection in use_data.selections %}
+                  {%- set item_name = selection.split('#')[-1].replace('parameter-', '').replace('procedure-', '') if '#' in selection else selection -%}
+                  {%- set rename = use_data.renames | selectattr('original', 'equalto', item_name) | first | default(None) -%}
+                  <li>
+                    {%- if rename -%}
+                      <code class="use-rename-local">{{ rename.local }}</code>
+                      <span class="use-rename-arrow">→</span>
+                      {%- if selection.endswith('.html') or '#' in selection -%}
+                        <a href="{{ selection }}"><code class="use-rename-original">{{ rename.original }}</code></a>
+                      {%- else -%}
+                        <code class="use-rename-original">{{ rename.original }}</code>
+                      {%- endif -%}
+                    {%- else -%}
+                      {%- if selection.endswith('.html') or '#' in selection -%}
+                        <a href="{{ selection }}"><code>{{ item_name }}</code></a>
+                      {%- else -%}
+                        <code>{{ item_name }}</code>
+                      {%- endif -%}
+                    {%- endif -%}
+                  </li>
+                {%- endfor %}
+              </ul>
+            {%- else -%}
+              <em>All public items</em>
+            {%- endif -%}
           </td>
           <td>{{ use_data.description if use_data.description }}</td>
         </tr>
-        {% endfor %}
+        {%- endfor %}
       </tbody>
-   </table>
+    </table>
   </section>
-{% endif %}
+{%- endif -%}

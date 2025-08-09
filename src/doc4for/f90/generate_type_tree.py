@@ -116,11 +116,15 @@ def generate_inheritance_tree_page(
         jinja2.exceptions.TemplateNotFound: If the template file is not found in the template directory.
         OSError: If there are issues writing the output file.
     """
-    env: Environment = Environment(loader=FileSystemLoader(template_dir))
+    env: Environment = Environment(
+        loader=FileSystemLoader(template_dir),
+        trim_blocks = True,      # Removes newline after blocks
+        lstrip_blocks = True     # Removes spaces/tabs before blocks
+    )
     template: Template = env.get_template(inheritance_tree_template)
 
     # Transform the inheritance tree
-    transformed_tree: Dict[str, Any] = transform_inheritance_tree(inheritance_tree)
+    transformed_tree: List[Dict[str, Any]] = transform_inheritance_tree(inheritance_tree)
 
     # Render the template
     output: str = template.render(

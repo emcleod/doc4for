@@ -412,6 +412,7 @@ class TestUsesLinkTransformation(TestCase):
         }
         self.assertEqual(block_data["uses"], expected_uses_after)
 
+#TODO test generation of link when there's a rename
     def test_program_uses(self):
         """Test use statements in main programs"""
         self.fs.create_file(

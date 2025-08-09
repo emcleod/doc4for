@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Set
 import os
 from pathlib import Path
 from doc4for.models.module_models import ModuleDescription
-from doc4for.process.generate_uses_tree import generate_imports_tree
+from doc4for.process.generate_uses_tree import generate_uses_tree
 
 def generate_module_diagram(module_descriptions: List[ModuleDescription], 
                            output_dir: str, 
@@ -135,7 +135,7 @@ def generate_module_usage_diagram(module_descriptions: List[ModuleDescription],
         Path to the generated HTML file
     """
     # Generate the imports tree
-    imports_tree = generate_imports_tree(module_descriptions)
+    imports_tree = generate_uses_tree(module_descriptions)
     
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)

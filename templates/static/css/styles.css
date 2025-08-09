@@ -579,6 +579,70 @@ code.fortran {
   color: var(--primary-color);
 }
 
+/* Uses summary table styling */
+.uses-summary table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.uses-summary th,
+.uses-summary td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.uses-summary th {
+  font-weight: 600;
+  background-color: #f6f8fa;
+}
+
+/* Uses list styling */
+.uses-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.uses-list li {
+  padding: 2px 0;
+}
+
+/* Renamed item styling */
+.use-rename-local {
+  color: #032f62;  /* Dark blue - local name used in this module */
+  font-weight: 600;
+}
+
+.use-rename-original {
+  color: #6e7781;  /* Gray - original name from source module */
+}
+
+.use-rename-arrow {
+  color: #6e7781;
+  margin: 0 4px;
+  font-family: monospace;
+}
+
+/* Highlight renamed items with subtle background */
+.uses-list li:has(.use-rename-local) {
+  background-color: #f6f8fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin: 2px 0;
+}
+
+/* Ensure links within code elements inherit code styling */
+.uses-list a code {
+  text-decoration: none;
+}
+
+.uses-list a:hover code {
+  text-decoration: underline;
+}
+
+
+
 /* ====== Responsive Design ====== */
 @media screen and (max-width: 768px) {
   main {

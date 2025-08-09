@@ -75,24 +75,27 @@ def extract_file_data(f90_files: List[Path]) -> List[FileDescription]:
         parser = ParserFactory().create(std="f2003")
 
     for f90_file in f90_files:
-        f90_file_path: str = os.fspath(f90_file)
+        try:
+            f90_file_path: str = os.fspath(f90_file)
 
-        reader = FortranFileReader(f90_file_path, ignore_comments=False)
-        tree = parser(reader)
+            reader = FortranFileReader(f90_file_path, ignore_comments=False)
+            tree = parser(reader)
 
-        file_data: FileDescription = {
-            "file_name": f90_file_path,
-            "file_description": "",
-            "functions": {},
-            "subroutines": {},
-            "modules": {},
-            "programs": {},
-            "block_data": {},
-            "equivalence": [],
-            "external_procedures": {}
-        }
-        parse_file_content(tree, file_data)
-        files.append(file_data)
+            file_data: FileDescription = {
+                "file_name": f90_file_path,
+                "file_description": "",
+                "functions": {},
+                "subroutines": {},
+                "modules": {},
+                "programs": {},
+                "block_data": {},
+                "equivalence": [],
+                "external_procedures": {}
+            }
+            parse_file_content(tree, file_data)
+            files.append(file_data)
+        except Exception as e:
+            logger.error(f"Could not parse {f90_file}: {e}")        
     return files
 
 def generate_file_pages(directory_tree: DirectoryTree,
@@ -101,7 +104,11 @@ def generate_file_pages(directory_tree: DirectoryTree,
                         file_template: str,
                         output_dir: str,
                         base_dir: str = "") -> None:
-    env: Environment = Environment(loader=FileSystemLoader(template_dir))
+    env: Environment = Environment(
+        loader = FileSystemLoader(template_dir),
+        trim_blocks = True,      # Removes newline after blocks
+        lstrip_blocks = True     # Removes spaces/tabs before blocks
+    )
     template: Template = env.get_template(file_template)
 
     def generate_html_recursively(node: Union[DirectoryTree, str], current_path: Path) -> None:
@@ -113,18 +120,25 @@ def generate_file_pages(directory_tree: DirectoryTree,
             relative_path: str = "../" * len(current_path.parts)
             with open(file_path, "r", encoding="utf-8", errors="replace") as file:
                 code: str = file.read()
-            output: str = template.render(
-                sidebar_data=directory_tree,
-                code=code,
-                file=file_name,
-                relative_path=relative_path,
-                is_index=False,
-                content_data="",
-                file_data=file_data[node]
-            )
             output_path: Path = target_directory / f"{file_path.stem}.html"
-            with open(output_path, "w", encoding="utf-8") as file:
-                file.write(output)
+            logger.info(f"Generating page for {file_path}, writing to {output_path}")
+            if node in file_data:
+                try:
+                    output: str = template.render(
+                        sidebar_data=directory_tree,
+                        code=code,
+                        file=file_name,
+                        relative_path=relative_path,
+                        is_index=False,
+                        content_data="",
+                        file_data=file_data[node]
+                    )
+                    with open(output_path, "w", encoding="utf-8") as file:
+                        file.write(output)
+                except Exception as e:
+                    logger.error(f"Problem rendering or writing {file_name}")
+            else:
+                logger.error(f"Could not find parsed data for {node}")
         else:
             for child in node.children:
                 generate_html_recursively(child, current_path / node.name)

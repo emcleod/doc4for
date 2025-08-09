@@ -11,6 +11,7 @@ from doc4for.f90.generate_module_tree import extract_module_data, generate_modul
 from doc4for.f90.generate_module_diagram import generate_module_diagram, generate_module_usage_diagram
 from doc4for.utils.file_utils import find_files_by_extensions, create_docs_directory
 from doc4for.f90.generate_type_tree import generate_inheritance_tree, generate_inheritance_tree_page
+from doc4for.process.generate_uses_tree import transform_uses_to_html_references
 from doc4for.config import (load_configuration, ConfigKeys, OutputFormatKeys, CommonOutputKeys, TemplateKeys, CoreTemplateKeys, StaticAssetKeys)
 from doc4for import __version__
 from doc4for.logging_config import setup_logging
@@ -62,6 +63,11 @@ def main() -> None:
 
         logger.info("Extracting file data")
         file_data: List[FileDescription] = extract_file_data(fortran_files)
+
+        # process for display
+        # TODO move this elsewhere
+        transform_uses_to_html_references(file_data)
+
         file_dict: Dict[str, FileDescription] = {}
         for data in file_data:
             file_dict[data['file_name']] = data
@@ -74,11 +80,15 @@ def main() -> None:
             file_template,
             output_dir
         )
-        logger.info("Extracting module data")
-        modules: List[ModuleDescription] = extract_module_data(fortran_files)
 
+        logger.info("Extracting module data")  
+        modules: List[ModuleDescription] = [module for file in file_data for module in file["modules"].values()]
+        
         logger.info("Generating module pages")
         generate_module_pages(modules, html_template_dir, module_template, output_dir)
+        transform_uses_to_html_references(file_data)
+
+
 #TODO enable this
         # # Create module diagrams directory
         # module_diagrams_dir = os.path.join(output_dir, "module_diagrams")

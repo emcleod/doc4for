@@ -628,6 +628,13 @@ end module complex_calculation
             Path("/fake/path/renamed_uses.f90")
         ])
         
+        temp = extract_file_data([
+            Path("/fake/path/constants.f90"),
+            Path("/fake/path/renamed_uses.f90")
+        ])
+        from doc4for.process.generate_uses_tree import transform_uses_to_html_references
+        transform_uses_to_html_references(temp)
+
         renamed_module = next((m for m in result if m["module_name"] == "renamed_uses"), None)
         assert renamed_module is not None
         

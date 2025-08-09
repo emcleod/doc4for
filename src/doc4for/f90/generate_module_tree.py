@@ -64,24 +64,26 @@ def extract_module_data(f90_files: List[Path], remove_private: bool = True) -> L
         parser = ParserFactory().create(std="f2003")
     
     for f90_file in f90_files:
-        comment_stack: List[Comment] = []
-        f90_file_path: str = os.fspath(f90_file)
-        
-        reader = FortranFileReader(f90_file_path, ignore_comments=False)
-        tree: Any = parser(reader)
-        
-        # Walk through the parse tree  
-        for child in tree.content:     
-            # comments before the module
-            if isinstance(child, Comment) and child.item.comment:
-                comment_stack.append(child)
-            elif isinstance(child, Module):
-                module_data: ModuleDescription = initialise_module_description(child, comment_stack, f90_file_path)
-                comment_stack.clear()
-                parse_module_content(child, module_data, comment_stack, remove_private)
-                modules.append(module_data)
-                comment_stack.clear()
-                    
+        try:
+            comment_stack: List[Comment] = []
+            f90_file_path: str = os.fspath(f90_file)
+            
+            reader = FortranFileReader(f90_file_path, ignore_comments=False)
+            tree: Any = parser(reader)
+            
+            # Walk through the parse tree  
+            for child in tree.content:     
+                # comments before the module
+                if isinstance(child, Comment) and child.item.comment:
+                    comment_stack.append(child)
+                elif isinstance(child, Module):
+                    module_data: ModuleDescription = initialise_module_description(child, comment_stack, f90_file_path)
+                    comment_stack.clear()
+                    parse_module_content(child, module_data, comment_stack, remove_private)
+                    modules.append(module_data)
+                    comment_stack.clear()
+        except Exception as e:
+            logger.error(f"Error while processing {f90_file_path}: {e}")            
     _post_process_modules(modules)
     return modules
 
@@ -169,7 +171,11 @@ def generate_module_pages(modules: List[ModuleDescription],
                           module_template: str, 
                           output_dir: str) -> None:
     create_modules_directory(output_dir)
-    env: Environment = Environment(loader=FileSystemLoader(template_dir))
+    env: Environment = Environment(
+        loader=FileSystemLoader(template_dir),
+        trim_blocks = True,      # Removes newline after blocks
+        lstrip_blocks = True     # Removes spaces/tabs before blocks
+    )
     template: Template = env.get_template(module_template)
     module_names: List[str] = [module["module_name"] for module in modules]
     

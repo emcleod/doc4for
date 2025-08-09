@@ -28,7 +28,8 @@ from fparser.two.Fortran2003 import (
     Part_Ref,
     Derived_Type_Spec,
     Type_Name,
-    Type_Param_Spec_List
+    Type_Param_Spec_List,
+    Contains_Stmt
 )
 from fparser.two.utils import walk
 from doc4for.models.variable_models import PolymorphismType
@@ -46,6 +47,7 @@ class HandlerProtocol(Protocol):
 class FortranHandler(Generic[T]):
     TYPE_HANDLING = {
         Comment: None,  # Though we shouldn't get here
+        Contains_Stmt: None
     }
 
     def __init__(self):
